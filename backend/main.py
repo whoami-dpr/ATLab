@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import fastf1
 from datetime import datetime
 import math
+import pandas as pd
 
 app = FastAPI()
 
@@ -175,8 +176,10 @@ def get_laps(
         if laps.empty:
             print(f"NO LAPS FOUND FOR DRIVER {driver}")
             return {"laps": []}
+        print(f"COLUMNS: {laps.columns}")  # <-- log de columnas
         lap_list = []
         for _, lap in laps.iterrows():
+            print(f"LAP DATA: {lap}")  # <-- log de cada vuelta
             lap_time = float(lap["LapTime"].total_seconds()) if lap["LapTime"] is not None else None
             if lap_time is not None and (math.isnan(lap_time) or math.isinf(lap_time)):
                 lap_time = None
@@ -186,6 +189,8 @@ def get_laps(
                 "lapTimeStr": str(lap["LapTime"]) if lap["LapTime"] is not None else None,
                 "lapStartTime": str(lap["StartTime"]) if "StartTime" in lap else "",
                 "isValid": bool(lap["IsAccurate"]) if "IsAccurate" in lap else True,
+                "compound": str(lap["Compound"]) if "Compound" in lap and lap["Compound"] is not None else None,
+                "isPit": ("PitInTime" in lap and pd.notna(lap["PitInTime"]))
             })
         print(f"RETURNING {len(lap_list)} LAPS")
         return {"laps": lap_list}

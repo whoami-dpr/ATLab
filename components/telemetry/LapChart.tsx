@@ -1,5 +1,5 @@
 import React from "react";
-import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { LapInfo } from "../../hooks/useTelemetry";
 
 interface LapChartProps {
@@ -27,17 +27,29 @@ export function LapChart({ laps, selectedLap, setSelectedLap }: LapChartProps) {
     isValid: lap.isValid,
     isFastest: lap.lapTimeSeconds === minLap && lap.isValid,
     isSelected: lap.lapNumber === selectedLap,
+    compound: lap.compound,
+    isPit: lap.isPit, // Added isPit to data
   }));
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const lap = payload[0].payload;
+      console.log('Tooltip lap:', lap); // <-- log para depuración
       return (
         <div style={{ background: "#232336", color: "#fff", padding: 10, borderRadius: 8, boxShadow: "0 2px 8px #0008" }}>
           <div style={{ fontWeight: 600 }}>Vuelta {lap.lapNumber}</div>
           <div>Tiempo: {formatLapTime(lap.lapTimeSeconds)}</div>
           <div>{lap.isValid ? "Válida" : "Inválida"}</div>
+          {lap.compound ? (
+            <img
+              src={`/images/${lap.compound.toLowerCase()}.svg`}
+              alt={lap.compound}
+              style={{ width: 28, height: 28, marginTop: 8 }}
+            />
+          ) : (
+            <div style={{ color: '#aaa', marginTop: 8 }}>Neumático no disponible</div>
+          )}
         </div>
       );
     }
@@ -70,6 +82,15 @@ export function LapChart({ laps, selectedLap, setSelectedLap }: LapChartProps) {
       <ResponsiveContainer width="100%" height={260}>
         <ScatterChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
           <CartesianGrid stroke="#222" />
+          {data.filter(lap => lap.isPit).map(lap => (
+            <ReferenceLine
+              key={`pit-${lap.lapNumber}`}
+              x={lap.lapNumber}
+              stroke="#fbbf24"
+              strokeDasharray="4 4"
+              label={{ value: "PIT", position: "top", fill: "#fbbf24", fontWeight: 700, fontSize: 10 }}
+            />
+          ))}
           <XAxis
             dataKey="lapNumber"
             type="number"

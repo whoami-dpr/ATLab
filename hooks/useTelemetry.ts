@@ -56,6 +56,8 @@ export interface LapInfo {
   lapTimeStr: string | null;
   lapStartTime: string;
   isValid: boolean;
+  compound?: string | null;
+  isPit?: boolean;
 }
 
 export function useLapChart() {
