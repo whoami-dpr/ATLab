@@ -17,6 +17,7 @@ import { YearSelect } from "../../components/YearSelect";
 import TelemetryPanel from '../../components/telemetry/TelemetryPanel';
 import { useLapChart } from '../../hooks/useTelemetry';
 import { LapChart } from '../../components/telemetry/LapChart';
+import { Skeleton } from "../../components/ui/skeleton";
 
 function GPSelect({ gps, gp, setGp, disabled }: { gps: string[]; gp: string | undefined; setGp: (v: string) => void; disabled?: boolean }) {
   return (
@@ -88,55 +89,39 @@ export default function TelemetryPage() {
   } = useF1Schedule();
   const [driver, setDriver] = useState("");
   const { data, loading: loadingTelemetry, error: errorTelemetry, fetchTelemetry } = useTelemetry();
-  const [submitted, setSubmitted] = useState(false);
   const [selectedLap, setSelectedLap] = useState<number | null>(null);
   const { laps, loading: loadingLaps, error: errorLaps, fetchLaps } = useLapChart();
   const [hasTriedLoad, setHasTriedLoad] = useState(false);
   const [showNoDataMessage, setShowNoDataMessage] = useState(false);
   const [activeTab, setActiveTab] = useState<'telemetry' | 'comparison'>('telemetry');
 
-  // Cuando cambian year, gp, session, driver, llama a fetchLaps
+  // Resetear selectedLap cuando cambian los selects principales
   useEffect(() => {
-    console.log("useEffect triggered:", { year, gp, session, driver });
-    if (year && gp && session && driver) {
-      console.log("Calling fetchLaps with:", { year, gp, session, driver });
-      fetchLaps({ year, gp, session, driver });
-    }
-  }, [year, gp, session, driver, fetchLaps]);
+    setSelectedLap(null);
+  }, [year, gp, session, driver]);
 
-  // Cuando cambia la vuelta seleccionada, pide la telemetría de esa vuelta
-  useEffect(() => {
-    if (year && gp && session && driver && selectedLap) {
-      fetchTelemetry({ year, gp, session, driver, lap: selectedLap });
-    }
-  }, [year, gp, session, driver, selectedLap, fetchTelemetry]);
-
+  // Cuando llegan las vueltas, setear la primera vuelta automáticamente
   useEffect(() => {
     if (laps.length > 0 && !selectedLap) {
       setSelectedLap(laps[0].lapNumber);
     }
   }, [laps, selectedLap]);
 
+  // Cargar telemetría automáticamente cuando hay una vuelta seleccionada y selects completos
   useEffect(() => {
-    if (submitted && !loadingTelemetry) {
-      setHasTriedLoad(true);
+    if (year && gp && session && driver && selectedLap) {
+      fetchTelemetry({ year, gp, session, driver, lap: selectedLap });
     }
-  }, [loadingTelemetry, submitted]);
+  }, [year, gp, session, driver, selectedLap]);
 
+  // Llamar a fetchLaps automáticamente cuando cambian los selects principales
   useEffect(() => {
-    // Solo mostrar el mensaje si: hubo submit, terminó de cargar, no hay error, no hay datos
-    if (submitted && !loadingTelemetry && !errorTelemetry && !data) {
-      setShowNoDataMessage(true);
-    } else if (loadingTelemetry) {
-      setShowNoDataMessage(false); // Oculta el mensaje mientras carga
+    if (year && gp && session && driver) {
+      fetchLaps({ year, gp, session, driver });
     }
-  }, [submitted, loadingTelemetry, errorTelemetry, data]);
+  }, [year, gp, session, driver, fetchLaps]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowNoDataMessage(false); // Oculta el mensaje al hacer submit
-    setSubmitted(true);
-  };
+  // Eliminar lógica de submitted, ya no se usa
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -173,7 +158,7 @@ export default function TelemetryPage() {
       
       {activeTab === 'telemetry' && (
         <>
-          <form onSubmit={handleSubmit} className="flex flex-wrap gap-6 items-end bg-[#13131a] border border-[#232336] rounded-2xl p-8 mb-8 shadow-xl">
+          <form className="flex flex-wrap gap-6 items-end bg-[#13131a] border border-[#232336] rounded-2xl p-8 mb-8 shadow-xl">
             <div className="flex flex-col gap-2">
               <label className="block text-gray-300 text-sm mb-1">Año</label>
               <YearSelect years={years} year={year} setYear={setYear} />
@@ -190,13 +175,6 @@ export default function TelemetryPage() {
               <label className="block text-gray-300 text-sm mb-1">Piloto</label>
               <DriverSelect drivers={drivers || []} driver={driver} setDriver={setDriver} disabled={!session || loading.drivers} />
             </div>
-            <button 
-              type="submit" 
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-2xl text-lg shadow transition disabled:opacity-60 disabled:cursor-not-allowed" 
-              disabled={!year || !gp || !session || !driver || loadingTelemetry}
-            >
-              Cargar Telemetría
-            </button>
           </form>
           
           {loading.years || loading.gps || loading.sessions || loading.drivers ? (
@@ -205,13 +183,13 @@ export default function TelemetryPage() {
           
           {error && <div className="text-red-400 mb-4">{error}</div>}
           
-          {laps.length > 0 && (
+          {(year && gp && session && driver) && (
             <div className="mb-8">
-              <LapChart laps={laps} selectedLap={selectedLap} setSelectedLap={setSelectedLap} />
+              <LapChart laps={laps} selectedLap={selectedLap} setSelectedLap={setSelectedLap} loading={loadingLaps} />
             </div>
           )}
           
-          {data && selectedLap && (
+          {data && selectedLap && !loadingTelemetry && (
             <div className="mb-8">
               <TelemetryPanel data={data} />
             </div>

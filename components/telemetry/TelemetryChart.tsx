@@ -23,7 +23,7 @@ export function TelemetryChart({ data, yKey = "speed", label = "Speed", color = 
       return (
         <div style={{ background: "#232336", color: "#fff", padding: 10, borderRadius: 8, boxShadow: "0 2px 8px #0008" }}>
           <div style={{ fontWeight: 600 }}>{label}</div>
-          <div>Distancia: {point.distance} m</div>
+          {/* <div>Distancia: {Number(point.distance).toFixed(1)} m</div> */}
           <div>Valor: {point.value}</div>
         </div>
       );
@@ -48,26 +48,35 @@ export function TelemetryChart({ data, yKey = "speed", label = "Speed", color = 
 
   if (!chartData || chartData.length === 0) return null;
 
+  // Calcular ticks uniformemente distribuidos (por ejemplo, 12 ticks)
+  const minDist = Math.min(...chartData.map(d => d.distance));
+  const maxDist = Math.max(...chartData.map(d => d.distance));
+  const numTicks = 12;
+  const tickStep = (maxDist - minDist) / (numTicks - 1);
+  const ticks = Array.from({ length: numTicks }, (_, i) => Number((minDist + i * tickStep).toFixed(1)));
+
   return (
     <div className="w-full">
-      <ResponsiveContainer width="100%" height={340}>
-        <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
-          <CartesianGrid stroke="#222" />
+      <ResponsiveContainer width="100%" height={yKey === "speed" ? 340 : 200}>
+        <LineChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 8 }}>
+          <CartesianGrid stroke="#888" strokeDasharray="3 3" />
           <XAxis
             dataKey="distance"
             type="number"
-            domain={[Math.min(...chartData.map(d => d.distance)), Math.max(...chartData.map(d => d.distance))]}
-            tick={{ fill: "#fff" }}
-            label={{ value: "Distancia (m)", position: "insideBottom", fill: "#fff", fontWeight: 600, offset: 0 }}
+            domain={[minDist, maxDist]}
+            tick={{ fill: "#fff", fontSize: 11 }}
+            label={{ value: "Distancia (m)", position: "insideBottom", fill: "#fff", fontWeight: 500, fontSize: 12, offset: 0 }}
+            tickFormatter={v => v.toFixed(1)}
+            ticks={ticks}
           />
           <YAxis
             dataKey="value"
             type="number"
             domain={[Math.floor(Math.min(...chartData.map(d => d.value)) - 1), Math.ceil(Math.max(...chartData.map(d => d.value)) + 1)]}
-            tick={{ fill: "#fff" }}
-            label={{ value: label, angle: -90, position: "insideLeft", fill: "#fff", fontWeight: 600 }}
+            tick={{ fill: "#fff", fontSize: 11 }}
+            label={{ value: label, angle: -90, position: "insideLeft", fill: "#fff", fontWeight: 500, fontSize: 12 }}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: color, strokeWidth: 2, fill: color, fillOpacity: 0.1 }} />
+          <Tooltip content={<CustomTooltip />} cursor={false} />
           <Line
             type="monotone"
             dataKey="value"
