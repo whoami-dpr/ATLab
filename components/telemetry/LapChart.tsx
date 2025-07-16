@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
+import ReactECharts from 'echarts-for-react';
 import { LapInfo } from "../../hooks/useTelemetry";
 import { Skeleton } from "../ui/skeleton";
 
@@ -10,23 +10,6 @@ interface LapChartProps {
   loading?: boolean;
 }
 
-function formatLapTime(seconds: number | null) {
-  if (seconds === null) return "-";
-  const min = Math.floor(seconds / 60);
-  const sec = Math.floor(seconds % 60);
-  return `${min}:${sec.toString().padStart(2, '0')}`;
-}
-
-// Formato con milisegundos para el tooltip
-function formatLapTimeMs(seconds: number | null) {
-  if (seconds === null) return "-";
-  const min = Math.floor(seconds / 60);
-  const sec = Math.floor(seconds % 60);
-  const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
-  return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-}
-
-// Mapeo de color para compuestos
 const compoundColors: Record<string, string> = {
   soft: '#ff4650',
   medium: '#ffd12a',
@@ -37,15 +20,12 @@ const compoundColors: Record<string, string> = {
 };
 
 export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChartProps) {
-  const [showInvalidLaps, setShowInvalidLaps] = useState(false);
   if (loading) {
     return (
       <div className="w-full mb-6 relative flex flex-col items-start">
         <div role="status" className="space-y-3 animate-pulse w-full h-[260px] flex flex-col justify-center">
-          {/* 10 filas de barras, distribuidas verticalmente */}
           {[...Array(10)].map((_, row) => (
             <div key={row} className="flex items-center w-full gap-3">
-              {/* Cada fila tiene de 2 a 5 barras de diferentes anchos, pero todas usan flex-grow para ocupar el ancho */}
               {Array.from({length: 2 + (row % 4)}).map((_, col, arr) => (
                 <div
                   key={col}
@@ -71,62 +51,154 @@ export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChar
   const validLaps = laps.filter(lap => lap.lapTimeSeconds !== null && (lap.isValid || lap.isPit));
   const minLap = Math.min(...validLaps.map(l => l.lapTimeSeconds ?? Infinity));
 
-  // Prepara los datos para Recharts
-  const data = laps
-    .filter(lap => showInvalidLaps || lap.isValid || lap.isPit)
-    .map(lap => ({
-      lapNumber: lap.lapNumber,
-      lapTimeSeconds: lap.lapTimeSeconds,
-      isValid: lap.isValid,
-      isFastest: lap.lapTimeSeconds === minLap && (lap.isValid || lap.isPit),
-      isSelected: lap.lapNumber === selectedLap,
-      compound: lap.compound,
-      isPit: lap.isPit,
-    }));
+  // Filtrar los datos a mostrar
+  const filteredLaps = laps.filter(lap => true); // Show all laps
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const lap = payload[0].payload;
-      return (
-        <div style={{ background: "#232336", color: "#fff", padding: 10, borderRadius: 8, boxShadow: "0 2px 8px #0008" }}>
-          <div style={{ fontWeight: 600 }}>Vuelta {lap.lapNumber}</div>
-          <div>Tiempo: {formatLapTimeMs(lap.lapTimeSeconds)}</div>
-          <div>{lap.isValid ? "Válida" : "Inválida"}</div>
-          {lap.compound ? (
-            <img
-              src={`/images/${lap.compound.toLowerCase()}.svg`}
-              alt={lap.compound}
-              style={{ width: 28, height: 28, marginTop: 8 }}
-            />
-          ) : (
-            <div style={{ color: '#aaa', marginTop: 8 }}>Neumático no disponible</div>
-          )}
-        </div>
-      );
+  // Determinar el rango de vueltas
+  const minLapNumber = Math.min(...laps.map(l => l.lapNumber));
+  const maxLapNumber = Math.max(...laps.map(l => l.lapNumber));
+  // Mapeo vuelta -> objeto lap
+  const lapMap = new Map(laps.map(lap => [lap.lapNumber, lap]));
+  // Construir arrays completos para ECharts
+  const lapNumbers: number[] = [];
+  const lapTimes: (number|null)[] = [];
+  const colors: string[] = [];
+  const pitLaps: number[] = [];
+  const [showInvalidLaps, setShowInvalidLaps] = useState(false);
+  for (let n = minLapNumber; n <= maxLapNumber; n++) {
+    const lap = lapMap.get(n);
+    lapNumbers.push(n);
+    if (!lap) {
+      lapTimes.push(null);
+      colors.push('#888');
+      continue;
     }
-    return null;
-  };
+    // Solo mostrar tiempo si es válida o PIT, o si el toggle está activado
+    const isVisible = showInvalidLaps || lap.isValid || lap.isPit;
+    lapTimes.push(isVisible ? lap.lapTimeSeconds : null);
+    if (lap.lapTimeSeconds === minLap && (lap.isValid || lap.isPit)) {
+      colors.push('#b266ff');
+    } else if (!lap.isValid && !lap.isPit) {
+      colors.push('#888');
+    } else {
+      colors.push(compoundColors[(lap.compound || 'unknown').toLowerCase()] || '#fff');
+    }
+    if (lap.isPit) pitLaps.push(n);
+  }
 
-  // Custom dot
-  const renderDot = (props: any) => {
-    const { cx, cy, payload } = props;
-    let fill = payload.isValid ? (compoundColors[(payload.compound || 'unknown').toLowerCase()] || '#fff') : "#888";
-    if (payload.isFastest) fill = "#b266ff"; // Vuelta más rápida en violeta
-    if (payload.isSelected) fill = "#3b82f6";
-    const r = payload.isSelected ? 7 : 5;
-    return (
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill={fill}
-        stroke="#232336"
-        strokeWidth={payload.isSelected ? 3 : 1}
-        style={{ cursor: "pointer" }}
-        onClick={() => setSelectedLap(payload.lapNumber)}
-      />
-    );
+  // Tooltip personalizado
+  function formatLapTimeMs(seconds: number | null) {
+    if (seconds === null) return "-";
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
+    return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+  }
+
+  // Calcular dominio Y dinámico según el toggle
+  let yMin = 0, yMax = 0, minLapTime = 0;
+  if (showInvalidLaps) {
+    const allLapTimes = laps.map(l => l.lapTimeSeconds).filter((v): v is number => typeof v === 'number' && isFinite(v));
+    minLapTime = Math.min(...allLapTimes);
+    const maxLapTime = Math.max(...allLapTimes);
+    yMin = Math.max(0, Math.floor(minLapTime - 1));
+    yMax = Math.ceil(maxLapTime + 1);
+  } else {
+    minLapTime = Math.min(...validLaps.map(l => l.lapTimeSeconds ?? Infinity));
+    const maxLapTime = Math.max(...validLaps.map(l => l.lapTimeSeconds ?? 0));
+    yMin = Math.max(0, Math.floor(minLapTime - 1));
+    yMax = Math.ceil(maxLapTime + 1);
+  }
+
+  const option = {
+    grid: { left: 9update0, right: 20, top: 20, bottom: 40 },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      backgroundColor: '#232336',
+      borderRadius: 8,
+      textStyle: { color: '#fff' },
+      formatter: (params: any) => {
+        const p = params[0];
+        const lap = lapMap.get(lapNumbers[p.dataIndex]);
+        if (!lap) return `<div>Sin datos para esta vuelta</div>`;
+        const compound = lap.compound ? lap.compound.toLowerCase() : 'unknown';
+        const compoundImg = `/images/${compound}.svg`;
+        return `
+          <div style="font-weight:600;">Vuelta ${lap.lapNumber}</div>
+          <div>Tiempo: ${formatLapTimeMs(lap.lapTimeSeconds)}</div>
+          <div>${lap.isValid ? "Válida" : "Inválida"}</div>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+            <img src='${compoundImg}' alt='${compound}' style='width:22px;height:22px;vertical-align:middle;' />
+            <span style='color:#aaa;'>${lap.compound ? lap.compound : 'Neumático no disponible'}</span>
+          </div>
+        `;
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: lapNumbers,
+      name: 'Vuelta',
+      nameLocation: 'middle',
+      nameGap: 28,
+      axisLabel: { color: '#fff', fontSize: 11 },
+      axisLine: { lineStyle: { color: '#888' } },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Tiempo (min:s)',
+      nameLocation: 'middle',
+      nameGap: 60,
+      nameTextStyle: { color: '#fff', fontSize: 13, fontWeight: 600 },
+      min: yMin,
+      max: yMax,
+      axisLabel: { color: '#fff', fontSize: 11, formatter: (v: number) => {
+        if (v < 0) return '-';
+        const min = Math.floor(v / 60);
+        const sec = Math.floor(v % 60);
+        return `${min}:${sec.toString().padStart(2, '0')}`;
+      } },
+      axisLine: { lineStyle: { color: '#888' } },
+      splitLine: { show: true, lineStyle: { color: 'rgba(136,136,136,0.7)', type: 'dashed' } },
+    },
+    series: [
+      // Línea curva
+      {
+        type: 'line',
+        data: lapTimes,
+        showSymbol: false,
+        lineStyle: { color: '#3b82f6', width: 2 },
+        emphasis: { focus: 'series' },
+        smooth: true,
+        z: 1,
+      },
+      // Puntos de cada vuelta
+      {
+        type: 'scatter',
+        data: lapTimes,
+        symbolSize: 8,
+        itemStyle: {
+          color: (params: any) => colors[params.dataIndex],
+          borderColor: '#232336',
+          borderWidth: 2,
+        },
+        z: 2,
+      },
+      // Líneas de PIT
+      ...pitLaps.map((lapNum) => ({
+        type: 'line',
+        markLine: {
+          symbol: 'none',
+          data: [
+            { xAxis: lapNum }
+          ],
+          lineStyle: { color: '#fbbf24', type: 'dashed', width: 2 },
+          label: { show: true, formatter: 'PIT', position: 'top', color: '#fbbf24', fontWeight: 700, fontSize: 10 }
+        },
+        z: 0,
+      })),
+    ]
   };
 
   return (
@@ -139,44 +211,19 @@ export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChar
           {showInvalidLaps ? 'HIDE INVALID LAPS' : 'SHOW INVALID LAPS'}
         </button>
       </div>
-      <ResponsiveContainer width="100%" height={260}>
-        <ScatterChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
-          <CartesianGrid stroke="#888" strokeDasharray="3 3" />
-          {data.filter(lap => lap.isPit).map(lap => (
-            <ReferenceLine
-              key={`pit-${lap.lapNumber}`}
-              x={lap.lapNumber}
-              stroke="#fbbf24"
-              strokeDasharray="4 4"
-              label={{ value: "PIT", position: "top", fill: "#fbbf24", fontWeight: 700, fontSize: 10 }}
-            />
-          ))}
-          <XAxis
-            dataKey="lapNumber"
-            type="number"
-            domain={[Math.min(...laps.map(l => l.lapNumber)), Math.max(...laps.map(l => l.lapNumber))]}
-            tick={{ fill: "#fff" }}
-            label={{ value: "Vuelta", position: "insideBottom", fill: "#fff", fontWeight: 600, offset: 0 }}
-          />
-          <YAxis
-            dataKey="lapTimeSeconds"
-            type="number"
-            domain={[
-              Math.floor(Math.min(...validLaps.map(l => l.lapTimeSeconds!)) - 1),
-              Math.ceil(Math.max(...validLaps.map(l => l.lapTimeSeconds!)) + 1)
-            ]}
-            tick={{ fill: "#fff" }}
-            label={{ value: "Tiempo (min:s)", angle: -90, position: "insideLeft", fill: "#fff", fontWeight: 600 }}
-            tickFormatter={formatLapTime}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#3b82f6", strokeWidth: 2, fill: "#3b82f6", fillOpacity: 0.1 }} />
-          <Scatter
-            data={data}
-            shape={renderDot}
-            line={{ stroke: "#3b82f6", strokeWidth: 2 }}
-          />
-        </ScatterChart>
-      </ResponsiveContainer>
+      <ReactECharts
+        option={option}
+        style={{ height: 260, width: '100%' }}
+        notMerge
+        lazyUpdate
+        theme={undefined}
+      />
+      <div className="flex gap-2 mt-2 items-center">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ borderLeft: '3px dashed #fbbf24', height: 16, marginRight: 6, display: 'inline-block' }}></span>
+          <span className="text-xs text-yellow-300 font-semibold">PIT (parada en boxes)</span>
+        </span>
+      </div>
       <div className="flex gap-2 mt-2">
         <span className="ml-4 text-sm text-gray-400">Haz clic en un punto para ver la telemetría de esa vuelta.</span>
       </div>
