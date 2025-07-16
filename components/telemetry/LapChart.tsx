@@ -111,7 +111,7 @@ export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChar
   }
 
   const option = {
-    grid: { left: 9update0, right: 20, top: 20, bottom: 40 },
+    grid: { left: 90, right: 20, top: 20, bottom: 40 },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'cross' },

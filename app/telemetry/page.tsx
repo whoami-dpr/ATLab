@@ -159,39 +159,39 @@ export default function TelemetryPage() {
       {activeTab === 'telemetry' && (
         <>
           <form className="flex flex-wrap gap-6 items-end bg-[#13131a] border border-[#232336] rounded-2xl p-8 mb-8 shadow-xl">
-            <div className="flex flex-col gap-2">
-              <label className="block text-gray-300 text-sm mb-1">Año</label>
-              <YearSelect years={years} year={year} setYear={setYear} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="block text-gray-300 text-sm mb-1">GP</label>
-              <GPSelect gps={gps || []} gp={gp} setGp={setGp} disabled={!year || loading.gps} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="block text-gray-300 text-sm mb-1">Sesión</label>
-              <SessionSelect sessions={sessions || []} session={session} setSession={setSession} disabled={!gp || loading.sessions} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="block text-gray-300 text-sm mb-1">Piloto</label>
-              <DriverSelect drivers={drivers || []} driver={driver} setDriver={setDriver} disabled={!session || loading.drivers} />
-            </div>
-          </form>
-          
-          {loading.years || loading.gps || loading.sessions || loading.drivers ? (
-            <div className="text-blue-400 mb-4">Cargando opciones...</div>
-          ) : null}
-          
-          {error && <div className="text-red-400 mb-4">{error}</div>}
-          
+        <div className="flex flex-col gap-2">
+          <label className="block text-gray-300 text-sm mb-1">Año</label>
+          <YearSelect years={years} year={year} setYear={setYear} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="block text-gray-300 text-sm mb-1">GP</label>
+          <GPSelect gps={gps || []} gp={gp} setGp={setGp} disabled={!year || loading.gps} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="block text-gray-300 text-sm mb-1">Sesión</label>
+          <SessionSelect sessions={sessions || []} session={session} setSession={setSession} disabled={!gp || loading.sessions} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="block text-gray-300 text-sm mb-1">Piloto</label>
+          <DriverSelect drivers={drivers || []} driver={driver} setDriver={setDriver} disabled={!session || loading.drivers} />
+        </div>
+      </form>
+      
+      {loading.years || loading.gps || loading.sessions || loading.drivers ? (
+        <div className="text-blue-400 mb-4">Cargando opciones...</div>
+      ) : null}
+      
+      {error && <div className="text-red-400 mb-4">{error}</div>}
+      
           {(year && gp && session && driver) && (
-            <div className="mb-8">
+        <div className="mb-8">
               <LapChart laps={laps} selectedLap={selectedLap} setSelectedLap={setSelectedLap} loading={loadingLaps} />
-            </div>
-          )}
-          
+        </div>
+      )}
+      
           {data && selectedLap && !loadingTelemetry && (
-            <div className="mb-8">
-              <TelemetryPanel data={data} />
+        <div className="mb-8">
+          <TelemetryPanel data={data} />
             </div>
           )}
         </>
