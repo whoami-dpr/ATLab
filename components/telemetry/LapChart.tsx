@@ -19,7 +19,7 @@ const compoundColors: Record<string, string> = {
   unknown: '#888',
 };
 
-export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChartProps) {
+function LapChartInner({ laps, selectedLap, setSelectedLap, loading }: LapChartProps) {
   if (loading) {
     return (
       <div className="w-full mb-6 relative flex flex-col items-start">
@@ -217,6 +217,14 @@ export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChar
         notMerge
         lazyUpdate
         theme={undefined}
+        onEvents={{
+          'click': (params: any) => {
+            if (typeof params.dataIndex === 'number') {
+              const lapNum = lapNumbers[params.dataIndex];
+              if (lapNum) setSelectedLap(lapNum);
+            }
+          }
+        }}
       />
       <div className="flex gap-2 mt-2 items-center">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -229,4 +237,9 @@ export function LapChart({ laps, selectedLap, setSelectedLap, loading }: LapChar
       </div>
     </div>
   );
-} 
+}
+
+// Memo para evitar rerender innecesario
+export const LapChart = React.memo(LapChartInner, (prev, next) => {
+  return prev.laps === next.laps && prev.loading === next.loading;
+}); 

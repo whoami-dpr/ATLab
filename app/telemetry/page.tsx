@@ -16,6 +16,7 @@ import { useF1Schedule } from "../../hooks/useF1Schedule";
 import { YearSelect } from "../../components/YearSelect";
 import TelemetryPanel from '../../components/telemetry/TelemetryPanel';
 import { useLapChart } from '../../hooks/useTelemetry';
+import React from 'react';
 import { LapChart } from '../../components/telemetry/LapChart';
 import { Skeleton } from "../../components/ui/skeleton";
 
@@ -185,7 +186,33 @@ export default function TelemetryPage() {
       
           {(year && gp && session && driver) && (
         <div className="mb-8">
-              <LapChart laps={laps} selectedLap={selectedLap} setSelectedLap={setSelectedLap} loading={loadingLaps} />
+          <LapChart laps={laps} selectedLap={selectedLap} setSelectedLap={setSelectedLap} loading={loadingLaps} />
+          {/* Panel de información de la vuelta seleccionada */}
+          {selectedLap && laps.length > 0 && (() => {
+            const lap = laps.find(l => l.lapNumber === selectedLap);
+            if (!lap) return null;
+            const formatLapTimeMs = (seconds: number | null | undefined) => {
+              if (seconds === null || seconds === undefined) return "-";
+              const min = Math.floor(seconds / 60);
+              const sec = Math.floor(seconds % 60);
+              const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
+              return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+            };
+            return (
+              <div className="bg-[#181824] border border-[#232336] rounded-xl px-6 py-4 mt-2 flex flex-wrap gap-8 items-center shadow">
+                <div className="text-white text-lg font-semibold">Vuelta {lap.lapNumber}</div>
+                <div className="text-gray-300 text-base">Tiempo: <span className="font-mono text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></div>
+                <div className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</div>
+                <div className="flex items-center gap-2 text-base">
+                  <img src={`/images/${(lap.compound || 'unknown').toLowerCase()}.svg`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
+                  <span className="text-gray-300">{lap.compound || 'Neumático no disponible'}</span>
+                </div>
+                {lap.isPit && (
+                  <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
       
