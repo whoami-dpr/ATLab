@@ -3,17 +3,20 @@ import type { TelemetryData } from '../../hooks/useTelemetry';
 
 interface TelemetryPanelProps {
   data: TelemetryData;
+  data2?: TelemetryData | null;
+  selectedLap?: number | null;
+  selectedLap2?: number | null;
 }
 
-export default function TelemetryPanel({ data }: TelemetryPanelProps) {
+export default function TelemetryPanel({ data, data2, selectedLap, selectedLap2 }: TelemetryPanelProps) {
   return (
     <div>
-      <TelemetryChart data={data} yKey="speed" label="Speed (km/h)" color="#e53935" />
-      <TelemetryChart data={data} yKey="throttle" label="Throttle (%)" color="#43a047" />
-      <TelemetryChart data={data} yKey="brake" label="Brake (%)" color="#1e88e5" />
-      <TelemetryChart data={data} yKey="rpm" label="RPM" color="#fbc02d" />
-      <TelemetryChart data={data} yKey="gear" label="Gear" color="#8e24aa" />
-      <TelemetryChart data={data} yKey="drs" label="DRS" color="#00bcd4" />
+      <TelemetryChart data={data} data2={data2} yKey="speed" label="Speed (km/h)" color="#e53935" color2="#22d3ee" />
+      <TelemetryChart data={data} data2={data2} yKey="throttle" label="Throttle (%)" color="#43a047" color2="#22d3ee" />
+      <TelemetryChart data={data} data2={data2} yKey="brake" label="Brake (%)" color="#1e88e5" color2="#22d3ee" />
+      <TelemetryChart data={data} data2={data2} yKey="rpm" label="RPM" color="#fbc02d" color2="#22d3ee" />
+      <TelemetryChart data={data} data2={data2} yKey="gear" label="Gear" color="#8e24aa" color2="#22d3ee" />
+      <TelemetryChart data={data} data2={data2} yKey="drs" label="DRS" color="#00bcd4" color2="#22d3ee" />
     </div>
   );
 } 

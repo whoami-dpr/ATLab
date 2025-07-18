@@ -6,8 +6,11 @@ import { Skeleton } from "../ui/skeleton";
 interface LapChartProps {
   laps: LapInfo[];
   selectedLap: number | null;
-  setSelectedLap: (lap: number) => void;
+  setSelectedLap: (lap: number | null) => void;
+  selectedLap2?: number | null;
+  setSelectedLap2?: (lap: number | null) => void;
   loading?: boolean;
+  comparisonMode?: boolean;
 }
 
 const compoundColors: Record<string, string> = {
@@ -19,7 +22,7 @@ const compoundColors: Record<string, string> = {
   unknown: '#888',
 };
 
-function LapChartInner({ laps, selectedLap, setSelectedLap, loading }: LapChartProps) {
+function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSelectedLap2, loading, comparisonMode }: LapChartProps) {
   if (loading) {
     return (
       <div className="w-full mb-6 relative flex flex-col items-start">
@@ -65,6 +68,7 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, loading }: LapChartP
   const colors: string[] = [];
   const pitLaps: number[] = [];
   const [showInvalidLaps, setShowInvalidLaps] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   for (let n = minLapNumber; n <= maxLapNumber; n++) {
     const lap = lapMap.get(n);
     lapNumbers.push(n);
@@ -78,6 +82,10 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, loading }: LapChartP
     lapTimes.push(isVisible ? lap.lapTimeSeconds : null);
     if (lap.lapTimeSeconds === minLap && (lap.isValid || lap.isPit)) {
       colors.push('#b266ff');
+    } else if (n === selectedLap) {
+      colors.push('#2563eb'); // azul para la vuelta principal
+    } else if (selectedLap2 && n === selectedLap2) {
+      colors.push('#22d3ee'); // cian para la segunda vuelta
     } else if (!lap.isValid && !lap.isPit) {
       colors.push('#888');
     } else {
@@ -177,11 +185,12 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, loading }: LapChartP
       {
         type: 'scatter',
         data: lapTimes,
-        symbolSize: 8,
+        symbolSize: 10,
         itemStyle: {
           color: (params: any) => colors[params.dataIndex],
           borderColor: '#232336',
           borderWidth: 2,
+          opacity: 1,
         },
         z: 2,
       },
@@ -201,39 +210,84 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, loading }: LapChartP
     ]
   };
 
+  const [selectMode, setSelectMode] = useState<'main' | 'secondary'>('main');
+
+  // onEvents para selección explícita
+  const onEvents = {
+    click: (params: any) => {
+      if (typeof params.dataIndex === 'number') {
+        const lapNum = lapNumbers[params.dataIndex];
+        if (!lapNum) return;
+        if (selectMode === 'main') {
+          if (lapNum === selectedLap) {
+            setSelectedLap(null);
+          } else {
+            setSelectedLap(lapNum);
+          }
+        } else if (selectMode === 'secondary') {
+          if (lapNum === selectedLap2) {
+            setSelectedLap2 && setSelectedLap2(null);
+          } else {
+            setSelectedLap2 && setSelectedLap2(lapNum);
+          }
+        }
+      }
+    }
+  };
+
   return (
     <div className="w-full mb-6 relative">
-      <div className="flex gap-4 mb-2">
+      {/* Barra de acciones mejorada */}
+      <div className="flex flex-wrap gap-3 p-3 bg-[#181824] rounded-2xl shadow mb-6 items-center">
         <button
-          className={`border px-4 py-2 rounded text-white ${showInvalidLaps ? 'border-blue-400' : 'border-gray-400'}`}
+          className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${showInvalidLaps ? 'bg-blue-700 border-blue-400 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-blue-900 hover:text-white'}`}
           onClick={() => setShowInvalidLaps(v => !v)}
         >
-          {showInvalidLaps ? 'HIDE INVALID LAPS' : 'SHOW INVALID LAPS'}
+          {showInvalidLaps ? 'Ocultar vueltas inválidas' : 'Mostrar vueltas inválidas'}
         </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${showComparison ? 'bg-blue-700 border-blue-400 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-blue-900 hover:text-white'}`}
+          onClick={() => setShowComparison(v => !v)}
+        >
+          {showComparison ? 'Ocultar comparación' : 'Comparar vueltas'}
+        </button>
+        {showComparison && (
+          <>
+            <button
+              className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${selectMode === 'main' ? 'bg-blue-600 border-blue-300 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-blue-900 hover:text-white'}`}
+              onClick={() => setSelectMode('main')}
+            >
+              Seleccionar vuelta principal
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${selectMode === 'secondary' ? 'bg-cyan-600 border-cyan-300 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-cyan-900 hover:text-white'}`}
+              onClick={() => setSelectMode('secondary')}
+            >
+              Seleccionar vuelta secundaria
+            </button>
+          </>
+        )}
       </div>
+      {/* Gráfico */}
       <ReactECharts
         option={option}
         style={{ height: 260, width: '100%' }}
         notMerge
         lazyUpdate
         theme={undefined}
-        onEvents={{
-          'click': (params: any) => {
-            if (typeof params.dataIndex === 'number') {
-              const lapNum = lapNumbers[params.dataIndex];
-              if (lapNum) setSelectedLap(lapNum);
-            }
-          }
-        }}
+        onEvents={onEvents}
       />
+      {/* Leyenda y ayuda */}
       <div className="flex gap-2 mt-2 items-center">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span style={{ borderLeft: '3px dashed #fbbf24', height: 16, marginRight: 6, display: 'inline-block' }}></span>
           <span className="text-xs text-yellow-300 font-semibold">PIT (parada en boxes)</span>
         </span>
+        <span className="ml-4 text-xs text-blue-400 font-semibold">● Vuelta principal</span>
+        <span className="ml-2 text-xs text-cyan-300 font-semibold">● Vuelta secundaria</span>
       </div>
       <div className="flex gap-2 mt-2">
-        <span className="ml-4 text-sm text-gray-400">Haz clic en un punto para ver la telemetría de esa vuelta.</span>
+        <span className="ml-4 text-sm text-gray-400">Haz clic en un punto para asignar la vuelta seleccionada ({selectMode === 'main' ? 'principal' : 'secundaria'}).</span>
       </div>
     </div>
   );

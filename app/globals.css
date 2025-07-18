@@ -15,8 +15,9 @@
     @apply border-border;
   }
   body {
-    background: linear-gradient(135deg, #111112 0%, #23242a 100%);
-    @apply bg-background text-foreground font-poppins;
+    @apply font-poppins transition-colors;
+    @apply bg-white text-black;
+    @apply dark:bg-black dark:text-white;
   }
 }
 

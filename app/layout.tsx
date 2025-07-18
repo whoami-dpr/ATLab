@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Poppins, Inter } from "next/font/google"
 import "./globals.css"
+import { useTheme } from "../hooks/useTheme";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -41,5 +42,5 @@ export default function RootLayout({
         <div className="relative z-10">{children}</div>
       </body>
     </html>
-  )
+  );
 }

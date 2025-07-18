@@ -4,26 +4,55 @@ import { TelemetryData } from '../../hooks/useTelemetry';
 
 export interface TelemetryChartProps {
   data: TelemetryData;
+  data2?: TelemetryData | null;
   yKey?: keyof TelemetryData;
   label?: string;
   color?: string;
+  color2?: string;
 }
 
-export function TelemetryChart({ data, yKey = "speed", label = "Speed", color = "#2196f3" }: TelemetryChartProps) {
+export function TelemetryChart({ data, data2, yKey = "speed", label = "Speed", color = "#2196f3", color2 = "#22d3ee" }: TelemetryChartProps) {
   // Prepara los datos para ECharts
   const chartData = data.distance.map((distance, i) => [
     Number(distance),
     Number(data[yKey][i])
   ]).filter(point => Number.isFinite(point[1]));
+  const chartData2 = data2 && data2.distance && data2[yKey] ? data2.distance.map((distance, i) => [
+    Number(distance),
+    Number(data2[yKey][i])
+  ]).filter(point => Number.isFinite(point[1])) : null;
 
-  if (!chartData || chartData.length === 0) return null;
+  if ((!chartData || chartData.length === 0) && (!chartData2 || chartData2.length === 0)) return null;
 
   // Calcular ticks uniformemente distribuidos (por ejemplo, 12 ticks)
-  const minDist = Math.min(...chartData.map(d => d[0]));
-  const maxDist = Math.max(...chartData.map(d => d[0]));
+  const minDist = Math.min(...chartData.map(d => d[0]), ...(chartData2 ? chartData2.map(d => d[0]) : []));
+  const maxDist = Math.max(...chartData.map(d => d[0]), ...(chartData2 ? chartData2.map(d => d[0]) : []));
   const numTicks = 12;
   const tickStep = (maxDist - minDist) / (numTicks - 1);
   const ticks = Array.from({ length: numTicks }, (_, i) => Number((minDist + i * tickStep).toFixed(1)));
+
+  const series = [
+    {
+      type: 'line',
+      data: chartData,
+      showSymbol: false,
+      lineStyle: { color, width: 2 },
+      emphasis: { focus: 'series' },
+      smooth: true,
+      name: 'Vuelta 1',
+    }
+  ];
+  if (chartData2 && chartData2.length > 0) {
+    series.push({
+      type: 'line',
+      data: chartData2,
+      showSymbol: false,
+      lineStyle: { color: color2, width: 2, type: 'dashed' } as any,
+      emphasis: { focus: 'series' },
+      smooth: true,
+      name: 'Vuelta 2',
+    });
+  }
 
   const option = {
     grid: { left: 90, right: 20, top: 20, bottom: 40 },
@@ -34,8 +63,11 @@ export function TelemetryChart({ data, yKey = "speed", label = "Speed", color = 
       borderRadius: 8,
       textStyle: { color: '#fff' },
       formatter: (params: any) => {
-        const p = params[0];
-        return `<div style="font-weight:600;">${label}</div><div>Valor: ${p.data[1]}</div>`;
+        let html = `<div style="font-weight:600;">${label}</div>`;
+        params.forEach((p: any, idx: number) => {
+          html += `<div style='color:${p.color};font-weight:600;'>${p.seriesName}: ${p.data[1]}</div>`;
+        });
+        return html;
       }
     },
     xAxis: {
@@ -61,16 +93,7 @@ export function TelemetryChart({ data, yKey = "speed", label = "Speed", color = 
       axisLine: { lineStyle: { color: '#888' } },
       splitLine: { show: true, lineStyle: { color: 'rgba(136,136,136,0.7)', type: 'dashed' } },
     },
-    series: [
-      {
-        type: 'line',
-        data: chartData,
-        showSymbol: false,
-        lineStyle: { color, width: 2 },
-        emphasis: { focus: 'series' },
-        smooth: true,
-      }
-    ]
+    series
   };
 
   return (
