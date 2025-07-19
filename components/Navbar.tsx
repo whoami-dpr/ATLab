@@ -7,7 +7,6 @@ import { GitHubStarsButton } from "./animate-ui/buttons/github-stars";
 const navItems = [
   { href: "/", label: "Live Timing" },
   { href: "/telemetry", label: "Telemetry" },
-  { href: "/track-map", label: "Track Map" },
   { href: "/standings", label: "Standings" },
   { href: "/schedule", label: "Schedule" },
   { href: "/weather", label: "Weather" },

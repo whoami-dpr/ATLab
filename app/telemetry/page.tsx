@@ -184,24 +184,64 @@ export default function TelemetryPage() {
       
       {activeTab === 'telemetry' && (
         <>
-          <form className="flex flex-wrap gap-6 items-end bg-[#13131a] border border-[#232336] rounded-2xl p-8 mb-8 shadow-xl">
-        <div className="flex flex-col gap-2">
-          <label className="block text-gray-300 text-sm mb-1">Año</label>
-          <YearSelect years={years} year={year} setYear={setYear} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label className="block text-gray-300 text-sm mb-1">GP</label>
-          <GPSelect gps={gps || []} gp={gp} setGp={setGp} disabled={!year || loading.gps} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label className="block text-gray-300 text-sm mb-1">Sesión</label>
-          <SessionSelect sessions={sessions || []} session={session} setSession={setSession} disabled={!gp || loading.sessions} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label className="block text-gray-300 text-sm mb-1">Piloto</label>
-          <DriverSelect drivers={drivers || []} driver={driver} setDriver={setDriver} disabled={!session || loading.drivers} />
-        </div>
-      </form>
+          <div className="flex flex-wrap md:flex-nowrap gap-8 w-full justify-start items-center mb-8 px-2 bg-[#181a1d] rounded-xl shadow-lg px-8 py-6">
+            <Select value={year ? String(year) : ""} onValueChange={v => setYear(Number(v))} disabled={loading.years}>
+              <SelectTrigger className="w-[170px] h-12 bg-[#23272b] border border-[#333] shadow-2xl rounded-xl text-white text-base font-bold uppercase justify-start px-5 focus:ring-2 focus:ring-white focus:border-white transition-all duration-200 hover:bg-[#2d3136] hover:border-white">
+                <SelectValue placeholder="AÑO" className="text-left text-white/90" />
+              </SelectTrigger>
+              <SelectContent className="bg-gradient-to-b from-[#23272b] to-[#181a1d] border border-[#111] shadow-lg rounded-md py-2 animate-fadein">
+                <SelectGroup>
+                  {years.map(y => (
+                    <SelectItem key={y} value={String(y)} className="text-white text-base px-6 py-2 uppercase text-left hover:bg-[#232b44] hover:text-[#e5e5e5] data-[state=checked]:bg-[#2c3138] data-[state=checked]:text-white rounded cursor-pointer transition-all duration-150">
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Select value={gp ?? ""} onValueChange={setGp} disabled={loading.gps}>
+              <SelectTrigger className="w-[170px] h-12 bg-[#23272b] border border-[#333] shadow-2xl rounded-xl text-white text-base font-bold uppercase justify-start px-5 focus:ring-2 focus:ring-white focus:border-white transition-all duration-200 hover:bg-[#2d3136] hover:border-white">
+                <SelectValue placeholder="GP" className="text-left text-white/90" />
+              </SelectTrigger>
+              <SelectContent className="bg-gradient-to-b from-[#23272b] to-[#181a1d] border border-[#111] shadow-lg rounded-md py-2 animate-fadein">
+                <SelectGroup>
+                  {gps.map(g => (
+                    <SelectItem key={g} value={g} className="text-white text-base px-6 py-2 uppercase text-left hover:bg-[#232b44] hover:text-[#e5e5e5] data-[state=checked]:bg-[#2c3138] data-[state=checked]:text-white rounded cursor-pointer transition-all duration-150">
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Select value={session ?? ""} onValueChange={setSession} disabled={loading.sessions}>
+              <SelectTrigger className="w-[170px] h-12 bg-[#23272b] border border-[#333] shadow-2xl rounded-xl text-white text-base font-bold uppercase justify-start px-5 focus:ring-2 focus:ring-white focus:border-white transition-all duration-200 hover:bg-[#2d3136] hover:border-white">
+                <SelectValue placeholder="SESIÓN" className="text-left text-white/90" />
+              </SelectTrigger>
+              <SelectContent className="bg-gradient-to-b from-[#23272b] to-[#181a1d] border border-[#111] shadow-lg rounded-md py-2 animate-fadein">
+                <SelectGroup>
+                  {sessions.map(s => (
+                    <SelectItem key={s} value={s} className="text-white text-base px-6 py-2 uppercase text-left hover:bg-[#232b44] hover:text-[#e5e5e5] data-[state=checked]:bg-[#2c3138] data-[state=checked]:text-white rounded cursor-pointer transition-all duration-150">
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Select value={driver ?? ""} onValueChange={setDriver} disabled={loading.drivers}>
+              <SelectTrigger className="w-[170px] h-12 bg-[#23272b] border border-[#333] shadow-2xl rounded-xl text-white text-base font-bold uppercase justify-start px-5 focus:ring-2 focus:ring-white focus:border-white transition-all duration-200 hover:bg-[#2d3136] hover:border-white">
+                <SelectValue placeholder="PILOTO" className="text-left text-white/90" />
+              </SelectTrigger>
+              <SelectContent className="bg-gradient-to-b from-[#23272b] to-[#181a1d] border border-[#111] shadow-lg rounded-md py-2 animate-fadein">
+                <SelectGroup>
+                  {drivers.map(d => (
+                    <SelectItem key={d.code} value={d.code} className="text-white text-base px-6 py-2 uppercase text-left hover:bg-[#232b44] hover:text-[#e5e5e5] data-[state=checked]:bg-[#2c3138] data-[state=checked]:text-white rounded cursor-pointer transition-all duration-150">
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
       
       {loading.years || loading.gps || loading.sessions || loading.drivers ? (
         <div className="text-blue-400 mb-4">Cargando opciones...</div>
@@ -234,14 +274,14 @@ export default function TelemetryPage() {
                   return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
                 };
                 return (
-                  <div className="bg-[#232336] border border-[#3b3b4f] rounded-xl px-6 py-4 mt-2 flex flex-wrap gap-8 items-center shadow">
-                    <div className="text-white text-lg font-semibold">Vuelta {lap.lapNumber}</div>
-                    <div className="text-gray-300 text-base">Tiempo: <span className="font-mono text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></div>
-                    <div className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</div>
-                    <div className="flex items-center gap-2 text-base">
-                      <img src={`/images/${(lap.compound || 'unknown').toLowerCase()}.svg`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
-                      <span className="text-gray-300">{lap.compound || 'Neumático no disponible'}</span>
-                    </div>
+                  <div className="bg-[#23272b] border border-white/60 rounded-xl px-8 py-3 mt-2 flex flex-row gap-8 items-center shadow min-h-[56px]">
+                    <span className="text-white text-lg font-bold">Vuelta {lap.lapNumber}</span>
+                    <span className="text-gray-200 text-base">Tiempo: <span className="font-mono text-lg font-bold text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></span>
+                    <span className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</span>
+                    <span className="flex items-center gap-2 text-base ml-auto">
+                      <img src={`/images/${(lap.compound && lap.compound.toLowerCase() === 'supersoft') ? 'supersoft.png' : (lap.compound || 'unknown').toLowerCase() + '.svg'}`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
+                      <span className="text-gray-200 font-semibold uppercase tracking-wide">{lap.compound || 'Neumático no disponible'}</span>
+                    </span>
                     {lap.isPit && (
                       <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
                     )}

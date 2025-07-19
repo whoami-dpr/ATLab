@@ -250,13 +250,13 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
       {/* Barra de acciones mejorada */}
       <div className="flex flex-wrap gap-3 p-3 bg-[#181824] rounded-2xl shadow mb-6 items-center">
         <button
-          className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${showInvalidLaps ? 'bg-blue-700 border-blue-400 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-blue-900 hover:text-white'}`}
+          className={`px-3 py-1 rounded-lg text-sm font-semibold uppercase border border-white/60 shadow transition-all duration-150 ${showInvalidLaps ? 'bg-blue-600 border-white/80 text-white' : 'bg-[#23272b] border-white/60 text-white hover:bg-[#232b36] hover:border-white focus:border-white'}`}
           onClick={() => setShowInvalidLaps(v => !v)}
         >
           {showInvalidLaps ? 'Ocultar vueltas inválidas' : 'Mostrar vueltas inválidas'}
         </button>
         <button
-          className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${showComparison ? 'bg-blue-700 border-blue-400 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-blue-900 hover:text-white'}`}
+          className={`px-3 py-1 rounded-lg text-sm font-semibold uppercase border border-white/60 shadow transition-all duration-150 ${showComparison ? 'bg-blue-600 border-white/80 text-white' : 'bg-[#23272b] border-white/60 text-white hover:bg-[#232b36] hover:border-white focus:border-white'}`}
           onClick={() => setShowComparison(v => !v)}
         >
           {showComparison ? 'Ocultar comparación' : 'Comparar vueltas'}
@@ -264,13 +264,13 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
         {showComparison && (
           <>
             <button
-              className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${selectMode === 'main' ? 'bg-blue-600 border-blue-300 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-blue-900 hover:text-white'}`}
+              className={`px-3 py-1 rounded-lg text-sm font-semibold uppercase border border-white/60 shadow transition-all duration-150 ${selectMode === 'main' ? 'bg-blue-600 border-white/80 text-white' : 'bg-[#23272b] border-white/60 text-white hover:bg-[#232b36] hover:border-white focus:border-white'}`}
               onClick={() => setSelectMode('main')}
             >
               Seleccionar vuelta principal
             </button>
             <button
-              className={`px-4 py-2 rounded-lg font-semibold border-2 transition-all duration-150 ${selectMode === 'secondary' ? 'bg-cyan-600 border-cyan-300 text-white shadow' : 'bg-[#232336] border-gray-500 text-gray-200 hover:bg-cyan-900 hover:text-white'}`}
+              className={`px-3 py-1 rounded-lg text-sm font-semibold uppercase border border-white/60 shadow transition-all duration-150 ${selectMode === 'secondary' ? 'bg-cyan-600 border-white/80 text-white' : 'bg-[#23272b] border-white/60 text-white hover:bg-[#232b36] hover:border-white focus:border-white'}`}
               onClick={() => setSelectMode('secondary')}
             >
               Seleccionar vuelta secundaria
