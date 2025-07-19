@@ -19,6 +19,7 @@ import { useLapChart } from '../../hooks/useTelemetry';
 import React from 'react';
 import { LapChart } from '../../components/telemetry/LapChart';
 import { Skeleton } from "../../components/ui/skeleton";
+import CardFlip from "../../components/kokonutui/card-flip";
 
 function GPSelect({ gps, gp, setGp, disabled }: { gps: string[]; gp: string | undefined; setGp: (v: string) => void; disabled?: boolean }) {
   return (
@@ -209,68 +210,70 @@ export default function TelemetryPage() {
       {error && <div className="text-red-400 mb-4">{error}</div>}
       
           {(year && gp && session && driver) && (
-        <div className="mb-8">
-          <LapChart
-            laps={laps}
-            selectedLap={selectedLap}
-            setSelectedLap={setSelectedLap}
-            selectedLap2={selectedLap2}
-            setSelectedLap2={handleSetSelectedLap2}
-            loading={loadingLaps}
-            onShowComparisonChange={handleShowComparisonChange}
-          />
-          {/* Panel de información de las vueltas seleccionadas */}
-          <div className="flex flex-wrap gap-4">
-            {selectedLap && laps.length > 0 && (() => {
-              const lap = laps.find(l => l.lapNumber === selectedLap);
-              if (!lap) return null;
-              const formatLapTimeMs = (seconds: number | null | undefined) => {
-                if (seconds === null || seconds === undefined) return "-";
-                const min = Math.floor(seconds / 60);
-                const sec = Math.floor(seconds % 60);
-                const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
-                return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-              };
-              return (
-                <div className="bg-[#232336] border border-[#3b3b4f] rounded-xl px-6 py-4 mt-2 flex flex-wrap gap-8 items-center shadow">
-                  <div className="text-white text-lg font-semibold">Vuelta {lap.lapNumber}</div>
-                  <div className="text-gray-300 text-base">Tiempo: <span className="font-mono text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></div>
-                  <div className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</div>
-                  <div className="flex items-center gap-2 text-base">
-                    <img src={`/images/${(lap.compound || 'unknown').toLowerCase()}.svg`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
-                    <span className="text-gray-300">{lap.compound || 'Neumático no disponible'}</span>
+        <div className="mb-8 flex flex-col md:flex-row gap-8 items-start">
+          <div className="flex-1 min-w-0">
+            <LapChart
+              laps={laps}
+              selectedLap={selectedLap}
+              setSelectedLap={setSelectedLap}
+              selectedLap2={selectedLap2}
+              setSelectedLap2={handleSetSelectedLap2}
+              loading={loadingLaps}
+              onShowComparisonChange={handleShowComparisonChange}
+            />
+            {/* Panel de información de las vueltas seleccionadas */}
+            <div className="flex flex-wrap gap-4">
+              {selectedLap && laps.length > 0 && (() => {
+                const lap = laps.find(l => l.lapNumber === selectedLap);
+                if (!lap) return null;
+                const formatLapTimeMs = (seconds: number | null | undefined) => {
+                  if (seconds === null || seconds === undefined) return "-";
+                  const min = Math.floor(seconds / 60);
+                  const sec = Math.floor(seconds % 60);
+                  const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
+                  return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+                };
+                return (
+                  <div className="bg-[#232336] border border-[#3b3b4f] rounded-xl px-6 py-4 mt-2 flex flex-wrap gap-8 items-center shadow">
+                    <div className="text-white text-lg font-semibold">Vuelta {lap.lapNumber}</div>
+                    <div className="text-gray-300 text-base">Tiempo: <span className="font-mono text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></div>
+                    <div className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</div>
+                    <div className="flex items-center gap-2 text-base">
+                      <img src={`/images/${(lap.compound || 'unknown').toLowerCase()}.svg`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
+                      <span className="text-gray-300">{lap.compound || 'Neumático no disponible'}</span>
+                    </div>
+                    {lap.isPit && (
+                      <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
+                    )}
                   </div>
-                  {lap.isPit && (
-                    <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
-                  )}
-                </div>
-              );
-            })()}
-            {selectedLap2 && laps.length > 0 && selectedLap2 !== selectedLap && (() => {
-              const lap = laps.find(l => l.lapNumber === selectedLap2);
-              if (!lap) return null;
-              const formatLapTimeMs = (seconds: number | null | undefined) => {
-                if (seconds === null || seconds === undefined) return "-";
-                const min = Math.floor(seconds / 60);
-                const sec = Math.floor(seconds % 60);
-                const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
-                return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
-              };
-              return (
-                <div className="bg-[#232336] border border-[#3b3b4f] rounded-xl px-6 py-4 mt-2 flex flex-wrap gap-8 items-center shadow">
-                  <div className="text-white text-lg font-semibold">Vuelta {lap.lapNumber}</div>
-                  <div className="text-gray-300 text-base">Tiempo: <span className="font-mono text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></div>
-                  <div className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</div>
-                  <div className="flex items-center gap-2 text-base">
-                    <img src={`/images/${(lap.compound || 'unknown').toLowerCase()}.svg`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
-                    <span className="text-gray-300">{lap.compound || 'Neumático no disponible'}</span>
+                );
+              })()}
+              {selectedLap2 && laps.length > 0 && selectedLap2 !== selectedLap && (() => {
+                const lap = laps.find(l => l.lapNumber === selectedLap2);
+                if (!lap) return null;
+                const formatLapTimeMs = (seconds: number | null | undefined) => {
+                  if (seconds === null || seconds === undefined) return "-";
+                  const min = Math.floor(seconds / 60);
+                  const sec = Math.floor(seconds % 60);
+                  const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
+                  return `${min}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+                };
+                return (
+                  <div className="bg-[#232336] border border-[#3b3b4f] rounded-xl px-6 py-4 mt-2 flex flex-wrap gap-8 items-center shadow">
+                    <div className="text-white text-lg font-semibold">Vuelta {lap.lapNumber}</div>
+                    <div className="text-gray-300 text-base">Tiempo: <span className="font-mono text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></div>
+                    <div className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</div>
+                    <div className="flex items-center gap-2 text-base">
+                      <img src={`/images/${(lap.compound || 'unknown').toLowerCase()}.svg`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
+                      <span className="text-gray-300">{lap.compound || 'Neumático no disponible'}</span>
+                    </div>
+                    {lap.isPit && (
+                      <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
+                    )}
                   </div>
-                  {lap.isPit && (
-                    <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
-                  )}
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
         </div>
       )}

@@ -65,15 +65,9 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error }: Ses
         <div className="flex items-center gap-6">
           <WeatherWidget weather={sessionInfo.weather} />
 
-          <div className="text-center bg-gradient-to-br from-gray-900/80 to-gray-800/80 glass rounded-xl px-4 py-2 border border-gray-700/50 shadow-md">
-            <div className="text-lg font-bold text-white">{sessionInfo.lapInfo}</div>
-            <div className="text-xs text-gray-400 font-medium">Laps</div>
-          </div>
-
-          <div
-            className={`${getTrackStatusColor()} text-white px-4 py-2 rounded-xl text-sm font-semibold border border-white/10`}
-          >
-            {sessionInfo.trackStatus}
+          <div className="flex items-center gap-4">
+            <span className="text-white text-lg font-semibold">{sessionInfo.lapInfo}</span>
+            <span className="text-xs text-gray-400 font-medium">{sessionInfo.trackStatus || 'No Active Session'}</span>
           </div>
         </div>
       </div>

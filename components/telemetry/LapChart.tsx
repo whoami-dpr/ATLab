@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import ReactECharts from 'echarts-for-react';
 import { LapInfo } from "../../hooks/useTelemetry";
@@ -126,6 +127,8 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
   }
 
   const option = {
+    animationDuration: 600,
+    animationEasing: 'cubicOut',
     grid: { left: 90, right: 20, top: 20, bottom: 40 },
     tooltip: {
       trigger: 'axis',
@@ -290,12 +293,18 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
           <span style={{ borderLeft: '3px dashed #fbbf24', height: 16, marginRight: 6, display: 'inline-block' }}></span>
           <span className="text-xs text-yellow-300 font-semibold">PIT (parada en boxes)</span>
         </span>
-        <span className="ml-4 text-xs text-blue-400 font-semibold">● Vuelta principal</span>
-        <span className="ml-2 text-xs text-cyan-300 font-semibold">● Vuelta secundaria</span>
+        {showComparison && (
+          <>
+            <span className="ml-4 text-xs text-blue-400 font-semibold">● Vuelta principal</span>
+            <span className="ml-2 text-xs text-cyan-300 font-semibold">● Vuelta secundaria</span>
+          </>
+        )}
       </div>
-      <div className="flex gap-2 mt-2">
-        <span className="ml-4 text-sm text-gray-400">Haz clic en un punto para asignar la vuelta seleccionada ({selectMode === 'main' ? 'principal' : 'secundaria'}).</span>
-      </div>
+      {showComparison && (
+        <div className="flex gap-2 mt-2">
+          <span className="ml-4 text-sm text-gray-400">Haz clic en un punto para asignar la vuelta seleccionada ({selectMode === 'main' ? 'principal' : 'secundaria'}).</span>
+        </div>
+      )}
     </div>
   );
 } 
