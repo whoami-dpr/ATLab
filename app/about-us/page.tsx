@@ -54,7 +54,7 @@ export default function AboutUs() {
         {/* Hero Section */}
         <section className="flex flex-col items-center justify-center min-h-[50vh] px-4 py-12 text-center">
           <div className="mb-6 flex items-center justify-center">
-            <span className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent select-none transition-transform duration-200 cursor-pointer active:scale-110 hover:scale-105">
+            <span className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 bg-clip-text text-transparent select-none cursor-pointer">
               ATLab
             </span>
           </div>

@@ -102,15 +102,21 @@ export default function TelemetryPage() {
     setSelectedLap(null);
   }, [year, gp, session, driver]);
 
-  // Cuando llegan las vueltas, setear la primera vuelta automáticamente
+  // Cuando llegan las vueltas, setear la vuelta más rápida automáticamente y solo esa
   useEffect(() => {
-    if (laps.length > 0 && !selectedLap) {
-      setSelectedLap(laps[0].lapNumber);
+    if (laps.length > 0) {
+      // Buscar la vuelta válida más rápida
+      const validLaps = laps.filter(l => l.lapTimeSeconds !== null && (l.isValid || l.isPit));
+      if (validLaps.length > 0) {
+        const fastest = validLaps.reduce((min, l) => (l.lapTimeSeconds! < min.lapTimeSeconds! ? l : min), validLaps[0]);
+        setSelectedLap(fastest.lapNumber);
+        setSelectedLap2(null);
+      } else {
+        setSelectedLap(laps[0].lapNumber);
+        setSelectedLap2(null);
+      }
     }
-    if (laps.length > 1 && !selectedLap2) {
-      setSelectedLap2(laps[1]?.lapNumber ?? null);
-    }
-  }, [laps, selectedLap, selectedLap2]);
+  }, [laps]);
 
   // Cargar telemetría automáticamente para ambas vueltas
   useEffect(() => {
@@ -133,6 +139,14 @@ export default function TelemetryPage() {
   }, [year, gp, session, driver, fetchLaps]);
 
   // Eliminar lógica de submitted, ya no se usa
+
+  // Limpiar selectedLap2 cuando se desactiva la comparación desde LapChart
+  const handleSetSelectedLap2 = (lap: number | null) => {
+    setSelectedLap2(lap);
+  };
+  const handleShowComparisonChange = (show: boolean) => {
+    if (!show) setSelectedLap2(null);
+  };
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -201,8 +215,9 @@ export default function TelemetryPage() {
             selectedLap={selectedLap}
             setSelectedLap={setSelectedLap}
             selectedLap2={selectedLap2}
-            setSelectedLap2={setSelectedLap2}
+            setSelectedLap2={handleSetSelectedLap2}
             loading={loadingLaps}
+            onShowComparisonChange={handleShowComparisonChange}
           />
           {/* Panel de información de las vueltas seleccionadas */}
           <div className="flex flex-wrap gap-4">

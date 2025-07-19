@@ -104,7 +104,7 @@ export function TelemetryChart({ data, data2, yKey = "speed", label = "Speed", c
         notMerge
         lazyUpdate
         theme={undefined}
-      />
+          />
     </div>
   );
 } 

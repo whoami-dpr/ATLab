@@ -11,6 +11,7 @@ interface LapChartProps {
   setSelectedLap2?: (lap: number | null) => void;
   loading?: boolean;
   comparisonMode?: boolean;
+  onShowComparisonChange?: (show: boolean) => void;
 }
 
 const compoundColors: Record<string, string> = {
@@ -22,7 +23,7 @@ const compoundColors: Record<string, string> = {
   unknown: '#888',
 };
 
-function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSelectedLap2, loading, comparisonMode }: LapChartProps) {
+function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSelectedLap2, loading, comparisonMode, onShowComparisonChange }: LapChartProps) {
   if (loading) {
     return (
       <div className="w-full mb-6 relative flex flex-col items-start">
@@ -69,6 +70,12 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
   const pitLaps: number[] = [];
   const [showInvalidLaps, setShowInvalidLaps] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  // Avisar al padre cuando cambia showComparison
+  React.useEffect(() => {
+    if (typeof onShowComparisonChange === 'function') {
+      onShowComparisonChange(showComparison);
+    }
+  }, [showComparison]);
   for (let n = minLapNumber; n <= maxLapNumber; n++) {
     const lap = lapMap.get(n);
     lapNumbers.push(n);
@@ -291,7 +298,7 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
       </div>
     </div>
   );
-}
+} 
 
 // Memo para evitar rerender innecesario
 export const LapChart = React.memo(LapChartInner, (prev, next) => {
