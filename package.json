@@ -8,6 +8,7 @@
     "postbuild": "next-on-pages"
   },
   "dependencies": {
+    "@base-ui-components/react": "1.0.0-beta.1",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",

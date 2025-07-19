@@ -29,24 +29,22 @@ interface StandingsResponse {
   success: boolean
 }
 
-export function useF1Standings() {
+export function useF1Standings(year?: number) {
   const [drivers, setDrivers] = useState<DriverStanding[]>([])
   const [constructors, setConstructors] = useState<ConstructorStanding[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<LastUpdated | null>(null)
 
-  const fetchStandings = async () => {
+  const fetchStandings = async (selectedYear?: number) => {
     try {
       setLoading(true)
       setError(null)
-
-      console.log("🔄 Fetching F1 standings...")
-
+      const yearParam = selectedYear ? `&year=${selectedYear}` : '';
       // Fetch both drivers and constructors in parallel
       const [driversResponse, constructorsResponse] = await Promise.all([
-        fetch("/api/f1/standings?type=drivers"),
-        fetch("/api/f1/standings?type=constructors"),
+        fetch(`/api/f1/standings?type=drivers${yearParam}`),
+        fetch(`/api/f1/standings?type=constructors${yearParam}`),
       ])
 
       if (!driversResponse.ok || !constructorsResponse.ok) {
@@ -60,17 +58,12 @@ export function useF1Standings() {
         throw new Error("Invalid response from standings API")
       }
 
-      console.log("✅ Successfully loaded standings data")
-
       setDrivers(driversData.standings as DriverStanding[])
       setConstructors(constructorsData.standings as ConstructorStanding[])
       setLastUpdated(driversData.lastUpdated)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
       setError(errorMessage)
-      console.error("❌ Standings fetch error:", err)
-
-      // Set empty arrays on error to prevent UI issues
       setDrivers([])
       setConstructors([])
     } finally {
@@ -79,11 +72,11 @@ export function useF1Standings() {
   }
 
   useEffect(() => {
-    fetchStandings()
-  }, [])
+    fetchStandings(year)
+  }, [year])
 
   const refresh = () => {
-    fetchStandings()
+    fetchStandings(year)
   }
 
   return {
