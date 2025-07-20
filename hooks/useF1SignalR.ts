@@ -24,6 +24,7 @@ export interface F1Driver {
   sector1Color: string
   sector2Color: string
   sector3Color: string
+  team: string // NUEVO: escudería
   pitStops?: number // NUEVO: cantidad de pit stops
   positionsGained?: number // NUEVO: posiciones ganadas o perdidas
   lapTimeColor?: 'green' | 'purple' | 'white';
@@ -89,6 +90,7 @@ export function useF1SignalR() {
       pos: 1,
       code: "VER",
       name: "Max Verstappen",
+      team: "Red Bull",
       color: driverColors[0],
       tire: "S",
       stint: "L 15",
@@ -112,6 +114,7 @@ export function useF1SignalR() {
       pos: 2,
       code: "HAM",
       name: "Lewis Hamilton",
+      team: "Mercedes",
       color: driverColors[1],
       tire: "M",
       stint: "L 18",
@@ -135,6 +138,7 @@ export function useF1SignalR() {
       pos: 3,
       code: "LEC",
       name: "Charles Leclerc",
+      team: "Ferrari",
       color: driverColors[2],
       tire: "S",
       stint: "L 12",
@@ -158,6 +162,7 @@ export function useF1SignalR() {
       pos: 4,
       code: "NOR",
       name: "Lando Norris",
+      team: "McLaren",
       color: driverColors[3],
       tire: "M",
       stint: "L 20",
@@ -181,6 +186,7 @@ export function useF1SignalR() {
       pos: 5,
       code: "RUS",
       name: "George Russell",
+      team: "Mercedes",
       color: driverColors[4],
       tire: "H",
       stint: "L 25",
@@ -204,6 +210,7 @@ export function useF1SignalR() {
       pos: 6,
       code: "PIA",
       name: "Oscar Piastri",
+      team: "McLaren",
       color: driverColors[5],
       tire: "M",
       stint: "L 16",
@@ -227,6 +234,7 @@ export function useF1SignalR() {
       pos: 7,
       code: "PER",
       name: "Sergio Perez",
+      team: "Red Bull",
       color: driverColors[6],
       tire: "S",
       stint: "L 13",
@@ -250,6 +258,7 @@ export function useF1SignalR() {
       pos: 8,
       code: "SAI",
       name: "Carlos Sainz",
+      team: "Ferrari",
       color: driverColors[7],
       tire: "M",
       stint: "L 19",
@@ -273,6 +282,7 @@ export function useF1SignalR() {
       pos: 9,
       code: "ALO",
       name: "Fernando Alonso",
+      team: "Aston Martin",
       color: driverColors[8],
       tire: "H",
       stint: "L 22",
@@ -296,6 +306,7 @@ export function useF1SignalR() {
       pos: 10,
       code: "STR",
       name: "Lance Stroll",
+      team: "Aston Martin",
       color: driverColors[9],
       tire: "M",
       stint: "L 17",
@@ -319,6 +330,7 @@ export function useF1SignalR() {
       pos: 11,
       code: "GAS",
       name: "Pierre Gasly",
+      team: "Alpine",
       color: driverColors[10],
       tire: "S",
       stint: "L 14",
@@ -342,6 +354,7 @@ export function useF1SignalR() {
       pos: 12,
       code: "OCO",
       name: "Esteban Ocon",
+      team: "Alpine",
       color: driverColors[11],
       tire: "M",
       stint: "L 21",
@@ -365,6 +378,7 @@ export function useF1SignalR() {
       pos: 13,
       code: "HUL",
       name: "Nico Hulkenberg",
+      team: "Haas",
       color: driverColors[12],
       tire: "H",
       stint: "L 24",
@@ -388,6 +402,7 @@ export function useF1SignalR() {
       pos: 14,
       code: "MAG",
       name: "Kevin Magnussen",
+      team: "Haas",
       color: driverColors[13],
       tire: "M",
       stint: "L 18",
@@ -411,6 +426,7 @@ export function useF1SignalR() {
       pos: 15,
       code: "TSU",
       name: "Yuki Tsunoda",
+      team: "RB",
       color: driverColors[14],
       tire: "S",
       stint: "L 15",
@@ -434,6 +450,7 @@ export function useF1SignalR() {
       pos: 16,
       code: "LAW",
       name: "Liam Lawson",
+      team: "RB",
       color: driverColors[15],
       tire: "M",
       stint: "L 20",
@@ -457,6 +474,7 @@ export function useF1SignalR() {
       pos: 17,
       code: "ALB",
       name: "Alex Albon",
+      team: "Williams",
       color: driverColors[16],
       tire: "H",
       stint: "L 23",
@@ -480,6 +498,7 @@ export function useF1SignalR() {
       pos: 18,
       code: "COL",
       name: "Franco Colapinto",
+      team: "Williams",
       color: driverColors[17],
       tire: "M",
       stint: "L 19",
@@ -503,6 +522,7 @@ export function useF1SignalR() {
       pos: 19,
       code: "BOT",
       name: "Valtteri Bottas",
+      team: "Kick Sauber",
       color: driverColors[18],
       tire: "S",
       stint: "L 16",
@@ -526,6 +546,7 @@ export function useF1SignalR() {
       pos: 20,
       code: "ZHO",
       name: "Zhou Guanyu",
+      team: "Kick Sauber",
       color: driverColors[19],
       tire: "M",
       stint: "L 22",
@@ -895,6 +916,7 @@ export function useF1SignalR() {
             : driverData.LastLapTime?.PersonalBest
               ? 'green'
               : 'white',
+        team: driverData.TeamName || driverData.Team || '', // Ajusta aquí según el campo real de la API
       }
 
       updatedDrivers.push(driver)

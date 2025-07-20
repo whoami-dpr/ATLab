@@ -66,34 +66,23 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     )
   }
 
-  // Mapeo de código de piloto a color de escudería y color de texto para el número
+  // Mapeo de escudería a color oficial y color de texto
   const TEAM_COLORS: Record<string, { bg: string; text: string }> = {
-    VER: { bg: '#1e41ff', text: 'white' },
-    PER: { bg: '#1e41ff', text: 'white' },
-    HAM: { bg: '#00d2be', text: 'black' },
-    RUS: { bg: '#00d2be', text: 'black' },
-    LEC: { bg: '#dc0000', text: 'white' },
-    SAI: { bg: '#dc0000', text: 'white' },
-    NOR: { bg: '#ff8700', text: 'black' },
-    PIA: { bg: '#ff8700', text: 'black' },
-    ALO: { bg: '#229971', text: 'white' },
-    STR: { bg: '#229971', text: 'white' },
-    GAS: { bg: '#2293d1', text: 'white' },
-    OCO: { bg: '#2293d1', text: 'white' },
-    ALB: { bg: '#37bedd', text: 'black' },
-    SAR: { bg: '#37bedd', text: 'black' },
-    HUL: { bg: '#b6babd', text: 'black' },
-    MAG: { bg: '#b6babd', text: 'black' },
-    BOT: { bg: '#52e252', text: 'black' },
-    ZHO: { bg: '#52e252', text: 'black' },
-    TSU: { bg: '#6692ff', text: 'white' },
-    RIC: { bg: '#6692ff', text: 'white' },
-    LAW: { bg: '#888', text: 'white' },
-    COL: { bg: '#888', text: 'white' },
+    "Red Bull":      { bg: "#1e41ff", text: "white" },
+    "Mercedes":      { bg: "#00d2be", text: "white" },
+    "Ferrari":       { bg: "#dc0000", text: "white" },
+    "McLaren":       { bg: "#ff8700", text: "white" },
+    "Aston Martin":  { bg: "#229971", text: "white" },
+    "Alpine":        { bg: "#2293d1", text: "white" },
+    "Williams":      { bg: "#37bedd", text: "white" },
+    "Haas":          { bg: "#b6babd", text: "white" },
+    "Kick Sauber":   { bg: "#52e252", text: "white" },
+    "RB":            { bg: "#6692ff", text: "white" }, // Racing Bulls
+    // Otros equipos si hay
   };
 
-  const getTeamBg = (code: string) => TEAM_COLORS[code]?.bg || '#888';
-  const getTeamText = (code: string) => TEAM_COLORS[code]?.text || 'white';
+  const getTeamBg = (team: string) => TEAM_COLORS[team]?.bg || '#888';
+  const getTeamText = (team: string) => TEAM_COLORS[team]?.text || 'white';
 
   const getSectorTextColor = (color: string) => {
     switch (color) {
@@ -117,7 +106,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         <div
           className="flex items-center justify-center"
           style={{
-            background: getTeamBg(driver.code),
+            background: getTeamBg(driver.team),
             borderRadius: '0.5rem',
             height: '32px',
             width: '90px', // Ancho fijo para todos
@@ -130,7 +119,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {/* Número de posición, texto blanco */}
           <div
             style={{
-              color: 'white',
+              color: getTeamText(driver.team),
               fontWeight: 700,
               fontSize: '1.1rem',
               display: 'flex',
@@ -149,8 +138,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {/* Código del piloto, fondo escudería, texto blanco */}
           <div
             style={{
-              color: 'white',
-              background: getTeamBg(driver.code),
+              color: getTeamText(driver.team),
+              background: getTeamBg(driver.team),
               fontWeight: 700,
               fontSize: '1.1rem',
               letterSpacing: '0.03em',
@@ -224,7 +213,12 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
 
       {/* Gap - Fuente mejorada */}
       <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-base">
-        <div className="font-bold text-white" style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem' }}>{driver.gap === 'LEADER' ? '--- ---' : driver.gap}</div>
+        <div
+          className={`font-bold ${driver.gap === 'LEADER' ? 'text-gray-500' : 'text-white'}`}
+          style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem' }}
+        >
+          {driver.gap === 'LEADER' ? '--- ---' : driver.gap}
+        </div>
         <div className="text-gray-500 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>{driver.gapTime}</div>
       </div>
 
