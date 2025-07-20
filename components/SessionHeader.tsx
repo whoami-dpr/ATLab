@@ -66,7 +66,10 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error }: Ses
           <WeatherWidget weather={sessionInfo.weather} />
 
           <div className="flex items-center gap-4">
-            <span className="text-white text-lg font-semibold">{sessionInfo.lapInfo}</span>
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-gray-400 font-medium leading-none mb-0.5">Laps</span>
+              <span className="text-white text-lg font-semibold leading-none">{sessionInfo.lapInfo}</span>
+            </div>
             <span className="text-xs text-gray-400 font-medium">{sessionInfo.trackStatus || 'No Active Session'}</span>
           </div>
         </div>

@@ -26,6 +26,7 @@ export interface F1Driver {
   sector3Color: string
   pitStops?: number // NUEVO: cantidad de pit stops
   positionsGained?: number // NUEVO: posiciones ganadas o perdidas
+  lapTimeColor?: 'green' | 'purple' | 'white';
 }
 
 export interface F1SessionInfo {
@@ -888,6 +889,12 @@ export function useF1SignalR() {
         sector1Color: getSectorColor(driverData.Sectors?.[0]),
         sector2Color: getSectorColor(driverData.Sectors?.[1]),
         sector3Color: getSectorColor(driverData.Sectors?.[2]),
+        lapTimeColor:
+          driverData.LastLapTime?.OverallFastest
+            ? 'purple'
+            : driverData.LastLapTime?.PersonalBest
+              ? 'green'
+              : 'white',
       }
 
       updatedDrivers.push(driver)
