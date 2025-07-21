@@ -58,7 +58,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             <div
               key={i}
               className={`w-2.5 h-1.5 rounded transition-all duration-200 ${
-                i < barCount ? `${barColor} shadow-sm ${glowColor}` : "bg-gray-800/50"
+                i < barCount ? `${barColor} shadow-sm ${glowColor}` : "bg-gray-700"
               }`}
             />
           ))}
@@ -219,7 +219,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         >
           {driver.gap === 'LEADER' ? '--- ---' : driver.gap}
         </div>
-        <div className="text-gray-500 text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>{driver.gapTime}</div>
+        <div className="text-gray-500 text-sm font-normal" style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>{driver.gapTime}</div>
       </div>
 
       {/* Lap Time - Nueva fuente Inter */}
@@ -237,8 +237,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {driver.lapTime}
         </div>
         <div
-          className={`text-sm ${driver.lapTimeColor === 'purple' ? 'text-purple-400' : 'text-gray-500'}`}
-          style={{ fontFamily: 'Inter, sans-serif' }}
+          className={`text-sm ${driver.lapTimeColor === 'purple' ? 'text-purple-400' : 'text-gray-500'} font-normal`}
+          style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
         >
           {driver.prevLap}
         </div>
@@ -251,7 +251,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {getSectorBars(driver.sector1Color, driver.sector1)}
           <div className="flex items-baseline gap-2">
             <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector1Color)}`}>{driver.sector1}</span>
-            <span className="text-sm text-gray-500">{driver.sector1Prev}</span>
+            <span className="text-sm text-gray-500 font-normal">{driver.sector1Prev}</span>
           </div>
         </div>
 
@@ -260,7 +260,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {getSectorBars(driver.sector2Color, driver.sector2)}
           <div className="flex items-baseline gap-2">
             <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector2Color)}`}>{driver.sector2}</span>
-            <span className="text-sm text-gray-500">{driver.sector2Prev}</span>
+            <span className="text-sm text-gray-500 font-normal">{driver.sector2Prev}</span>
           </div>
         </div>
 
@@ -269,7 +269,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {getSectorBars(driver.sector3Color, driver.sector3)}
           <div className="flex items-baseline gap-2">
             <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector3Color)}`}>{driver.sector3}</span>
-            <span className="text-sm text-gray-500">{driver.sector3Prev}</span>
+            <span className="text-sm text-gray-500 font-normal">{driver.sector3Prev}</span>
           </div>
         </div>
       </div>
