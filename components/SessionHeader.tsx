@@ -43,29 +43,29 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error }: Ses
 
   return (
     <div className="border-b border-gray-800/50 bg-transparent">
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-4" style={{ minHeight: '4.5rem' }}>
+      <div className="flex items-center justify-between p-3 min-h-[56px]">
+        <div className="flex items-center gap-3 min-h-[48px]">
           <div className="h-full flex items-center">
-            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[4.5rem] object-contain" />
+            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[2.8rem] object-contain" />
           </div>
           <div className="flex flex-col justify-center">
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
                 F1 Live Timing
                 <span
-                  className={`w-2.5 h-2.5 rounded-full inline-block ml-1 ${statusColor} ${(!isDemoMode && (!isConnected || error)) ? 'animate-blink' : ''}`}
+                  className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isDemoMode && (!isConnected || error)) ? 'animate-blink' : ''}`}
                   title={isDemoMode ? 'Demo' : isConnected && !error ? 'Online' : 'Offline'}
                 ></span>
               </h1>
             </div>
-            <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>{sessionInfo.timer}</div>
+            <div className="text-2xl font-bold text-white leading-none" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>{sessionInfo.timer}</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <WeatherWidget weather={sessionInfo.weather} />
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="flex flex-col items-center">
               <span className="text-xs text-gray-400 font-medium leading-none mb-0.5">Laps</span>
               <span className="text-white text-lg font-semibold leading-none">{sessionInfo.lapInfo}</span>
