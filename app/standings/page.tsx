@@ -236,7 +236,7 @@ export default function StandingsPage() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-10">
         <h1 className="text-4xl font-bold mb-2">Standings</h1>
-        <p className="text-gray-400 mb-8 text-lg">Visualizá el campeonato actual o explorá temporadas pasadas de Fórmula 1 con un diseño visual y moderno.</p>
+        <p className="text-gray-400 mb-8 text-lg">Consultá el estado del campeonato de pilotos y constructores o explorá los resultados históricos de la Fórmula 1</p>
         {/* Card Toggle */}
         <div className="flex gap-8 mb-8">
           <button
