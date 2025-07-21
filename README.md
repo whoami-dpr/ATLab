@@ -3,7 +3,8 @@
 </p>
 
 <h3 align="center">Real-time Formula 1 telemetry and timing</h3>
-Link: https://atlab.pages.dev/
+Link: https://atlab.pages.dev
+
 ## ATLab (ARSIM Telemetry Lab)
 
 ATLab is a real-time telemetry and timing dashboard inspired by professional Formula 1 timing panels.
