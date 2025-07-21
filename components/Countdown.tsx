@@ -28,9 +28,9 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate, label, classNa
   }, [targetDate]);
 
   return (
-    <div className={`flex flex-col items-start ${className || ''}`}>
+    <div className={`flex flex-col items-start font-inter ${className || ''}`}>
       {label && <span className="text-lg font-medium mb-1">{label}</span>}
-      <div className="flex gap-4 text-4xl font-mono font-bold tracking-widest select-none">
+      <div className="flex gap-4 text-4xl font-inter font-bold tracking-widest select-none">
         <TimeUnit value={timeLeft.days} label="days" />
         <TimeUnit value={timeLeft.hours} label="hrs" />
         <TimeUnit value={timeLeft.minutes} label="min" />
@@ -42,11 +42,11 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate, label, classNa
 
 function TimeUnit({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex flex-col items-center min-w-[60px]">
-      <span className="transition-all duration-300 ease-in-out text-white drop-shadow-sm">
+    <div className="flex flex-col items-center min-w-[60px] font-inter">
+      <span className="transition-all duration-300 ease-in-out text-white drop-shadow-sm font-inter">
         {value.toString().padStart(2, '0')}
       </span>
-      <span className="text-xs text-gray-400 font-normal mt-1 uppercase tracking-wider">{label}</span>
+      <span className="text-xs text-gray-400 font-normal mt-1 uppercase tracking-wider font-inter">{label}</span>
     </div>
   );
 } 

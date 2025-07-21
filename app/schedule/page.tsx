@@ -47,7 +47,7 @@ export default function SchedulePage() {
   const now = new Date();
 
   return (
-    <div className="min-h-screen w-full relative">
+    <div className="min-h-screen w-full relative font-inter">
       {/* X Organizations Black Background with Top Glow */}
       <div
         className="absolute inset-0 z-0"
