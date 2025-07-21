@@ -48,7 +48,7 @@ export default function AboutUs() {
         }} />
       </div>
 
-      <Navbar hideLogo />
+      <div className="font-inter"><Navbar hideLogo /></div>
       
       <div className="relative z-10">
         {/* Hero Section */}
