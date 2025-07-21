@@ -15,7 +15,7 @@ const navItems = [
 export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
   const pathname = usePathname();
   return (
-    <nav className={`w-full h-12 bg-black/80 border-b border-gray-800 ${hideLogo ? 'pl-8 pr-8' : 'px-8'} flex items-center gap-8 sticky top-0 z-20`}>
+    <nav className={`w-full h-12 bg-black/80 border-b border-gray-800 ${hideLogo ? 'pl-8 pr-8' : 'px-8'} flex items-center gap-8 sticky top-0 z-20 font-inter`}>
       {!hideLogo && (
         <a href="/about-us" className="font-bold text-2xl text-white cursor-pointer">ATLab</a>
       )}
