@@ -20,13 +20,6 @@ const EmptyState = memo(({ reconnect, startDemo }: EmptyStateProps) => {
         </p>
         <div className="flex gap-4 justify-center mt-2">
           <button
-            onClick={reconnect}
-            className="border border-blue-500 text-blue-400 hover:bg-blue-500/10 px-6 py-2 rounded-xl font-medium text-base transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <Clock className="w-5 h-5" />
-            Buscar sesión
-          </button>
-          <button
             onClick={startDemo}
             className="border border-green-500 text-green-400 hover:bg-green-500/10 px-6 py-2 rounded-xl font-medium text-base transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
           >

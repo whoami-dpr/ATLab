@@ -973,20 +973,29 @@ export function useF1SignalR() {
 
   useEffect(() => {
     if (!isDemoMode) {
-      connectToF1SignalR()
-    }
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
+      connectToF1SignalR();
+    } else {
+      // Si se activa el modo demo, cerrar cualquier WebSocket abierto
+      if (wsRef.current) {
+        wsRef.current.close();
       }
-      if (demoIntervalRef.current) {
-        clearInterval(demoIntervalRef.current)
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    }
+    // Solo limpiar el intervalo de demo al desmontar o salir del modo demo
+    return () => {
+      if (!isDemoMode && demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
       }
       if (wsRef.current) {
-        wsRef.current.close()
+        wsRef.current.close();
       }
-    }
-  }, [isDemoMode])
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [isDemoMode]);
 
   const reconnect = () => {
     // Si estamos en modo demo, no hacer nada al intentar reconectar
