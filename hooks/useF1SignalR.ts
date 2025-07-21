@@ -583,7 +583,7 @@ export function useF1SignalR() {
   })
 
   const startDemo = () => {
-    console.log("🎮 Starting demo mode...")
+    console.log("�� Starting demo mode... (DEMO ACTIVADO)");
     setIsDemoMode(true)
     setIsConnected(true)
     setError(null)
@@ -972,27 +972,34 @@ export function useF1SignalR() {
   }
 
   useEffect(() => {
+    console.log("[useEffect] isDemoMode:", isDemoMode, "(PROD:", process.env.NODE_ENV, ")");
     if (!isDemoMode) {
+      console.log("[useEffect] Conectando a SignalR/WebSocket real...");
       connectToF1SignalR();
     } else {
       // Si se activa el modo demo, cerrar cualquier WebSocket abierto
       if (wsRef.current) {
         wsRef.current.close();
+        console.log("[useEffect] Cerrando WebSocket porque está en demo");
       }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        console.log("[useEffect] Limpiando timeout de reconexión porque está en demo");
       }
     }
     // Solo limpiar el intervalo de demo al desmontar o salir del modo demo
     return () => {
       if (!isDemoMode && demoIntervalRef.current) {
         clearInterval(demoIntervalRef.current);
+        console.log("[useEffect] Limpiando intervalo de demo al desmontar o salir de demo");
       }
       if (wsRef.current) {
         wsRef.current.close();
+        console.log("[useEffect] Cerrando WebSocket al desmontar");
       }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        console.log("[useEffect] Limpiando timeout de reconexión al desmontar");
       }
     };
   }, [isDemoMode]);
@@ -1001,7 +1008,7 @@ export function useF1SignalR() {
     // Si estamos en modo demo, no hacer nada al intentar reconectar
     // ya que la demo debería continuar funcionando independientemente
     if (isDemoMode) {
-      console.log("🔄 Reconnect called while in demo mode - ignoring")
+      console.log("🔄 Reconnect llamado en modo demo - ignorado (NO SE DEBE CONECTAR)");
       return
     }
 
