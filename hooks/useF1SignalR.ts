@@ -204,8 +204,17 @@ export function useF1SignalR() {
       const negotiateResponse = await fetch("/api/f1/negotiate")
       if (!negotiateResponse.ok) {
         console.error(`❌ Connection failed: Negotiate failed: ${negotiateResponse.status}`)
-        // Activar modo demo automáticamente si la negociación falla, solo si no se forzó el stop
-        if (!forceStopDemo) startDemo()
+        // Solo mostrar estado vacío, no activar demo automáticamente
+        setIsConnected(false)
+        setDrivers([])
+        setSessionInfo({
+          raceName: "F1 Live Timing",
+          flag: "🏁",
+          timer: "00:00:00",
+          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+          lapInfo: "-- / --",
+          trackStatus: "No Active Session",
+        })
         return
       }
 
@@ -213,14 +222,32 @@ export function useF1SignalR() {
 
       if (negotiateData.error) {
         console.error(`❌ Connection failed: ${negotiateData.error}`)
-        if (!forceStopDemo) startDemo()
+        setIsConnected(false)
+        setDrivers([])
+        setSessionInfo({
+          raceName: "F1 Live Timing",
+          flag: "🏁",
+          timer: "00:00:00",
+          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+          lapInfo: "-- / --",
+          trackStatus: "No Active Session",
+        })
         return
       }
 
       const connectionToken = negotiateData.ConnectionToken
       if (!connectionToken) {
         console.error("❌ Connection failed: No connection token received")
-        if (!forceStopDemo) startDemo()
+        setIsConnected(false)
+        setDrivers([])
+        setSessionInfo({
+          raceName: "F1 Live Timing",
+          flag: "🏁",
+          timer: "00:00:00",
+          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+          lapInfo: "-- / --",
+          trackStatus: "No Active Session",
+        })
         return
       }
 
@@ -250,9 +277,15 @@ export function useF1SignalR() {
         if (!isDemoMode) {
           setError("Connection error")
           setIsConnected(false)
-          // Activar modo demo automáticamente si falla la conexión real
-          // Activar modo demo automáticamente si falla la conexión real, solo si no se forzó el stop
-          if (!forceStopDemo) startDemo()
+          setDrivers([])
+          setSessionInfo({
+            raceName: "F1 Live Timing",
+            flag: "🏁",
+            timer: "00:00:00",
+            weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+            lapInfo: "-- / --",
+            trackStatus: "No Active Session",
+          })
         }
       }
 
@@ -261,10 +294,15 @@ export function useF1SignalR() {
         if (!isDemoMode) {
           setIsConnected(false)
           setError("Connection closed")
-          // Activar modo demo automáticamente si falla la conexión real
-          // Activar modo demo automáticamente si falla la conexión real, solo si no se forzó el stop
-          if (!forceStopDemo) startDemo()
-
+          setDrivers([])
+          setSessionInfo({
+            raceName: "F1 Live Timing",
+            flag: "🏁",
+            timer: "00:00:00",
+            weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+            lapInfo: "-- / --",
+            trackStatus: "No Active Session",
+          })
           // Auto-reconnect después de 10 segundos para intentar volver al modo real
           if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current)
