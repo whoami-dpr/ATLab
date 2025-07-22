@@ -62,7 +62,7 @@ useEffect(() => {
         {(nextSession || lastSession) && (
           <div className="flex flex-col items-center gap-1 mb-2">
             <span className="text-gray-300 text-sm">Next session in:</span>
-            <span className="text-white font-mono text-lg">
+            <span className="text-white font-inter text-lg">
               {countdown
                 ? `${countdown.days}d ${countdown.hours}h ${countdown.minutes}m ${countdown.seconds}s`
                 : "--"}
