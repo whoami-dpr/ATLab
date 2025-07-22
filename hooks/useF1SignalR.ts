@@ -237,7 +237,8 @@ export function useF1SignalR() {
         if (!isDemoMode) {
           setError("Connection error")
           setIsConnected(false)
-          setIsDemoMode(false)
+          // Activar modo demo automáticamente si falla la conexión real
+          startDemo()
         }
       }
 
@@ -246,20 +247,10 @@ export function useF1SignalR() {
         if (!isDemoMode) {
           setIsConnected(false)
           setError("Connection closed")
-          setIsDemoMode(false)
+          // Activar modo demo automáticamente si falla la conexión real
+          startDemo()
 
-          // Clear any existing data
-          setDrivers([])
-          setSessionInfo((prev) => ({
-            ...prev,
-            trackStatus: "No Active Session",
-            raceName: "F1 Live Timing",
-            timer: "00:00:00",
-            weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-            lapInfo: "-- / --",
-          }))
-
-          // Auto-reconnect after 10 seconds
+          // Auto-reconnect después de 10 segundos para intentar volver al modo real
           if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current)
           }
