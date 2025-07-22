@@ -4,6 +4,12 @@ import fastf1
 from datetime import datetime
 import math
 import pandas as pd
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+from slowapi.decorator import limiter
+from fastapi import Request
 
 app = FastAPI()
 
@@ -14,6 +20,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Inicializa el limiter (por IP)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"error": "Too many requests, please slow down."}
+    )
+
+# Middleware global: 10 requests por minuto por IP
+app.middleware("http")(limiter.middleware)
+limiter.default_limits = ["10/minute"]
 
 @app.get("/")
 def root():
