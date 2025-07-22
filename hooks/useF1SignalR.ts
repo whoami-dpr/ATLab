@@ -197,18 +197,25 @@ export function useF1SignalR() {
       // Step 1: Negotiate connection
       const negotiateResponse = await fetch("/api/f1/negotiate")
       if (!negotiateResponse.ok) {
-        throw new Error(`Negotiate failed: ${negotiateResponse.status}`)
+        console.error(`❌ Connection failed: Negotiate failed: ${negotiateResponse.status}`)
+        // Activar modo demo automáticamente si la negociación falla
+        startDemo()
+        return
       }
 
       const negotiateData = await negotiateResponse.json()
 
       if (negotiateData.error) {
-        throw new Error(negotiateData.error)
+        console.error(`❌ Connection failed: ${negotiateData.error}`)
+        startDemo()
+        return
       }
 
       const connectionToken = negotiateData.ConnectionToken
       if (!connectionToken) {
-        throw new Error("No connection token received")
+        console.error("❌ Connection failed: No connection token received")
+        startDemo()
+        return
       }
 
       // Step 2: Connect to WebSocket
