@@ -105,6 +105,17 @@ export function useF1SignalR() {
 
   // Demo data con 20 pilotos
   const startDemo = () => {
+    // Cerrar WebSocket antes de activar demo para evitar race conditions
+    if (wsRef.current) {
+      wsRef.current.onclose = null; // Desactivar handler para evitar limpieza de estado
+      wsRef.current.onerror = null;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
     console.log(" Starting demo mode... (DEMO ACTIVADO)");
     setIsDemoMode(true)
     setForceStopDemo(false)
@@ -281,6 +292,7 @@ export function useF1SignalR() {
       wsRef.current = new WebSocket(wsUrl)
 
       wsRef.current.onopen = () => {
+        if (isDemoMode) return; // Si demo se activó mientras conectaba, ignorar
         console.log("✅ Connected to F1 SignalR")
         setIsConnected(true)
         setError(null)
@@ -292,6 +304,7 @@ export function useF1SignalR() {
       }
 
       wsRef.current.onmessage = (event) => {
+        if (isDemoMode) return; // Ignorar mensajes si demo está activo
         handleWebSocketMessage(event.data)
       }
 
