@@ -216,7 +216,7 @@ export function useF1SignalR() {
 
   const connectToF1SignalR = async () => {
     if (isDemoMode) {
-      console.log("[connectToF1SignalR] Bloqueado: está en modo demo, no se conecta al WebSocket real.");
+      console.log("[connectToF1SignalR] Bloqueado: está en modo demo, no se conecta ni cierra WebSocket real.");
       return;
     }
     try {
@@ -575,20 +575,12 @@ export function useF1SignalR() {
 
   useEffect(() => {
     console.log("[useEffect] isDemoMode:", isDemoMode, "(PROD:", process.env.NODE_ENV, ")");
-    if (!isDemoMode) {
-      console.log("[useEffect] Conectando a SignalR/WebSocket real...");
-      connectToF1SignalR();
-    } else {
-      // Solo cerrar WebSocket si está abierto y no estamos en demo
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-        console.log("[useEffect] Cerrando WebSocket porque está en demo");
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        console.log("[useEffect] Limpiando timeout de reconexión porque está en demo");
-      }
+    if (isDemoMode) {
+      // Si está en demo, nunca crear ni cerrar WebSocket
+      return;
     }
+    console.log("[useEffect] Conectando a SignalR/WebSocket real...");
+    connectToF1SignalR();
     // Solo limpiar el intervalo de demo al desmontar o si realmente se sale del modo demo
     return () => {
       if (demoIntervalRef.current) {
