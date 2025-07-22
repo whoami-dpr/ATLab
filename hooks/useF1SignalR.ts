@@ -56,6 +56,22 @@ export function useF1SignalR() {
     trackStatus: "No Active Session",
   })
   const [isConnected, setIsConnected] = useState(false)
+  // Nuevo: estado para saber si hay datos activos de sesión
+  const [hasActiveSession, setHasActiveSession] = useState(false)
+  // Helper para saber si el trackStatus indica sesión activa
+  function isSessionActive(trackStatus: string) {
+    if (!trackStatus) return false
+    const status = trackStatus.toLowerCase()
+    // Considera activo si no es "no active session", "finished", "closed", "not started", "test", "unknown"
+    return !(
+      status.includes("no active") ||
+      status.includes("finished") ||
+      status.includes("closed") ||
+      status.includes("not started") ||
+      status.includes("test") ||
+      status.includes("unknown")
+    )
+  }
   const [error, setError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [forceStopDemo, setForceStopDemo] = useState(false)
@@ -480,6 +496,12 @@ export function useF1SignalR() {
 
     updatedDrivers.sort((a, b) => a.pos - b.pos)
     setDrivers(updatedDrivers)
+    // Si hay drivers y el trackStatus es activo, marcar sesión activa
+    if (updatedDrivers.length > 0 && isSessionActive(sessionInfo.trackStatus)) {
+      setHasActiveSession(true)
+    } else {
+      setHasActiveSession(false)
+    }
   }
 
   const getSectorColor = (sector: any) => {
@@ -500,10 +522,33 @@ export function useF1SignalR() {
 
   const updateTrackStatus = (trackData: any) => {
     if (isDemoMode) return
-    setSessionInfo((prev) => ({
-      ...prev,
-      trackStatus: trackData.Status || prev.trackStatus,
-    }))
+    setSessionInfo((prev) => {
+      const newStatus = trackData.Status || prev.trackStatus
+      // Si hay drivers y el trackStatus es activo, marcar sesión activa
+      if (drivers.length > 0 && isSessionActive(newStatus)) {
+        setHasActiveSession(true)
+      } else {
+        setHasActiveSession(false)
+      }
+      return {
+        ...prev,
+        trackStatus: newStatus,
+      }
+    })
+  // Helper para saber si el trackStatus indica sesión activa
+  function isSessionActive(trackStatus: string) {
+    if (!trackStatus) return false
+    const status = trackStatus.toLowerCase()
+    // Considera activo si no es "no active session", "finished", "closed", "not started", "test", "unknown"
+    return !(
+      status.includes("no active") ||
+      status.includes("finished") ||
+      status.includes("closed") ||
+      status.includes("not started") ||
+      status.includes("test") ||
+      status.includes("unknown")
+    )
+  }
   }
 
   const updateWeatherData = (weatherData: any) => {
@@ -579,7 +624,8 @@ export function useF1SignalR() {
   return {
     drivers,
     sessionInfo,
-    isConnected,
+    // Solo conectado si WebSocket está abierto, no hay error, y hay sesión activa
+    isConnected: isConnected && hasActiveSession && !error,
     error,
     isDemoMode,
     reconnect,
