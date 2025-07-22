@@ -579,8 +579,8 @@ export function useF1SignalR() {
       console.log("[useEffect] Conectando a SignalR/WebSocket real...");
       connectToF1SignalR();
     } else {
-      // Si se activa el modo demo, cerrar cualquier WebSocket abierto
-      if (wsRef.current) {
+      // Solo cerrar WebSocket si está abierto y no estamos en demo
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.close();
         console.log("[useEffect] Cerrando WebSocket porque está en demo");
       }
