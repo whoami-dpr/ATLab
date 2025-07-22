@@ -587,13 +587,8 @@ export function useF1SignalR() {
     }
     console.log("[useEffect] Conectando a SignalR/WebSocket real...");
     connectToF1SignalR();
-    // Solo limpiar el demoInterval si el modo demo está inactivo al desmontar
+    // Cleanup solo para WebSocket y reconexión, nunca para el demoInterval
     return () => {
-      if (demoIntervalRef.current && !isDemoMode) {
-        clearInterval(demoIntervalRef.current);
-        demoIntervalRef.current = null;
-        console.log("[useEffect] Limpiando intervalo de demo al desmontar");
-      }
       if (wsRef.current) {
         wsRef.current.close();
         console.log("[useEffect] Cerrando WebSocket al desmontar");
