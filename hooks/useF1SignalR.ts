@@ -124,6 +124,9 @@ export function useF1SignalR() {
   }
 
   const updateDemoData = () => {
+    // Solo actualizar datos de demo si el modo demo está activo
+    if (!isDemoMode) return;
+
     setDrivers((prevDrivers) => {
       return prevDrivers.map((driver) => {
         // Simulate random lap time changes
@@ -167,7 +170,7 @@ export function useF1SignalR() {
       })
     })
 
-    // Update session timer
+    // Update session timer solo si está en demo
     setSessionInfo((prev) => {
       const [hours, minutes, seconds] = prev.timer.split(":").map(Number)
       let newSeconds = seconds + 1
