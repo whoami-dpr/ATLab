@@ -108,6 +108,7 @@ export function useF1SignalR() {
     console.log(" Starting demo mode... (DEMO ACTIVADO)");
     setIsDemoMode(true)
     setForceStopDemo(false)
+    setPreventReconnect(true) // Evita reconexión automática mientras esté en demo
     setIsConnected(true)
     setError(null)
     setSessionInfo(getDemoSessionInfo())
@@ -123,7 +124,7 @@ export function useF1SignalR() {
     console.log("🛑 Stopping demo mode...")
     setIsDemoMode(false)
     setForceStopDemo(true)
-    setPreventReconnect(true)
+    setPreventReconnect(false) // Permite reconexión automática al salir de demo
     setIsConnected(false)
     setDrivers([])
     setSessionInfo({
