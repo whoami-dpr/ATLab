@@ -589,11 +589,12 @@ export function useF1SignalR() {
         console.log("[useEffect] Limpiando timeout de reconexión porque está en demo");
       }
     }
-    // Solo limpiar el intervalo de demo al desmontar o salir del modo demo
+    // Solo limpiar el intervalo de demo al desmontar o si realmente se sale del modo demo
     return () => {
-      if (!isDemoMode && demoIntervalRef.current) {
+      if (demoIntervalRef.current) {
         clearInterval(demoIntervalRef.current);
-        console.log("[useEffect] Limpiando intervalo de demo al desmontar o salir de demo");
+        demoIntervalRef.current = null;
+        console.log("[useEffect] Limpiando intervalo de demo al desmontar");
       }
       if (wsRef.current) {
         wsRef.current.close();
