@@ -296,9 +296,12 @@ export function useF1SignalR() {
       }
 
       wsRef.current.onerror = (error) => {
+        if (isDemoMode) {
+          // Demo activo: nunca modificar estado ni limpiar nada
+          console.warn("[DEMO] Ignorando error de WebSocket, demo sigue activo.");
+          return;
+        }
         console.error("❌ WebSocket error:", error)
-        // Si está en modo demo, ignorar el error del WebSocket
-        if (isDemoMode) return;
         setError("Connection error")
         setIsConnected(false)
         setDrivers([])
@@ -313,9 +316,12 @@ export function useF1SignalR() {
       }
 
       wsRef.current.onclose = (event) => {
+        if (isDemoMode) {
+          // Demo activo: nunca modificar estado ni limpiar nada
+          console.warn("[DEMO] Ignorando cierre de WebSocket, demo sigue activo.");
+          return;
+        }
         console.log("🔌 WebSocket closed:", event.code, event.reason)
-        // Si está en modo demo, ignorar el cierre del WebSocket
-        if (isDemoMode) return;
         setIsConnected(false)
         setError("Connection closed")
         setDrivers([])
