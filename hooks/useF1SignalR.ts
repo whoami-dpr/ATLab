@@ -297,45 +297,45 @@ export function useF1SignalR() {
 
       wsRef.current.onerror = (error) => {
         console.error("❌ WebSocket error:", error)
-        if (!isDemoMode) {
-          setError("Connection error")
-          setIsConnected(false)
-          setDrivers([])
-          setSessionInfo({
-            raceName: "F1 Live Timing",
-            flag: "🏁",
-            timer: "00:00:00",
-            weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-            lapInfo: "-- / --",
-            trackStatus: "No Active Session",
-          })
-        }
+        // Si está en modo demo, ignorar el error del WebSocket
+        if (isDemoMode) return;
+        setError("Connection error")
+        setIsConnected(false)
+        setDrivers([])
+        setSessionInfo({
+          raceName: "F1 Live Timing",
+          flag: "🏁",
+          timer: "00:00:00",
+          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+          lapInfo: "-- / --",
+          trackStatus: "No Active Session",
+        })
       }
 
       wsRef.current.onclose = (event) => {
         console.log("🔌 WebSocket closed:", event.code, event.reason)
-        if (!isDemoMode) {
-          setIsConnected(false)
-          setError("Connection closed")
-          setDrivers([])
-          setSessionInfo({
-            raceName: "F1 Live Timing",
-            flag: "🏁",
-            timer: "00:00:00",
-            weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-            lapInfo: "-- / --",
-            trackStatus: "No Active Session",
-          })
-          // Auto-reconnect después de 10 segundos para intentar volver al modo real
-          if (!preventReconnect) {
-            if (reconnectTimeoutRef.current) {
-              clearTimeout(reconnectTimeoutRef.current)
-            }
-            reconnectTimeoutRef.current = setTimeout(() => {
-              console.log("🔄 Attempting to reconnect...")
-              connectToF1SignalR()
-            }, 10000)
+        // Si está en modo demo, ignorar el cierre del WebSocket
+        if (isDemoMode) return;
+        setIsConnected(false)
+        setError("Connection closed")
+        setDrivers([])
+        setSessionInfo({
+          raceName: "F1 Live Timing",
+          flag: "🏁",
+          timer: "00:00:00",
+          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+          lapInfo: "-- / --",
+          trackStatus: "No Active Session",
+        })
+        // Auto-reconnect después de 10 segundos para intentar volver al modo real
+        if (!preventReconnect) {
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current)
           }
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log("🔄 Attempting to reconnect...")
+            connectToF1SignalR()
+          }, 10000)
         }
       }
     } catch (error) {
