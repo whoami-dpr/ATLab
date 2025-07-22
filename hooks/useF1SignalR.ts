@@ -59,6 +59,7 @@ export function useF1SignalR() {
   const [error, setError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [forceStopDemo, setForceStopDemo] = useState(false)
+  const [preventReconnect, setPreventReconnect] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const demoIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -106,6 +107,7 @@ export function useF1SignalR() {
     console.log("🛑 Stopping demo mode...")
     setIsDemoMode(false)
     setForceStopDemo(true)
+    setPreventReconnect(true)
     setIsConnected(false)
     setDrivers([])
     setSessionInfo({
@@ -196,6 +198,10 @@ export function useF1SignalR() {
   }
 
   const connectToF1SignalR = async () => {
+    if (isDemoMode) {
+      console.log("[connectToF1SignalR] Bloqueado: está en modo demo, no se conecta al WebSocket real.");
+      return;
+    }
     try {
       setError("Connecting to F1 Live Timing...")
       console.log("🔄 Attempting to connect to F1 SignalR...")
@@ -304,13 +310,15 @@ export function useF1SignalR() {
             trackStatus: "No Active Session",
           })
           // Auto-reconnect después de 10 segundos para intentar volver al modo real
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current)
+          if (!preventReconnect) {
+            if (reconnectTimeoutRef.current) {
+              clearTimeout(reconnectTimeoutRef.current)
+            }
+            reconnectTimeoutRef.current = setTimeout(() => {
+              console.log("🔄 Attempting to reconnect...")
+              connectToF1SignalR()
+            }, 10000)
           }
-          reconnectTimeoutRef.current = setTimeout(() => {
-            console.log("🔄 Attempting to reconnect...")
-            connectToF1SignalR()
-          }, 10000)
         }
       }
     } catch (error) {
@@ -554,10 +562,9 @@ export function useF1SignalR() {
 
   const reconnect = () => {
     // Si estamos en modo demo, no hacer nada al intentar reconectar
-    // ya que la demo debería continuar funcionando independientemente
     if (isDemoMode) {
       console.log("🔄 Reconnect llamado en modo demo - ignorado (NO SE DEBE CONECTAR)");
-      return
+      return;
     }
 
     if (reconnectTimeoutRef.current) {
