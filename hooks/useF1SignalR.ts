@@ -58,6 +58,7 @@ export function useF1SignalR() {
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
+  const [forceStopDemo, setForceStopDemo] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const demoIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -89,6 +90,7 @@ export function useF1SignalR() {
   const startDemo = () => {
     console.log(" Starting demo mode... (DEMO ACTIVADO)");
     setIsDemoMode(true)
+    setForceStopDemo(false)
     setIsConnected(true)
     setError(null)
     setSessionInfo(getDemoSessionInfo())
@@ -103,6 +105,7 @@ export function useF1SignalR() {
   const stopDemo = () => {
     console.log("🛑 Stopping demo mode...")
     setIsDemoMode(false)
+    setForceStopDemo(true)
     setIsConnected(false)
     setDrivers([])
     setSessionInfo({
@@ -198,8 +201,8 @@ export function useF1SignalR() {
       const negotiateResponse = await fetch("/api/f1/negotiate")
       if (!negotiateResponse.ok) {
         console.error(`❌ Connection failed: Negotiate failed: ${negotiateResponse.status}`)
-        // Activar modo demo automáticamente si la negociación falla
-        startDemo()
+        // Activar modo demo automáticamente si la negociación falla, solo si no se forzó el stop
+        if (!forceStopDemo) startDemo()
         return
       }
 
@@ -207,14 +210,14 @@ export function useF1SignalR() {
 
       if (negotiateData.error) {
         console.error(`❌ Connection failed: ${negotiateData.error}`)
-        startDemo()
+        if (!forceStopDemo) startDemo()
         return
       }
 
       const connectionToken = negotiateData.ConnectionToken
       if (!connectionToken) {
         console.error("❌ Connection failed: No connection token received")
-        startDemo()
+        if (!forceStopDemo) startDemo()
         return
       }
 
@@ -245,7 +248,8 @@ export function useF1SignalR() {
           setError("Connection error")
           setIsConnected(false)
           // Activar modo demo automáticamente si falla la conexión real
-          startDemo()
+          // Activar modo demo automáticamente si falla la conexión real, solo si no se forzó el stop
+          if (!forceStopDemo) startDemo()
         }
       }
 
@@ -255,7 +259,8 @@ export function useF1SignalR() {
           setIsConnected(false)
           setError("Connection closed")
           // Activar modo demo automáticamente si falla la conexión real
-          startDemo()
+          // Activar modo demo automáticamente si falla la conexión real, solo si no se forzó el stop
+          if (!forceStopDemo) startDemo()
 
           // Auto-reconnect después de 10 segundos para intentar volver al modo real
           if (reconnectTimeoutRef.current) {
