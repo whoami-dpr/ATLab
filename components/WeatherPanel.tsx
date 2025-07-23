@@ -77,7 +77,7 @@ export function WeatherPanel() {
 
   return (
     <>
-      <div className="bg-gradient-to-br from-[#232336]/80 to-[#181824]/90 rounded-2xl p-8 shadow-2xl border border-[#232336] w-full max-w-4xl mx-auto backdrop-blur-xl font-inter">
+      <div className="w-full max-w-4xl mx-auto font-inter">
         <div className="mb-2">
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-1 tracking-tight drop-shadow-lg">
             Tiempo en Spa-Francorchamps
@@ -125,7 +125,7 @@ export function WeatherPanel() {
               title="Mapa Windy Spa-Francorchamps"
               width="100%"
               height="400"
-              src="https://embed.windy.com/embed2.html?lat=50.4372&lon=5.9714&detailLat=50.4372&detailLon=5.9714&width=650&height=350&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=false&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
+              src="https://embed.windy.com/embed2.html?lat=50.4372&lon=5.9714&detailLat=50.4372&detailLon=5.9714&width=650&height=350&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=false&metricWind=km%2Fh&metricTemp=%C2%B0C&metricRain=mm&radarRange=-1"
               frameBorder="0"
               className="w-full h-full min-h-[300px] bg-[#232336]"
               allowFullScreen
@@ -149,7 +149,7 @@ export function WeatherPanel() {
               title="Mapa Windy Spa-Francorchamps Expandido"
               width="100%"
               height="100%"
-              src="https://embed.windy.com/embed2.html?lat=50.4372&lon=5.9714&detailLat=50.4372&detailLon=5.9714&width=650&height=350&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=false&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
+              src="https://embed.windy.com/embed2.html?lat=50.4372&lon=5.9714&detailLat=50.4372&detailLon=5.9714&width=650&height=350&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=true&type=map&location=coordinates&detail=false&metricWind=km%2Fh&metricTemp=%C2%B0C&metricRain=mm&radarRange=-1"
               frameBorder="0"
               className="w-full h-full min-h-[300px] bg-[#232336]"
               allowFullScreen
