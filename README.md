@@ -17,8 +17,6 @@ It allows you to visualize:
 - Weather and track conditions
 - Historical championship data
 
-The ATLab "logo" is simply a styled text element within the application interface, with "AT" in white and "Lab" in blue.
-
 ## Notice
 
 This project is unofficial and not associated in any way with Formula 1 or its affiliated companies.  
