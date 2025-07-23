@@ -31,7 +31,7 @@ function WeatherSkeleton() {
     <div className="w-full max-w-4xl mx-auto">
       {/* Skeleton para título principal */}
       <div className="mb-2">
-        <div className="h-7 w-[60%] rounded-2xl bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-shimmer mb-2 ml-0" />
+        <div className="h-9 w-[60%] rounded-2xl bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-shimmer mb-2 ml-0" />
       </div>
       {/* Skeleton para subtítulo y ubicación */}
       <div className="mb-2">
@@ -43,7 +43,7 @@ function WeatherSkeleton() {
         {Array.from({ length: 7 }).map((_, i) => (
           <div
             key={i}
-            className="flex flex-col items-center bg-[#232336]/80 rounded-xl p-3 md:p-4 min-w-[90px] shadow-md border border-[#2a2a3a]/40"
+            className="flex flex-col items-center rounded-xl p-3 md:p-4 min-w-[90px]"
           >
             {/* Día y fecha */}
             <div className="h-5 w-20 mb-1 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
