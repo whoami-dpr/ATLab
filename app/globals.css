@@ -80,6 +80,15 @@ button:focus-visible {
   animation: blink 1.5s ease-in-out infinite;
 }
 
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.animate-shimmer {
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
 @layer utilities {
   .font-poppins {
     font-family: var(--font-poppins), sans-serif;

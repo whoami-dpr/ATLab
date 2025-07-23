@@ -28,18 +28,47 @@ const weatherIcons: Record<number, string> = {
 
 function WeatherSkeleton() {
   return (
-    <div className="bg-gradient-to-br from-[#232336]/80 to-[#181824]/90 rounded-2xl p-8 shadow-2xl border border-[#232336] w-full max-w-4xl mx-auto animate-pulse backdrop-blur-xl">
-      <div className="h-8 w-1/3 bg-gray-700/60 rounded mb-8" />
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mt-4">
+    <div className="w-full max-w-4xl mx-auto">
+      {/* Skeleton para título principal */}
+      <div className="mb-2">
+        <div className="h-7 w-[60%] rounded-2xl bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-shimmer mb-2 ml-0" />
+      </div>
+      {/* Skeleton para subtítulo y ubicación */}
+      <div className="mb-2">
+        <div className="h-6 w-[40%] rounded-xl bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-shimmer mb-2 ml-0" />
+        <div className="h-4 w-[30%] rounded-xl bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 animate-shimmer mb-2 ml-0" />
+      </div>
+      {/* Skeleton para tarjetas */}
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mt-2">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="flex flex-col items-center bg-[#232336]/80 rounded-xl p-4 min-w-[90px] shadow-md">
-            <div className="h-5 w-12 bg-gray-700/60 rounded mb-2" />
-            <div className="h-12 w-12 bg-gray-700/60 rounded-full mb-2" />
-            <div className="h-4 w-16 bg-gray-700/60 rounded mb-1" />
-            <div className="h-3 w-10 bg-gray-700/60 rounded mb-1" />
-            <div className="h-3 w-10 bg-gray-700/60 rounded" />
+          <div
+            key={i}
+            className="flex flex-col items-center bg-[#232336]/80 rounded-xl p-3 md:p-4 min-w-[90px] shadow-md border border-[#2a2a3a]/40"
+          >
+            {/* Día y fecha */}
+            <div className="h-5 w-20 mb-1 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
+            {/* Icono de clima */}
+            <div className="h-14 w-14 mb-2 rounded-full bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
+            {/* Temperatura máxima y mínima */}
+            <div className="flex flex-row items-end w-full justify-center mb-1 gap-1">
+              <div className="h-7 w-10 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
+              <div className="h-4 w-6 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer ml-1" />
+            </div>
+            <div className="h-4 w-16 mb-1 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
+            {/* Lluvia */}
+            <div className="h-4 w-20 mb-1 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
+            {/* Viento */}
+            <div className="h-4 w-24 rounded bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600 animate-shimmer" />
           </div>
         ))}
+      </div>
+      {/* Skeleton para el mapa Windy */}
+      <div className="w-full mt-8 rounded-2xl overflow-hidden shadow-lg border border-[#232336]" style={{height: 400, maxHeight: 500}}>
+        <div className="w-full h-full min-h-[300px] rounded-2xl bg-gradient-to-r from-gray-700/60 via-gray-600/60 to-gray-700/60 animate-shimmer flex items-center justify-center" style={{height: 400}}>
+          <svg className="w-10 h-10 text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
+            <path d="M18 0H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2Zm-5.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm4.376 10.481A1 1 0 0 1 16 15H4a1 1 0 0 1-.895-1.447l3.5-7A1 1 0 0 1 7.468 6a.965.965 0 0 1 .9.5l2.775 4.757 1.546-1.887a1 1 0 0 1 1.618.1l2.541 4a1 1 0 0 1 .028 1.011Z"/>
+          </svg>
+        </div>
       </div>
     </div>
   );
