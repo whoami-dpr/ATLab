@@ -6,6 +6,7 @@ import type { F1Driver } from "../hooks/useF1SignalR"
 interface OptimizedDriverRowProps {
   driver: F1Driver
   index: number
+  gapClass?: string
 }
 
 export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: OptimizedDriverRowProps) {
@@ -66,7 +67,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     )
   }
 
-  // Mapeo de escudería a color oficial y color de texto
+  // Mapping of team to official color and text color
   const TEAM_COLORS: Record<string, { bg: string; text: string }> = {
     "Red Bull":      { bg: "#1e41ff", text: "white" },
     "Mercedes":      { bg: "#00d2be", text: "white" },
@@ -78,7 +79,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     "Haas":          { bg: "#b6babd", text: "white" },
     "Kick Sauber":   { bg: "#52e252", text: "white" },
     "RB":            { bg: "#6692ff", text: "white" }, // Racing Bulls
-    // Otros equipos si hay
+    // Other teams if any
   };
 
   const getTeamBg = (team: string) => TEAM_COLORS[team]?.bg || '#888';
@@ -97,11 +98,41 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     }
   }
 
+  // Function to render tyres history
+  const renderTyresHistory = () => {
+    if (!driver.tyresHistory || driver.tyresHistory.length === 0) {
+      return <span className="text-gray-500 text-xs">-</span>
+    }
+    
+    return (
+      <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
+        {driver.tyresHistory.slice(0, 3).map((tire, index) => (
+          <img
+            key={index}
+            src={
+              tire === 'S' ? '/images/soft.svg'
+              : tire === 'M' ? '/images/medium.svg'
+              : tire === 'H' ? '/images/hard.svg'
+              : tire === 'I' ? '/images/intermediate.svg'
+              : '/images/soft.svg'
+            }
+            alt={tire}
+            className="w-8 h-8 opacity-90 flex-shrink-0"
+            title={`Stint ${index + 1}: ${tire}`}
+          />
+        ))}
+        {driver.tyresHistory.length > 3 && (
+          <span className="text-xs text-gray-400 ml-1">+{driver.tyresHistory.length - 3}</span>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       className={`grid grid-cols-12 gap-0.5 px-1 py-0.5 hover:bg-gradient-to-r hover:from-gray-800/20 hover:to-gray-900/20 transition-all duration-200 font-inter font-bold`}
     >
-      {/* Position & Driver - Fondo escudería, tamaño fijo */}
+      {/* Position & Driver - Team background, fixed size */}
       <div className="col-span-1 flex items-center gap-0">
         <div
           className="flex items-center justify-center"
@@ -116,7 +147,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             padding: 0,
           }}
         >
-          {/* Número de posición, texto blanco */}
+          {/* Position number, white text */}
           <div
             style={{
               color: getTeamText(driver.team),
@@ -193,6 +224,11 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         </div>
       </div>
 
+      {/* Tyres History */}
+      <div className="col-span-1 flex items-center">
+        {renderTyresHistory()}
+      </div>
+
       {/* Info - Más pequeño */}
       <div className="col-span-1 flex flex-col items-start justify-center">
         <span className={
@@ -245,7 +281,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       </div>
 
       {/* Sectors - Más compactos */}
-      <div className="col-span-6 grid grid-cols-3 gap-2">
+      <div className="col-span-5 grid grid-cols-3 gap-2">
         {/* Sector 1 */}
         <div className="flex flex-col bg-gray-900/20 rounded-md p-1.5 border border-gray-800/30 text-base font-inter">
           {getSectorBars(driver.sector1Color, driver.sector1)}

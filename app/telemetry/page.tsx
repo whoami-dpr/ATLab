@@ -275,12 +275,12 @@ export default function TelemetryPage() {
                 };
                 return (
                   <div className="bg-[#23272b] border border-white/60 rounded-xl px-8 py-3 mt-2 flex flex-row gap-8 items-center shadow min-h-[56px]">
-                    <span className="text-white text-lg font-bold">Vuelta {lap.lapNumber}</span>
-                    <span className="text-gray-200 text-base">Tiempo: <span className="font-mono text-lg font-bold text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></span>
-                    <span className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</span>
+                    <span className="text-white text-lg font-bold">Lap {lap.lapNumber}</span>
+                    <span className="text-gray-200 text-base">Time: <span className="font-mono text-lg font-bold text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></span>
+                    <span className="text-gray-300 text-base">{lap.isValid ? 'Valid' : lap.isPit ? 'PIT' : 'Invalid'}</span>
                     <span className="flex items-center gap-2 text-base ml-auto">
                       <img src={`/images/${(lap.compound && lap.compound.toLowerCase() === 'supersoft') ? 'supersoft.png' : (lap.compound || 'unknown').toLowerCase() + '.svg'}`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
-                      <span className="text-gray-200 font-semibold uppercase tracking-wide">{lap.compound || 'Neumático no disponible'}</span>
+                      <span className="text-gray-200 font-semibold uppercase tracking-wide">{lap.compound || 'Tyre not available'}</span>
                     </span>
                     {lap.isPit && (
                       <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>
@@ -300,12 +300,12 @@ export default function TelemetryPage() {
                 };
                 return (
                   <div className="bg-[#23272b] border border-white/60 rounded-xl px-8 py-3 mt-2 flex flex-row gap-8 items-center shadow min-h-[56px]">
-                    <span className="text-white text-lg font-bold">Vuelta {lap.lapNumber}</span>
-                    <span className="text-gray-200 text-base">Tiempo: <span className="font-mono text-lg font-bold text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></span>
-                    <span className="text-gray-300 text-base">{lap.isValid ? 'Válida' : lap.isPit ? 'PIT' : 'Inválida'}</span>
+                    <span className="text-white text-lg font-bold">Lap {lap.lapNumber}</span>
+                    <span className="text-gray-200 text-base">Time: <span className="font-mono text-lg font-bold text-white">{formatLapTimeMs(lap.lapTimeSeconds)}</span></span>
+                    <span className="text-gray-300 text-base">{lap.isValid ? 'Valid' : lap.isPit ? 'PIT' : 'Invalid'}</span>
                     <span className="flex items-center gap-2 text-base ml-auto">
                       <img src={`/images/${(lap.compound && lap.compound.toLowerCase() === 'supersoft') ? 'supersoft.png' : (lap.compound || 'unknown').toLowerCase() + '.svg'}`} alt={(lap.compound || 'unknown')} className="w-7 h-7" />
-                      <span className="text-gray-200 font-semibold uppercase tracking-wide">{lap.compound || 'Neumático no disponible'}</span>
+                      <span className="text-gray-200 font-semibold uppercase tracking-wide">{lap.compound || 'Tyre not available'}</span>
                     </span>
                     {lap.isPit && (
                       <span className="text-yellow-300 font-semibold text-base ml-2">PIT STOP</span>

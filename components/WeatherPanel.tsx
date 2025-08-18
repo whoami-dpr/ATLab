@@ -109,10 +109,10 @@ export function WeatherPanel() {
       <div className="w-full max-w-4xl mx-auto font-inter">
         <div className="mb-2">
           <h2 className="text-2xl md:text-3xl font-semibold text-white mb-1 tracking-tight drop-shadow-lg">
-            Tiempo en Spa-Francorchamps
+            Weather in Spa-Francorchamps
           </h2>
           <div className="text-base md:text-lg text-gray-300 font-normal mb-1">
-            Pronóstico para el Gran Premio de Bélgica {year}
+            Forecast for the Belgian Grand Prix {year}
           </div>
           <div className="text-sm text-gray-400 font-normal mb-2">
             {location}

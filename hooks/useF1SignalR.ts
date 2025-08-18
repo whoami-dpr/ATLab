@@ -25,10 +25,11 @@ export interface F1Driver {
   sector1Color: string
   sector2Color: string
   sector3Color: string
-  team: string // NUEVO: escudería
-  pitStops?: number // NUEVO: cantidad de pit stops
-  positionsGained?: number // NUEVO: posiciones ganadas o perdidas
+  team: string // NEW: team
+  pitStops?: number // NEW: number of pit stops
+  positionsGained?: number // NEW: positions gained or lost
   lapTimeColor?: 'green' | 'purple' | 'white';
+  tyresHistory?: string[] // NEW: history of tyres used
 }
 
 export interface F1SessionInfo {
@@ -55,14 +56,16 @@ export function useF1SignalR() {
     lapInfo: "-- / --",
     trackStatus: "No Active Session",
   })
+  // State to track tyres history per driver
+  const [driversTyreHistory, setDriversTyreHistory] = useState<Record<string, string[]>>({})
   const [isConnected, setIsConnected] = useState(false)
-  // Nuevo: estado para saber si hay datos activos de sesión
+  // New: state to know if there is active session data
   const [hasActiveSession, setHasActiveSession] = useState(false)
-  // Helper para saber si el trackStatus indica sesión activa
+  // Helper to know if trackStatus indicates active session
   function isSessionActive(trackStatus: string) {
     if (!trackStatus) return false
     const status = trackStatus.toLowerCase()
-    // Considera activo si no es "no active session", "finished", "closed", "not started", "test", "unknown"
+    // Consider active if it's not "no active session", "finished", "closed", "not started", "test", "unknown"
     return !(
       status.includes("no active") ||
       status.includes("finished") ||
@@ -480,12 +483,31 @@ export function useF1SignalR() {
       const position = Number.parseInt(driverData.Position) || 0
       if (position === 0) return
 
+      const currentTire = driverData.Tyres?.Compound?.charAt(0) || "M"
+      const driverCode = driverData.RacingNumber || driverNumber
+      
+              // Update tyres history
+      setDriversTyreHistory(prev => {
+        const currentHistory = prev[driverCode] || []
+        const lastTire = currentHistory[currentHistory.length - 1]
+        
+        // Only add if it's a different tyre from the last one
+        if (lastTire !== currentTire && currentTire !== "") {
+          return {
+            ...prev,
+            [driverCode]: [...currentHistory, currentTire]
+          }
+        }
+        
+        return prev
+      })
+
       const driver: F1Driver = {
         pos: position,
-        code: driverData.RacingNumber || driverNumber,
+        code: driverCode,
         name: driverData.BroadcastName || `Driver ${driverNumber}`,
         color: driverColors[position - 1] || "bg-gray-500",
-        tire: driverData.Tyres?.Compound?.charAt(0) || "M",
+        tire: currentTire,
         stint: `L ${driverData.NumberOfLaps || 0}`,
         change: driverData.IntervalToPositionAhead?.Value || "",
         drs: driverData.DRS === "1",
@@ -508,7 +530,8 @@ export function useF1SignalR() {
             : driverData.LastLapTime?.PersonalBest
               ? 'green'
               : 'white',
-        team: driverData.TeamName || driverData.Team || '', // Ajusta aquí según el campo real de la API
+        team: driverData.TeamName || driverData.Team || '', // Adjust here according to the real API field
+        tyresHistory: driversTyreHistory[driverCode] || []
       }
 
       updatedDrivers.push(driver)

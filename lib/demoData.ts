@@ -1,4 +1,4 @@
-// Demo data para F1 Live Timing
+// Demo data for F1 Live Timing
 import type { F1Driver, F1SessionInfo } from '../hooks/useF1SignalR'
 
 export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
@@ -25,6 +25,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "green",
     sector2Color: "yellow",
     sector3Color: "purple",
+    tyresHistory: ["M", "S"],
   },
   {
     pos: 2,
@@ -49,6 +50,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "yellow",
     sector2Color: "green",
     sector3Color: "yellow",
+    tyresHistory: ["H", "M"],
   },
   {
     pos: 3,
@@ -73,6 +75,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "purple",
     sector2Color: "yellow",
     sector3Color: "green",
+    tyresHistory: ["M", "H", "S"],
   },
   {
     pos: 4,
@@ -97,6 +100,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "yellow",
     sector2Color: "purple",
     sector3Color: "green",
+    tyresHistory: ["H", "M"],
   },
   {
     pos: 5,
@@ -121,6 +125,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "green",
     sector2Color: "yellow",
     sector3Color: "yellow",
+    tyresHistory: ["H"],
   },
   {
     pos: 6,
@@ -145,6 +150,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "yellow",
     sector2Color: "green",
     sector3Color: "purple",
+    tyresHistory: ["S", "M"],
   },
   {
     pos: 7,
@@ -169,6 +175,7 @@ export const getDemoDrivers = (driverColors: string[]): F1Driver[] => [
     sector1Color: "purple",
     sector2Color: "yellow",
     sector3Color: "green",
+    tyresHistory: ["H", "M", "S"],
   },
   {
     pos: 8,

@@ -143,12 +143,12 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
         const compound = lap.compound ? lap.compound.toLowerCase() : 'unknown';
         const compoundImg = `/images/${compound}.svg`;
         return `
-          <div style="font-weight:600;">Vuelta ${lap.lapNumber}</div>
-          <div>Tiempo: ${formatLapTimeMs(lap.lapTimeSeconds)}</div>
-          <div>${lap.isValid ? "Válida" : "Inválida"}</div>
+                      <div style="font-weight:600;">Lap ${lap.lapNumber}</div>
+          <div>Time: ${formatLapTimeMs(lap.lapTimeSeconds)}</div>
+                      <div>${lap.isValid ? "Valid" : "Invalid"}</div>
           <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
             <img src='${compoundImg}' alt='${compound}' style='width:22px;height:22px;vertical-align:middle;' />
-            <span style='color:#aaa;'>${lap.compound ? lap.compound : 'Neumático no disponible'}</span>
+            <span style='color:#aaa;'>${lap.compound ? lap.compound : 'Tyre not available'}</span>
           </div>
         `;
       }
@@ -165,7 +165,7 @@ function LapChartInner({ laps, selectedLap, setSelectedLap, selectedLap2, setSel
     },
     yAxis: {
       type: 'value',
-      name: 'Tiempo (min:s)',
+              name: 'Time (min:s)',
       nameLocation: 'middle',
       nameGap: 60,
       nameTextStyle: { color: '#fff', fontSize: 13, fontWeight: 600 },

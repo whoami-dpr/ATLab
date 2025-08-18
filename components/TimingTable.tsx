@@ -20,10 +20,11 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
         <div className="col-span-1">Position</div>
         <div className="col-span-1">DRS</div>
         <div className="col-span-1">Tire</div>
+        <div className="col-span-1">Tyres History</div>
         <div className="col-span-1">Info</div>
         <div className="col-span-1">Gap</div>
         <div className="col-span-1">LapTime</div>
-        <div className="col-span-6">Sectors</div>
+        <div className="col-span-5">Sectors</div>
       </div>
 
       {/* Driver Rows */}

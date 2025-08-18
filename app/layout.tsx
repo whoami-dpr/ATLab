@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
       <body className="min-h-screen w-full relative font-sans antialiased">
-        {/* Fondo negro con glow azul en la parte superior */}
+        {/* Black background with blue glow at the top */}
         <div
           className="absolute inset-0 z-0"
           style={{
