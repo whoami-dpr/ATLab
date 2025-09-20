@@ -22,6 +22,8 @@ interface SidebarProps {
   isConnected: boolean
   error: string | null
   reconnect: () => void
+  isDemoMode: boolean
+  hasActiveSession: boolean
 }
 
 export const Sidebar = memo(function Sidebar(props: SidebarProps) {
@@ -79,7 +81,24 @@ export const Sidebar = memo(function Sidebar(props: SidebarProps) {
           </div>
           <div className="flex-1">
             <div className="text-xs font-medium text-white">{props.isConnected ? "Live" : "Offline"}</div>
-            <div className="text-xs text-gray-400">{props.isConnected ? "Connected" : props.error || "Disconnected"}</div>
+            <div className={`px-2 py-1 rounded text-xs font-bold text-white ${
+              props.isDemoMode 
+                ? 'bg-blue-600' 
+                : props.isConnected && props.hasActiveSession
+                  ? 'bg-green-600'
+                  : props.isConnected && !props.hasActiveSession
+                    ? 'bg-yellow-600'
+                    : 'bg-red-600'
+            }`}>
+              {props.isDemoMode 
+                ? 'Blue Flag' 
+                : props.isConnected && props.hasActiveSession
+                  ? 'Green Flag'
+                  : props.isConnected && !props.hasActiveSession
+                    ? 'Yellow Flag'
+                    : 'Red Flag'
+              }
+            </div>
           </div>
           <button
             onClick={props.reconnect}

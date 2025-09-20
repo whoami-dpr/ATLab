@@ -3,15 +3,19 @@
 import { memo } from "react"
 import { WeatherWidget } from "./WeatherWidget"
 import type { F1SessionInfo } from "../hooks/useF1SignalR"
+import { useSchedule } from "../hooks/useSchedule"
 
 interface SessionHeaderProps {
   sessionInfo: F1SessionInfo
   isConnected: boolean
   isDemoMode: boolean
   error: string | null
+  hasActiveSession: boolean
 }
 
-const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error }: SessionHeaderProps) => {
+const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error, hasActiveSession }: SessionHeaderProps) => {
+  const { schedule } = useSchedule()
+  
   const getTrackStatusColor = () => {
     const status = sessionInfo.trackStatus.toLowerCase()
     if (status.includes("green") || status.includes("clear"))
@@ -20,6 +24,108 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error }: Ses
       return "bg-gradient-to-r from-yellow-500 to-yellow-600 shadow-md shadow-yellow-500/25"
     if (status.includes("red")) return "bg-gradient-to-r from-red-500 to-red-600 shadow-md shadow-red-500/25"
     return "bg-gradient-to-r from-gray-500 to-gray-600 shadow-md shadow-gray-500/25"
+  }
+
+  // Obtener información del GP actual del schedule
+  const getCurrentGPInfo = () => {
+    if (!schedule || schedule.length === 0) {
+      return {
+        gpName: sessionInfo.raceName || 'F1 Live Timing',
+        country: 'Unknown',
+        sessionType: 'Session'
+      }
+    }
+
+    // Buscar el GP actual (el que no está terminado)
+    const currentGP = schedule.find(gp => !gp.over) || schedule[0]
+    
+    // Extraer el tipo de sesión del raceName
+    let sessionType = 'Session'
+    if (sessionInfo.raceName) {
+      if (sessionInfo.raceName.toLowerCase().includes('qualifying')) {
+        sessionType = 'Qualifying'
+      } else if (sessionInfo.raceName.toLowerCase().includes('practice')) {
+        sessionType = 'Practice'
+      } else if (sessionInfo.raceName.toLowerCase().includes('race')) {
+        sessionType = 'Race'
+      } else if (sessionInfo.raceName.toLowerCase().includes('sprint')) {
+        sessionType = 'Sprint'
+      }
+    }
+
+    // Extraer solo el nombre del país y "Grand Prix" del nombre completo
+    let shortGPName = currentGP.name
+    if (currentGP.name) {
+      // Buscar el patrón "PAÍS Grand Prix" en el nombre
+      const match = currentGP.name.match(/(\w+)\s+Grand\s+Prix/i)
+      if (match) {
+        shortGPName = `${match[1]} Grand Prix`
+      } else {
+        // Si no encuentra el patrón, usar solo el país del schedule
+        shortGPName = `${currentGP.country} Grand Prix`
+      }
+    }
+
+    return {
+      gpName: shortGPName,
+      country: currentGP.country,
+      sessionType: sessionType
+    }
+  }
+
+  const gpInfo = getCurrentGPInfo()
+
+  const getCountryFlag = (country: string) => {
+    // Mapeo de países a códigos de bandera (usando el mismo del schedule)
+    const countryNameToCode: Record<string, string> = {
+      Australia: 'aus',
+      Austria: 'aut',
+      Azerbaijan: 'aze',
+      Belgium: 'bel',
+      Brazil: 'bra',
+      Bahrain: 'brn',
+      Canada: 'can',
+      China: 'chn',
+      Spain: 'esp',
+      France: 'fra',
+      UnitedKingdom: 'gbr',
+      Hungary: 'hun',
+      Italy: 'ita',
+      Japan: 'jpn',
+      Mexico: 'mex',
+      Monaco: 'mco',
+      Netherlands: 'nld',
+      Qatar: 'qat',
+      SaudiArabia: 'sau',
+      Singapore: 'sgp',
+      USA: 'usa',
+      UnitedStates: 'usa',
+      Miami: 'usa',
+      LasVegas: 'usa',
+      AbuDhabi: 'are',
+    }
+
+    const code = countryNameToCode[country.replace(/\s/g, '')] || 'aze'
+    const flagUrl = `/country-flags/${code.toLowerCase()}.svg`
+
+    return (
+      <div className="w-8 h-6 rounded overflow-hidden flex items-center justify-center bg-gray-200">
+        <img 
+          src={flagUrl} 
+          alt={`${country} flag`}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // Fallback si la imagen no carga
+            e.currentTarget.style.display = 'none'
+            e.currentTarget.parentElement!.innerHTML = `
+              <div class="w-8 h-6 rounded bg-gradient-to-b from-blue-500 via-white to-red-500 flex items-center justify-center">
+                <div class="w-2 h-2 bg-blue-500 rounded-sm"></div>
+              </div>
+            `
+          }}
+        />
+      </div>
+    )
   }
 
   // Estado de conexión
@@ -65,12 +171,43 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error }: Ses
         <div className="flex items-center gap-8">
           <WeatherWidget weather={sessionInfo.weather} />
 
+          {/* Grand Prix Info with Flag */}
+          <div className="flex items-center gap-4">
+            {getCountryFlag(gpInfo.country)}
+            <div className="flex flex-col">
+              <div className="text-sm text-white font-medium leading-none">
+                {gpInfo.gpName} - {gpInfo.sessionType}
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-center">
               <span className="text-xs text-gray-400 font-medium leading-none mb-0.5">Laps</span>
               <span className="text-white text-lg font-semibold leading-none">{sessionInfo.lapInfo}</span>
             </div>
-            <span className="text-xs text-gray-400 font-medium">{sessionInfo.trackStatus || 'No Active Session'}</span>
+            <div className={`px-4 py-2 rounded text-sm font-bold text-white ${
+              isDemoMode 
+                ? 'bg-blue-600' 
+                : sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
+                  ? 'bg-red-600'
+                  : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
+                    ? 'bg-yellow-600'
+                    : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
+                      ? 'bg-green-600'
+                      : 'bg-gray-600'
+            }`}>
+              {isDemoMode 
+                ? 'Blue Flag' 
+                : sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
+                  ? 'Red Flag'
+                  : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
+                    ? 'Yellow Flag'
+                    : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
+                      ? 'Green Flag'
+                      : 'No Flag'
+              }
+            </div>
           </div>
         </div>
       </div>

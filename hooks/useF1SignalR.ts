@@ -45,6 +45,9 @@ export interface F1SessionInfo {
     air: number
     humidity: number
     condition: string
+    windSpeed?: number
+    windDirection?: number
+    pressure?: number
   }
   lapInfo: string
   trackStatus: string
@@ -56,7 +59,7 @@ export const useF1SignalR = () => {
     raceName: "F1 Live Timing",
     flag: "🏁",
     timer: "00:00:00",
-    weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+    weather: { track: 0, air: 0, humidity: 0, condition: "unknown", windSpeed: 0, windDirection: 0, pressure: 0 },
     lapInfo: "-- / --",
     trackStatus: "No Active Session",
   })
@@ -158,7 +161,7 @@ export const useF1SignalR = () => {
       raceName: "F1 Live Timing",
       flag: "🏁",
       timer: "00:00:00",
-      weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
+      weather: { track: 0, air: 0, humidity: 0, condition: "unknown", windSpeed: 0, windDirection: 0, pressure: 0 },
       lapInfo: "-- / --",
       trackStatus: "No Active Session",
     })
@@ -547,7 +550,9 @@ export const useF1SignalR = () => {
     
     // Process weather data
     if (initialData.WeatherData) {
-      console.log("🎯 Initial weather data:", initialData.WeatherData)
+      console.log("🎯 Initial weather data:", JSON.stringify(initialData.WeatherData, null, 2))
+      console.log("🎯 Weather data type:", typeof initialData.WeatherData)
+      console.log("🎯 Weather data keys:", Object.keys(initialData.WeatherData || {}))
       updateWeatherData(initialData.WeatherData)
       setHasActiveSession(true)
     }
@@ -697,6 +702,8 @@ export const useF1SignalR = () => {
         case "WeatherData":
           if (messageData) {
             console.log("🌤️ Weather data received:", JSON.stringify(messageData, null, 2))
+            console.log("🌤️ Weather data type:", typeof messageData)
+            console.log("🌤️ Weather data keys:", Object.keys(messageData || {}))
             updateWeatherData(messageData)
             // Weather data alone doesn't indicate active session
             console.log("🌤️ Weather data received but not setting active session")
@@ -1231,7 +1238,7 @@ export const useF1SignalR = () => {
           // Format: "MM:SS.mmm"
           const [minutes, seconds] = driver.lapTime.split(':')
           lapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
-        } else {
+    } else {
           // Format: "SS.mmm" or just seconds
           lapTimeMs = parseFloat(driver.lapTime) * 1000
         }
@@ -1322,13 +1329,24 @@ export const useF1SignalR = () => {
   const updateWeatherData = (weatherData: any) => {
     if (isDemoMode) return
 
+    console.log("🌤️ COMPLETE weather data structure:", JSON.stringify(weatherData, null, 2))
+    console.log("🌤️ TrackTemp:", weatherData.TrackTemp)
+    console.log("🌤️ AirTemp:", weatherData.AirTemp)
+    console.log("🌤️ Humidity:", weatherData.Humidity)
+    console.log("🌤️ WindSpeed:", weatherData.WindSpeed)
+    console.log("🌤️ WindDirection:", weatherData.WindDirection)
+    console.log("🌤️ Rainfall:", weatherData.Rainfall)
+
     setSessionInfo(prev => ({
       ...prev,
       weather: {
-        track: weatherData.TrackTemperature || prev.weather.track,
-        air: weatherData.AirTemperature || prev.weather.air,
-        humidity: weatherData.Humidity || prev.weather.humidity,
-        condition: weatherData.Condition || prev.weather.condition
+        track: parseFloat(weatherData.TrackTemp) || prev.weather.track,
+        air: parseFloat(weatherData.AirTemp) || prev.weather.air,
+        humidity: parseFloat(weatherData.Humidity) || prev.weather.humidity,
+        condition: weatherData.Rainfall === "1" ? "rain" : "clear",
+        windSpeed: parseFloat(weatherData.WindSpeed) || prev.weather.windSpeed,
+        windDirection: parseFloat(weatherData.WindDirection) || prev.weather.windDirection,
+        pressure: parseFloat(weatherData.Pressure) || prev.weather.pressure
       }
     }))
   }

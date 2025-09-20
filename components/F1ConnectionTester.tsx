@@ -26,7 +26,7 @@ export const F1ConnectionTester = () => {
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={() => setIsMinimized(false)}
-          className="bg-black/90 text-white p-2 rounded-lg hover:bg-black/80 transition-colors"
+          className="bg-black/90 text-white p-2 rounded-lg hover:bg-black/80 transition-colors clickable"
           title="Show F1 Connection Tester"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,11 +62,20 @@ export const F1ConnectionTester = () => {
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <span>Status:</span>
-          <span className={`px-2 py-1 rounded text-xs ${
-            isConnected ? 'bg-green-600' : 'bg-red-600'
+          <div className={`px-3 py-1 rounded text-xs font-bold text-white ${
+            isDemoMode 
+              ? 'bg-blue-600' 
+              : isConnected
+                ? 'bg-green-600'
+                : 'bg-red-600'
           }`}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </span>
+            {isDemoMode 
+              ? 'Demo Mode' 
+              : isConnected
+                ? 'Connected'
+                : 'Disconnected'
+            }
+          </div>
         </div>
         
         <div className="flex items-center gap-2">

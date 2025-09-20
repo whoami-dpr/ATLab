@@ -22,7 +22,7 @@ export default function TelemetryLab() {
     <div className="min-h-screen w-full relative flex flex-col">
       <Navbar />
       <div className="flex-1 bg-transparent">
-        <SessionHeader sessionInfo={sessionInfo} isConnected={isConnected} isDemoMode={isDemoMode} error={error} />
+        <SessionHeader sessionInfo={sessionInfo} isConnected={isConnected} isDemoMode={isDemoMode} error={error} hasActiveSession={hasActiveSession} />
         <div className="p-6">
           {!shouldShowData ? (
             <EmptyState reconnect={reconnect} startDemo={startDemo} />
