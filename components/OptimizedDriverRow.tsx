@@ -11,15 +11,69 @@ interface OptimizedDriverRowProps {
 
 export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: OptimizedDriverRowProps) {
   const { driver, index } = props
+  
+  // Log the driver data to see what team is being received
+  console.log(`🎨 OptimizedDriverRow received driver:`, {
+    'name': driver.name,
+    'team': driver.team,
+    'pos': driver.pos
+  })
+
+  // Function to format lap times properly
+  const formatLapTime = (time: string): string => {
+    if (!time || time === "0.000" || time === "0") return "--:--.---"
+    
+    // If it's already in the correct format (MM:SS.mmm), return as is
+    if (time.includes(':') && time.includes('.')) {
+      return time
+    }
+    
+    // If it's just a number (seconds), convert to MM:SS.mmm format
+    const numTime = parseFloat(time)
+    if (!isNaN(numTime)) {
+      const minutes = Math.floor(numTime / 60)
+      const seconds = numTime % 60
+      return `${minutes}:${seconds.toFixed(3).padStart(6, '0')}`
+    }
+    
+    return time
+  }
+
+  // Function to format sector times properly
+  const formatSectorTime = (time: string): string => {
+    if (!time || time === "0.000" || time === "0") return "--.---"
+    
+    // If it's already in the correct format (SS.mmm), return as is
+    if (time.includes('.') && !time.includes(':')) {
+      return time
+    }
+    
+    // If it's just a number (seconds), format as SS.mmm
+    const numTime = parseFloat(time)
+    if (!isNaN(numTime)) {
+      return numTime.toFixed(3)
+    }
+    
+    return time
+  }
 
   const getTireColor = (tire: string) => {
-    switch (tire) {
+    switch (tire.toUpperCase()) {
       case "S":
+      case "SOFT":
         return "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-md shadow-red-500/20"
       case "M":
+      case "MEDIUM":
         return "bg-gradient-to-br from-yellow-400 to-yellow-500 text-black shadow-md shadow-yellow-500/20"
       case "H":
+      case "HARD":
         return "bg-gradient-to-br from-gray-100 to-gray-200 text-black shadow-md shadow-gray-500/20"
+      case "I":
+      case "INTERMEDIATE":
+        return "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md shadow-green-500/20"
+      case "W":
+      case "WET":
+        return "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/20"
       default:
         return "bg-gradient-to-br from-gray-500 to-gray-600 text-white shadow-md shadow-gray-500/20"
     }
@@ -79,10 +133,17 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     "Haas":          { bg: "#b6babd", text: "white" },
     "Kick Sauber":   { bg: "#52e252", text: "white" },
     "RB":            { bg: "#6692ff", text: "white" }, // Racing Bulls
+    // Default colors for unknown teams
+    "Unknown":       { bg: "#666666", text: "white" },
+    "F1":            { bg: "#666666", text: "white" },
     // Other teams if any
   };
 
-  const getTeamBg = (team: string) => TEAM_COLORS[team]?.bg || '#888';
+  const getTeamBg = (team: string) => {
+    const color = TEAM_COLORS[team]?.bg || '#666666';
+    console.log(`🎨 Team color for "${team}":`, color);
+    return color;
+  };
   const getTeamText = (team: string) => TEAM_COLORS[team]?.text || 'white';
 
   const getSectorTextColor = (color: string) => {
@@ -106,21 +167,25 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     
     return (
       <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
-        {driver.tyresHistory.slice(0, 3).map((tire, index) => (
-          <img
-            key={index}
-            src={
-              tire === 'S' ? '/images/soft.svg'
-              : tire === 'M' ? '/images/medium.svg'
-              : tire === 'H' ? '/images/hard.svg'
-              : tire === 'I' ? '/images/intermediate.svg'
-              : '/images/soft.svg'
-            }
-            alt={tire}
-            className="w-8 h-8 opacity-90 flex-shrink-0"
-            title={`Stint ${index + 1}: ${tire}`}
-          />
-        ))}
+        {driver.tyresHistory.slice(0, 3).map((tire, index) => {
+          const tireType = tire.toUpperCase()
+          return (
+            <img
+              key={index}
+              src={
+                tireType === 'S' || tireType === 'SOFT' ? '/images/soft.svg'
+                : tireType === 'M' || tireType === 'MEDIUM' ? '/images/medium.svg'
+                : tireType === 'H' || tireType === 'HARD' ? '/images/hard.svg'
+                : tireType === 'I' || tireType === 'INTERMEDIATE' ? '/images/intermediate.svg'
+                : tireType === 'W' || tireType === 'WET' ? '/images/wet.svg'
+                : '/images/soft.svg'
+              }
+              alt={tire}
+              className="w-6 h-6 opacity-90 flex-shrink-0"
+              title={`Stint ${index + 1}: ${tire}`}
+            />
+          )
+        })}
         {driver.tyresHistory.length > 3 && (
           <span className="text-xs text-gray-400 ml-1">+{driver.tyresHistory.length - 3}</span>
         )}
@@ -128,16 +193,20 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     )
   }
 
-  return (
-    <div
-      className={`grid grid-cols-12 gap-0.5 px-1 py-0.5 hover:bg-gradient-to-r hover:from-gray-800/20 hover:to-gray-900/20 transition-all duration-200 font-inter font-bold`}
-    >
+        return (
+          <div
+            className={`grid grid-cols-12 gap-0.5 px-1 py-0.5 transition-all duration-200 font-inter font-bold ${
+              driver.isFastestLap 
+                ? 'bg-gradient-to-r from-purple-900/30 to-purple-800/30' 
+                : 'hover:bg-gradient-to-r hover:from-gray-800/20 hover:to-gray-900/20'
+            }`}
+          >
       {/* Position & Driver - Team background, fixed size */}
       <div className="col-span-1 flex items-center gap-0">
         <div
           className="flex items-center justify-center"
           style={{
-            background: getTeamBg(driver.team),
+            background: getTeamBg(driver.team || "Unknown"),
             borderRadius: '0.5rem',
             height: '32px',
             width: '90px', // Ancho fijo para todos
@@ -150,7 +219,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {/* Position number, white text */}
           <div
             style={{
-              color: getTeamText(driver.team),
+              color: getTeamText(driver.team || "Unknown"),
               fontWeight: 700,
               fontSize: '1.1rem',
               display: 'flex',
@@ -166,11 +235,11 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           >
             {driver.pos}
           </div>
-          {/* Código del piloto, fondo escudería, texto blanco */}
+          {/* Nombre del piloto, fondo escudería, texto blanco */}
           <div
             style={{
-              color: getTeamText(driver.team),
-              background: getTeamBg(driver.team),
+              color: getTeamText(driver.team || "Unknown"),
+              background: getTeamBg(driver.team || "Unknown"),
               fontWeight: 700,
               fontSize: '1.1rem',
               letterSpacing: '0.03em',
@@ -186,22 +255,24 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
               whiteSpace: 'nowrap',
             }}
           >
-            {driver.code}
+            {driver.name}
           </div>
         </div>
       </div>
 
-      {/* DRS - Más pequeño */}
+      {/* DRS/PIT - Más pequeño */}
       <div className="col-span-1 flex items-center">
         <div
-          className={`px-3 py-0.5 rounded border transition-all duration-200 ${
-            driver.drs
-              ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400/30 shadow-md shadow-blue-500/20"
-              : "bg-gradient-to-r from-gray-800 to-gray-900 text-gray-500 border-gray-700/30"
+          className={`px-3 py-0.5 rounded border-2 transition-all duration-200 ${
+            driver.inPit
+              ? "bg-slate-600 text-blue-300 border-blue-300 shadow-md shadow-blue-300/20"
+              : driver.drs
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400/30 shadow-md shadow-blue-500/20"
+                : "bg-gradient-to-r from-gray-800 to-gray-900 text-gray-500 border-gray-700/30"
           }`}
           style={{ borderRadius: '0.25rem' }}
         >
-          DRS
+          {driver.inPit ? "PIT" : "DRS"}
         </div>
       </div>
 
@@ -262,21 +333,29 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-lg">
         <div
           className={`font-bold ${
-            driver.lapTimeColor === 'green'
-              ? 'text-green-400'
-              : driver.lapTimeColor === 'purple'
-                ? 'text-purple-400'
-                : 'text-white'
+            driver.isFastestLap
+              ? 'text-purple-400'
+              : driver.lapTimeColor === 'green'
+                ? 'text-green-400'
+                : driver.lapTimeColor === 'purple'
+                  ? 'text-purple-400'
+                  : 'text-white'
           }`}
           style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem' }}
         >
-          {driver.lapTime}
+          {formatLapTime(driver.lapTime)}
         </div>
         <div
-          className={`text-sm ${driver.lapTimeColor === 'purple' ? 'text-purple-400' : 'text-gray-500'} font-normal`}
+          className={`text-sm ${
+            driver.isFastestLap
+              ? 'text-purple-400'
+              : driver.lapTimeColor === 'purple' 
+                ? 'text-purple-400' 
+                : 'text-gray-500'
+          } font-normal`}
           style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
         >
-          {driver.prevLap}
+          {formatLapTime(driver.prevLap)}
         </div>
       </div>
 
@@ -286,8 +365,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         <div className="flex flex-col bg-gray-900/20 rounded-md p-1.5 border border-gray-800/30 text-base font-inter">
           {getSectorBars(driver.sector1Color, driver.sector1)}
           <div className="flex items-baseline gap-2">
-            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector1Color)}`}>{driver.sector1}</span>
-            <span className="text-sm text-gray-500 font-normal">{driver.sector1Prev}</span>
+            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector1Color)}`}>{formatSectorTime(driver.sector1)}</span>
+            <span className="text-sm text-gray-500 font-normal">{formatSectorTime(driver.sector1Prev)}</span>
           </div>
         </div>
 
@@ -295,8 +374,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         <div className="flex flex-col bg-gray-900/20 rounded-md p-1.5 border border-gray-800/30 text-base font-inter">
           {getSectorBars(driver.sector2Color, driver.sector2)}
           <div className="flex items-baseline gap-2">
-            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector2Color)}`}>{driver.sector2}</span>
-            <span className="text-sm text-gray-500 font-normal">{driver.sector2Prev}</span>
+            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector2Color)}`}>{formatSectorTime(driver.sector2)}</span>
+            <span className="text-sm text-gray-500 font-normal">{formatSectorTime(driver.sector2Prev)}</span>
           </div>
         </div>
 
@@ -304,8 +383,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         <div className="flex flex-col bg-gray-900/20 rounded-md p-1.5 border border-gray-800/30 text-base font-inter">
           {getSectorBars(driver.sector3Color, driver.sector3)}
           <div className="flex items-baseline gap-2">
-            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector3Color)}`}>{driver.sector3}</span>
-            <span className="text-sm text-gray-500 font-normal">{driver.sector3Prev}</span>
+            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector3Color)}`}>{formatSectorTime(driver.sector3)}</span>
+            <span className="text-sm text-gray-500 font-normal">{formatSectorTime(driver.sector3Prev)}</span>
           </div>
         </div>
       </div>

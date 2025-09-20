@@ -5,9 +5,18 @@ import { TimingTable } from "../components/TimingTable";
 import { DemoControls } from "../components/DemoControls";
 import { EmptyState } from "../components/EmptyState";
 import { Navbar } from "../components/Navbar";
+import { F1ConnectionTester } from "../components/F1ConnectionTester";
 
 export default function TelemetryLab() {
-  const { drivers, sessionInfo, isConnected, error, isDemoMode, reconnect, startDemo, stopDemo } = useF1SignalR();
+  const { drivers, sessionInfo, isConnected, error, isDemoMode, reconnect, startDemo, stopDemo, hasActiveSession, forceActiveSession } = useF1SignalR();
+
+  // Mostrar datos si hay drivers O si hay una sesión activa (incluso sin drivers aún)
+  const shouldShowData = drivers.length > 0 || (isConnected && hasActiveSession);
+
+  // Hacer la función disponible globalmente para el botón
+  if (typeof window !== 'undefined') {
+    (window as any).forceActiveSession = forceActiveSession;
+  }
 
   return (
     <div className="min-h-screen w-full relative flex flex-col">
@@ -15,7 +24,7 @@ export default function TelemetryLab() {
       <div className="flex-1 bg-transparent">
         <SessionHeader sessionInfo={sessionInfo} isConnected={isConnected} isDemoMode={isDemoMode} error={error} />
         <div className="p-6">
-          {drivers.length === 0 ? (
+          {!shouldShowData ? (
             <EmptyState reconnect={reconnect} startDemo={startDemo} />
           ) : (
             <>
@@ -25,6 +34,7 @@ export default function TelemetryLab() {
           )}
         </div>
       </div>
+      <F1ConnectionTester />
     </div>
   );
 }

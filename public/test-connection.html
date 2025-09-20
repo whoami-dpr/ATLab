@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test F1 Connection</title>
+</head>
+<body>
+    <h1>Test F1 Connection</h1>
+    <div id="status">Testing...</div>
+    <div id="logs"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            console.log(message);
+            logsDiv.innerHTML += '<div>' + message + '</div>';
+        }
+        
+        async function testConnection() {
+            try {
+                log('🔄 Testing API connection...');
+                
+                const response = await fetch('/api/f1/negotiate');
+                log('📡 API Response: ' + response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ API working, got token: ' + (data.ConnectionToken ? 'Yes' : 'No'));
+                    
+                    // Test WebSocket connection
+                    log('🔗 Testing WebSocket connection...');
+                    const connectionData = encodeURIComponent('[{"name":"Streaming"}]');
+                    const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(data.ConnectionToken)}&connectionData=${connectionData}`;
+                    
+                    const ws = new WebSocket(wsUrl);
+                    
+                    ws.onopen = () => {
+                        log('✅ WebSocket connected successfully!');
+                        statusDiv.innerHTML = '✅ Connection working!';
+                        ws.close();
+                    };
+                    
+                    ws.onerror = (error) => {
+                        log('❌ WebSocket error: ' + error);
+                        statusDiv.innerHTML = '❌ WebSocket failed';
+                    };
+                    
+                    ws.onclose = (event) => {
+                        log('🔌 WebSocket closed: ' + event.code + ' ' + event.reason);
+                    };
+                    
+                } else {
+                    log('❌ API failed: ' + response.status);
+                    statusDiv.innerHTML = '❌ API failed';
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+        
+        testConnection();
+    </script>
+</body>
+</html>

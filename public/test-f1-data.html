@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test F1 Data Detection</title>
+</head>
+<body>
+    <h1>Test F1 Data Detection</h1>
+    <div id="status">Testing...</div>
+    <div id="logs"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            console.log(message);
+            logsDiv.innerHTML += '<div>' + message + '</div>';
+        }
+        
+        async function testF1Data() {
+            try {
+                log('🔄 Testing F1 data detection...');
+                
+                // Test API
+                const response = await fetch('/api/f1/negotiate');
+                const data = await response.json();
+                log('✅ API working, got token');
+                
+                // Connect WebSocket
+                const connectionData = encodeURIComponent('[{"name":"Streaming"}]');
+                const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(data.ConnectionToken)}&connectionData=${connectionData}`;
+                
+                const ws = new WebSocket(wsUrl);
+                let messageCount = 0;
+                let f1DataCount = 0;
+                
+                ws.onopen = () => {
+                    log('✅ WebSocket connected');
+                    
+                    // Subscribe to feeds
+                    const subscription = {
+                        target: "Streaming",
+                        type: 1,
+                        invocationId: "0",
+                        arguments: [
+                            "Subscribe",
+                            [
+                                "Heartbeat",
+                                "CarData.z",
+                                "Position.z",
+                                "ExtrapolatedClock",
+                                "TopThree",
+                                "RcmSeries",
+                                "TimingStats",
+                                "TimingAppData",
+                                "WeatherData",
+                                "TrackStatus",
+                                "DriverList",
+                                "RaceControlMessages",
+                                "SessionInfo",
+                                "SessionData",
+                                "LapCount",
+                                "TimingData",
+                            ],
+                        ],
+                    };
+                    
+                    ws.send(JSON.stringify(subscription) + "\x1e");
+                    log('📡 Subscription sent');
+                };
+                
+                ws.onmessage = (event) => {
+                    messageCount++;
+                    log(`📨 Message ${messageCount}: ${event.data.substring(0, 100)}...`);
+                    
+                    try {
+                        const parsed = JSON.parse(event.data);
+                        if (parsed.M && Array.isArray(parsed.M) && parsed.M.length > 0) {
+                            f1DataCount++;
+                            log(`🎉 F1 DATA FOUND! Message ${messageCount} has ${parsed.M.length} F1 messages`);
+                            parsed.M.forEach((msg, index) => {
+                                log(`  📡 F1 Message ${index}: ${JSON.stringify(msg).substring(0, 200)}...`);
+                            });
+                        } else if (parsed.M && Array.isArray(parsed.M)) {
+                            log(`⏳ Message ${messageCount}: Empty M array (no F1 data)`);
+                        } else {
+                            log(`📊 Message ${messageCount}: Other format - ${JSON.stringify(parsed).substring(0, 100)}...`);
+                        }
+                    } catch (e) {
+                        log(`⚠️ Message ${messageCount}: Parse error - ${e.message}`);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    log('❌ WebSocket error: ' + error);
+                };
+                
+                ws.onclose = (event) => {
+                    log(`🔌 WebSocket closed: ${event.code} ${event.reason}`);
+                    log(`📊 Total messages: ${messageCount}, F1 data messages: ${f1DataCount}`);
+                    if (f1DataCount > 0) {
+                        statusDiv.innerHTML = '✅ F1 data detected!';
+                    } else {
+                        statusDiv.innerHTML = '❌ No F1 data detected';
+                    }
+                };
+                
+                // Close after 30 seconds
+                setTimeout(() => {
+                    log('⏰ Closing connection after 30 seconds...');
+                    ws.close();
+                }, 30000);
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+        
+        testF1Data();
+    </script>
+</body>
+</html>

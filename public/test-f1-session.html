@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Session Status Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .warning { background: #5a5a2d; }
+        .info { background: #2d2d5a; }
+        .log { background: #333; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; }
+        button { padding: 10px 20px; margin: 5px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        button:disabled { background: #666; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏁 F1 Session Status Test</h1>
+        <p>This page will test if there's an active F1 session and what data is being broadcast.</p>
+        
+        <div id="status" class="status info">
+            Ready to test...
+        </div>
+        
+        <button onclick="testConnection()">Test F1 Connection</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+        
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageCount = 0;
+        let f1DataCount = 0;
+        let lastMessageTime = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #888">[${timestamp}]</span> ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            messageCount = 0;
+            f1DataCount = 0;
+        }
+        
+        async function testConnection() {
+            updateStatus('Testing F1 connection...', 'info');
+            clearLogs();
+            
+            try {
+                // Step 1: Test API
+                log('🔄 Testing API connection...');
+                const response = await fetch('/api/f1/negotiate');
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                log(`✅ API working, got token: ${data.ConnectionToken ? 'Yes' : 'No'}`);
+                
+                if (!data.ConnectionToken) {
+                    throw new Error('No connection token received');
+                }
+                
+                // Step 2: Connect WebSocket
+                log('🔗 Connecting to WebSocket...');
+                const connectionData = encodeURIComponent('[{"name":"Streaming"}]');
+                const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(data.ConnectionToken)}&connectionData=${connectionData}`;
+                
+                log(`🔗 URL: ${wsUrl.substring(0, 100)}...`);
+                log(`🔗 Token: ${data.ConnectionToken.substring(0, 20)}...`);
+                
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    log('✅ WebSocket connected successfully!');
+                    updateStatus('WebSocket connected, subscribing...', 'success');
+                    
+                    // Subscribe to feeds
+                    setTimeout(() => {
+                        const subscribeMessage = {
+                            target: "Streaming",
+                            type: 1,
+                            invocationId: "0",
+                            arguments: ["Subscribe", [
+                                "Heartbeat",
+                                "CarData.z",
+                                "Position.z",
+                                "ExtrapolatedClock",
+                                "TopThree",
+                                "RcmSeries",
+                                "TimingStats",
+                                "TimingAppData",
+                                "WeatherData",
+                                "TrackStatus",
+                                "DriverList",
+                                "RaceControlMessages",
+                                "SessionInfo",
+                                "SessionData",
+                                "LapCount",
+                                "TimingData"
+                            ]]
+                        };
+                        
+                        log('📡 Sending subscription...');
+                        ws.send(JSON.stringify(subscribeMessage) + '\x1e');
+                        log('✅ Subscription sent');
+                        
+                        // Set timeout to check for data
+                        setTimeout(() => {
+                            if (f1DataCount === 0) {
+                                log('⏰ No F1 data received after 15 seconds');
+                                log('⏰ This means:');
+                                log('  - No active F1 session');
+                                log('  - Session is paused/red flag');
+                                log('  - F1 API not broadcasting');
+                                updateStatus('No F1 data detected - no active session', 'warning');
+                            }
+                        }, 15000);
+                    }, 1000);
+                };
+                
+                ws.onmessage = (event) => {
+                    messageCount++;
+                    lastMessageTime = new Date();
+                    
+                    log(`📨 Message ${messageCount} received`);
+                    
+                    try {
+                        const messages = event.data.split('\x1e').filter(msg => msg.trim());
+                        
+                        messages.forEach((message, index) => {
+                            try {
+                                const parsed = JSON.parse(message);
+                                
+                                if (parsed.M && Array.isArray(parsed.M)) {
+                                    log(`📦 SignalR message with M array, length: ${parsed.M.length}`);
+                                    
+                                    if (parsed.M.length > 0) {
+                                        f1DataCount++;
+                                        log(`🎉 F1 DATA DETECTED! Message ${f1DataCount} with ${parsed.M.length} items`);
+                                        
+                                        parsed.M.forEach((msg, msgIndex) => {
+                                            log(`  📡 F1 Message ${msgIndex + 1}: ${msg.H || 'unknown'} - ${JSON.stringify(msg).substring(0, 100)}...`);
+                                        });
+                                        
+                                        updateStatus(`F1 data detected! ${f1DataCount} messages with data`, 'success');
+                                    } else {
+                                        log(`⏳ Empty M array - waiting for F1 data...`);
+                                    }
+                                } else {
+                                    log(`📊 Other message format: ${JSON.stringify(parsed).substring(0, 100)}...`);
+                                }
+                            } catch (e) {
+                                log(`⚠️ Failed to parse message ${index}: ${e.message}`);
+                            }
+                        });
+                    } catch (e) {
+                        log(`⚠️ Failed to process message: ${e.message}`);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    log(`❌ WebSocket error: ${error}`);
+                    updateStatus('WebSocket error', 'error');
+                };
+                
+                ws.onclose = (event) => {
+                    log(`🔌 WebSocket closed: ${event.code} - ${event.reason || 'No reason'}`);
+                    updateStatus(`WebSocket closed (${event.code})`, 'error');
+                };
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-start test
+        window.onload = () => {
+            log('🚀 Page loaded, ready to test F1 connection');
+        };
+    </script>
+</body>
+</html>

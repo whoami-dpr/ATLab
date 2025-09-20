@@ -12,6 +12,8 @@ export interface F1Driver {
   stint: string
   change: string
   drs: boolean
+  inPit: boolean
+  isFastestLap: boolean
   gap: string
   gapTime: string
   lapTime: string
@@ -25,11 +27,13 @@ export interface F1Driver {
   sector1Color: string
   sector2Color: string
   sector3Color: string
-  team: string // NEW: team
-  pitStops?: number // NEW: number of pit stops
-  positionsGained?: number // NEW: positions gained or lost
-  lapTimeColor?: 'green' | 'purple' | 'white';
-  tyresHistory?: string[] // NEW: history of tyres used
+  lapTimeColor: string
+  gapColor: string
+  gapTimeColor: string
+  team?: string
+  tyresHistory?: string[]
+  pitStops?: number
+  positionsGained?: number
 }
 
 export interface F1SessionInfo {
@@ -46,7 +50,7 @@ export interface F1SessionInfo {
   trackStatus: string
 }
 
-export function useF1SignalR() {
+export const useF1SignalR = () => {
   const [drivers, setDrivers] = useState<F1Driver[]>([])
   const [sessionInfo, setSessionInfo] = useState<F1SessionInfo>({
     raceName: "F1 Live Timing",
@@ -56,32 +60,20 @@ export function useF1SignalR() {
     lapInfo: "-- / --",
     trackStatus: "No Active Session",
   })
-  // State to track tyres history per driver
   const [driversTyreHistory, setDriversTyreHistory] = useState<Record<string, string[]>>({})
   const [isConnected, setIsConnected] = useState(false)
-  // New: state to know if there is active session data
   const [hasActiveSession, setHasActiveSession] = useState(false)
-  // Helper to know if trackStatus indicates active session
-  function isSessionActive(trackStatus: string) {
-    if (!trackStatus) return false
-    const status = trackStatus.toLowerCase()
-    // Consider active if it's not "no active session", "finished", "closed", "not started", "test", "unknown"
-    return !(
-      status.includes("no active") ||
-      status.includes("finished") ||
-      status.includes("closed") ||
-      status.includes("not started") ||
-      status.includes("test") ||
-      status.includes("unknown")
-    )
-  }
+  const [connectionWorking, setConnectionWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [forceStopDemo, setForceStopDemo] = useState(false)
   const [preventReconnect, setPreventReconnect] = useState(false)
+  const [fastestLapDriver, setFastestLapDriver] = useState<string | null>(null)
+  
   const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const demoIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectTimeoutRef = useRef<number | null>(null)
+  const demoIntervalRef = useRef<number | null>(null)
+  const messageTimeoutRef = useRef<number | null>(null)
 
   const driverColors = [
     "bg-orange-500",
@@ -106,41 +98,62 @@ export function useF1SignalR() {
     "bg-gray-500",
   ]
 
+  const getCloseCodeMeaning = (code: number) => {
+    switch (code) {
+      case 1000: return "Normal closure"
+      case 1001: return "Going away"
+      case 1002: return "Protocol error"
+      case 1003: return "Unsupported data"
+      case 1004: return "Reserved"
+      case 1005: return "No status received"
+      case 1006: return "Abnormal closure (connection lost)"
+      case 1007: return "Invalid frame payload data"
+      case 1008: return "Policy violation"
+      case 1009: return "Message too big"
+      case 1010: return "Missing extension"
+      case 1011: return "Internal error"
+      case 1015: return "TLS handshake failure"
+      default: return "Unknown code"
+    }
+  }
+
   // Demo data con 20 pilotos
   const startDemo = () => {
-    // Cerrar WebSocket antes de activar demo para evitar race conditions
     if (wsRef.current) {
-      wsRef.current.onclose = null; // Desactivar handler para evitar limpieza de estado
-      wsRef.current.onerror = null;
-      wsRef.current.close();
-      wsRef.current = null;
+      wsRef.current.close()
     }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    console.log(" Starting demo mode... (DEMO ACTIVADO)");
+    
     setIsDemoMode(true)
-    setForceStopDemo(false)
-    setPreventReconnect(true) // Evita reconexión automática mientras esté en demo
-    setIsConnected(true)
     setError(null)
-    setSessionInfo(getDemoSessionInfo())
+    setIsConnected(true)
+    setHasActiveSession(true)
     setDrivers(getDemoDrivers(driverColors))
+    setSessionInfo(getDemoSessionInfo())
 
-    // Update demo data every 2 seconds
-    demoIntervalRef.current = setInterval(() => {
-      updateDemoData()
+    // Simular actualizaciones de datos
+      demoIntervalRef.current = window.setInterval(() => {
+      if (!forceStopDemo) {
+        setDrivers(prevDrivers => 
+          prevDrivers.map(driver => ({
+            ...driver,
+            lapTime: `${Math.floor(Math.random() * 60) + 1}:${(Math.random() * 60).toFixed(3)}`,
+            sector1: `${(Math.random() * 30 + 20).toFixed(3)}`,
+            sector2: `${(Math.random() * 30 + 20).toFixed(3)}`,
+            sector3: `${(Math.random() * 30 + 20).toFixed(3)}`,
+          }))
+        )
+      }
     }, 2000)
   }
 
   const stopDemo = () => {
-    console.log("🛑 Stopping demo mode...")
-    setIsDemoMode(false)
     setForceStopDemo(true)
-    setPreventReconnect(false) // Permite reconexión automática al salir de demo
-    setIsConnected(false)
+    if (demoIntervalRef.current) {
+      clearInterval(demoIntervalRef.current)
+    }
+    setIsDemoMode(false)
     setDrivers([])
+    setHasActiveSession(false)
     setSessionInfo({
       raceName: "F1 Live Timing",
       flag: "🏁",
@@ -149,254 +162,201 @@ export function useF1SignalR() {
       lapInfo: "-- / --",
       trackStatus: "No Active Session",
     })
-
-    if (demoIntervalRef.current) {
-      clearInterval(demoIntervalRef.current)
-      demoIntervalRef.current = null
-    }
-  }
-
-  const updateDemoData = () => {
-    // Solo actualizar datos de demo si el modo demo está activo
-    if (!isDemoMode) return;
-
-    setDrivers((prevDrivers) => {
-      return prevDrivers.map((driver) => {
-        // Simulate random lap time changes
-        const baseTime = 78.234 + Math.random() * 2 // 1:18.234 to 1:20.234
-        const newLapTime = `1:${baseTime.toFixed(3)}`
-
-        // Simulate sector times
-        const sector1 = (23.4 + Math.random() * 0.5).toFixed(3)
-        const sector2 = (31.2 + Math.random() * 0.6).toFixed(3)
-        const sector3 = (23.5 + Math.random() * 0.4).toFixed(3)
-
-        // Random sector colors
-        const colors = ["green", "yellow", "purple"]
-        const sector1Color = colors[Math.floor(Math.random() * colors.length)]
-        const sector2Color = colors[Math.floor(Math.random() * colors.length)]
-        const sector3Color = colors[Math.floor(Math.random() * colors.length)]
-
-        // Random DRS
-        const drs = Math.random() > 0.7
-
-        // Update stint laps
-        const currentLap = Number.parseInt(driver.stint.split(" ")[1]) + 1
-        const stint = `L ${currentLap}`
-
-        return {
-          ...driver,
-          lapTime: newLapTime,
-          prevLap: driver.lapTime,
-          sector1,
-          sector1Prev: driver.sector1,
-          sector2,
-          sector2Prev: driver.sector2,
-          sector3,
-          sector3Prev: driver.sector3,
-          sector1Color,
-          sector2Color,
-          sector3Color,
-          drs,
-          stint,
-        }
-      })
-    })
-
-    // Update session timer solo si está en demo
-    setSessionInfo((prev) => {
-      const [hours, minutes, seconds] = prev.timer.split(":").map(Number)
-      let newSeconds = seconds + 1
-      let newMinutes = minutes
-      let newHours = hours
-
-      if (newSeconds >= 60) {
-        newSeconds = 0
-        newMinutes += 1
-      }
-      if (newMinutes >= 60) {
-        newMinutes = 0
-        newHours += 1
-      }
-
-      const newTimer = `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}:${newSeconds.toString().padStart(2, "0")}`
-
-      return {
-        ...prev,
-        timer: newTimer,
-      }
-    })
   }
 
   const connectToF1SignalR = async () => {
-    if (isDemoMode) {
-      console.log("[connectToF1SignalR] Bloqueado: está en modo demo, no se conecta ni cierra WebSocket real.");
-      return;
+    if (isDemoMode) return
+
+    // Clear any existing connection
+    if (wsRef.current) {
+      console.log("🔄 Closing existing WebSocket connection...")
+      wsRef.current.close()
+      wsRef.current = null
     }
+
+    // Clear any existing timeouts
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
     try {
-      setError("Connecting to F1 Live Timing...")
       console.log("🔄 Attempting to connect to F1 SignalR...")
-
-      // Step 1: Negotiate connection
-      const negotiateResponse = await fetch("/api/f1/negotiate")
-      if (!negotiateResponse.ok) {
-        console.error(`❌ Connection failed: Negotiate failed: ${negotiateResponse.status}`)
-        // Solo mostrar estado vacío, no activar demo automáticamente
-        setIsConnected(false)
-        setDrivers([])
-        setSessionInfo({
-          raceName: "F1 Live Timing",
-          flag: "🏁",
-          timer: "00:00:00",
-          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-          lapInfo: "-- / --",
-          trackStatus: "No Active Session",
+      setError(null)
+      
+      // Test basic connectivity first
+      console.log("🌐 Testing basic connectivity...")
+      try {
+        const testResponse = await fetch("https://livetiming.formula1.com/", { 
+          method: 'HEAD',
+          mode: 'no-cors' // This will work even with CORS issues
         })
-        return
+        console.log("✅ Basic connectivity test passed")
+      } catch (connectivityError) {
+        console.warn("⚠️ Basic connectivity test failed:", connectivityError)
+        console.log("🔄 Continuing with connection attempt...")
       }
-
-      const negotiateData = await negotiateResponse.json()
-
-      if (negotiateData.error) {
-        console.error(`❌ Connection failed: ${negotiateData.error}`)
-        setIsConnected(false)
-        setDrivers([])
-        setSessionInfo({
-          raceName: "F1 Live Timing",
-          flag: "🏁",
-          timer: "00:00:00",
-          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-          lapInfo: "-- / --",
-          trackStatus: "No Active Session",
-        })
-        return
+      
+      // Step 1: Negotiate
+      console.log("📡 Attempting to negotiate with F1 API...")
+      const response = await fetch("/api/f1/negotiate")
+      if (!response.ok) {
+        throw new Error(`Negotiate failed: ${response.status} - ${response.statusText}`)
       }
-
-      const connectionToken = negotiateData.ConnectionToken
-      if (!connectionToken) {
-        console.error("❌ Connection failed: No connection token received")
-        setIsConnected(false)
-        setDrivers([])
-        setSessionInfo({
-          raceName: "F1 Live Timing",
-          flag: "🏁",
-          timer: "00:00:00",
-          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-          lapInfo: "-- / --",
-          trackStatus: "No Active Session",
-        })
-        return
-      }
-
-      // Step 2: Connect to WebSocket
+      
+      const negotiateData = await response.json()
+      console.log("📡 Negotiate data received:", negotiateData)
+      
+      // Step 2: Connect WebSocket
       const connectionData = encodeURIComponent('[{"name":"Streaming"}]')
-      const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(connectionToken)}&connectionData=${connectionData}`
+      const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(negotiateData.ConnectionToken)}&connectionData=${connectionData}`
+      
+      console.log("🔗 WebSocket URL:", wsUrl.substring(0, 100) + "...")
+      console.log("🔗 Connection token:", negotiateData.ConnectionToken?.substring(0, 20) + "...")
+      console.log("🔗 Connection data:", connectionData)
+      console.log("🔗 Full URL length:", wsUrl.length)
 
       wsRef.current = new WebSocket(wsUrl)
 
-      wsRef.current.onopen = () => {
-        if (isDemoMode) return; // Si demo se activó mientras conectaba, ignorar
-        console.log("✅ Connected to F1 SignalR")
-        setIsConnected(true)
-        setError(null)
-        // Solo salir del modo demo si no está activo manualmente
-        if (!isDemoMode) {
-          setIsDemoMode(false)
+      // Monitor WebSocket state changes
+      const stateCheckInterval = window.setInterval(() => {
+        if (wsRef.current) {
+          const state = wsRef.current.readyState
+          const stateText = state === WebSocket.CONNECTING ? 'CONNECTING' : 
+                           state === WebSocket.OPEN ? 'OPEN' : 
+                           state === WebSocket.CLOSING ? 'CLOSING' : 
+                           state === WebSocket.CLOSED ? 'CLOSED' : 'UNKNOWN'
+          console.log("🔍 WebSocket state check:", stateText, state)
         }
+      }, 2000) // Check every 2 seconds
+
+      // Set a connection timeout
+      const connectionTimeout = window.setTimeout(() => {
+        clearInterval(stateCheckInterval)
+        if (wsRef.current?.readyState === WebSocket.CONNECTING) {
+          console.error("⏰ Connection timeout - closing WebSocket")
+          wsRef.current.close()
+          setError("Connection timeout - F1 server not responding")
+          setIsConnected(false)
+          setConnectionWorking(false)
+        }
+      }, 15000) // 15 seconds timeout
+
+      wsRef.current.onopen = () => {
+        clearTimeout(connectionTimeout)
+        clearInterval(stateCheckInterval)
+        console.log("✅ WebSocket connected successfully!")
+        setIsConnected(true)
+        setConnectionWorking(true)
+        setError(null)
         subscribeToFeeds()
+        // No establecer hasActiveSession aquí - esperar datos reales de F1
       }
 
       wsRef.current.onmessage = (event) => {
-        if (isDemoMode) return; // Ignorar mensajes si demo está activo
+        console.log("📨 WebSocket message received:", event.data.substring(0, 100) + "...")
         handleWebSocketMessage(event.data)
       }
 
       wsRef.current.onerror = (error) => {
-        if (isDemoMode) {
-          // Demo activo: nunca modificar estado ni limpiar nada
-          console.warn("[DEMO] Ignorando error de WebSocket, demo sigue activo.");
-          return;
-        }
-        console.error("❌ WebSocket error:", error)
-        setError("Connection error")
-        setIsConnected(false)
-        setDrivers([])
-        setSessionInfo({
-          raceName: "F1 Live Timing",
-          flag: "🏁",
-          timer: "00:00:00",
-          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-          lapInfo: "-- / --",
-          trackStatus: "No Active Session",
+        clearTimeout(connectionTimeout)
+        clearInterval(stateCheckInterval)
+        
+        // WebSocket error objects are often empty, so we need to check the readyState
+        const readyState = wsRef.current?.readyState
+        const url = wsRef.current?.url
+        
+        console.error("❌ WebSocket error occurred")
+        console.error("❌ Error object:", error)
+        console.error("❌ WebSocket state:", {
+          readyState,
+          readyStateText: readyState === WebSocket.CONNECTING ? 'CONNECTING' : 
+                         readyState === WebSocket.OPEN ? 'OPEN' : 
+                         readyState === WebSocket.CLOSING ? 'CLOSING' : 
+                         readyState === WebSocket.CLOSED ? 'CLOSED' : 'UNKNOWN',
+          url: url?.substring(0, 100) + '...',
+          errorType: error?.type,
+          errorTarget: error?.target,
+          isTrusted: error?.isTrusted
         })
+        
+        // Determine error type based on readyState
+        if (readyState === WebSocket.CONNECTING) {
+          console.error("❌ Connection failed during initial handshake")
+          setError("Failed to connect to F1 Live Timing server - check your internet connection")
+        } else if (readyState === WebSocket.OPEN) {
+          console.error("❌ Error occurred while connected")
+          setError("WebSocket connection error - attempting reconnection...")
+        } else if (readyState === WebSocket.CLOSED) {
+          console.error("❌ WebSocket was already closed")
+          setError("WebSocket connection was closed unexpectedly")
+        } else {
+          console.error("❌ WebSocket in unexpected state:", readyState)
+          setError("WebSocket connection error")
+        }
+        
+        setIsConnected(false)
+        setConnectionWorking(false)
+        
+        // Attempt to reconnect after a short delay
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          if (!preventReconnect) {
+            console.log("🔄 Attempting to reconnect after error...")
+            connectToF1SignalR()
+          }
+        }, 5000)
       }
 
       wsRef.current.onclose = (event) => {
-        if (isDemoMode) {
-          // Demo activo: nunca modificar estado ni limpiar nada
-          console.warn("[DEMO] Ignorando cierre de WebSocket, demo sigue activo.");
-          return;
-        }
+        clearTimeout(connectionTimeout)
+        clearInterval(stateCheckInterval)
         console.log("🔌 WebSocket closed:", event.code, event.reason)
+        console.log("🔌 Close code meaning:", getCloseCodeMeaning(event.code))
+        console.log("🔌 Was clean:", event.wasClean)
+        console.log("🔌 ReadyState before close:", wsRef.current?.readyState)
+        
         setIsConnected(false)
-        setError("Connection closed")
-        setDrivers([])
-        setSessionInfo({
-          raceName: "F1 Live Timing",
-          flag: "🏁",
-          timer: "00:00:00",
-          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-          lapInfo: "-- / --",
-          trackStatus: "No Active Session",
-        })
-        // Auto-reconnect después de 10 segundos para intentar volver al modo real
-        if (!preventReconnect) {
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current)
-          }
-          reconnectTimeoutRef.current = setTimeout(() => {
+        setConnectionWorking(false)
+        
+        // Only clear hasActiveSession if it was an unexpected close
+        if (event.code !== 1000) {
+          setHasActiveSession(false)
+          console.log("🔌 Unexpected close - clearing active session")
+        }
+        
+        if (event.code !== 1000 && !preventReconnect) {
+          console.log("🔄 Unexpected close - attempting to reconnect in 10 seconds...")
+          setError(`Connection lost (${event.code}): ${event.reason || 'Unknown reason'}`)
+          reconnectTimeoutRef.current = window.setTimeout(() => {
             console.log("🔄 Attempting to reconnect...")
             connectToF1SignalR()
           }, 10000)
+        } else if (event.code === 1000) {
+          console.log("✅ WebSocket closed normally")
+          setError(null)
         }
       }
+      
     } catch (error) {
       console.error("❌ Connection failed:", error)
-      if (!isDemoMode) {
-        setError("No active F1 session")
+      setError("Connection failed")
         setIsConnected(false)
-        setIsDemoMode(false)
-
-        // Clear data
-        setDrivers([])
-        setSessionInfo((prev) => ({
-          ...prev,
-          trackStatus: "No Active Session",
-          raceName: "F1 Live Timing",
-          timer: "00:00:00",
-          weather: { track: 0, air: 0, humidity: 0, condition: "unknown" },
-          lapInfo: "-- / --",
-        }))
-
-        // Retry after 30 seconds
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current)
-        }
-        reconnectTimeoutRef.current = setTimeout(connectToF1SignalR, 30000)
-      }
     }
   }
 
   const subscribeToFeeds = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      console.log("❌ Cannot subscribe: WebSocket not open")
+      return
+    }
 
-    const subscriptions = [
-      {
-        target: "Streaming",
-        type: 1,
-        invocationId: "0",
-        arguments: [
-          "Subscribe",
+    console.log("📡 Subscribing to F1 feeds...")
+
+    // Formato exacto de F1-DASH
+    const subscription = {
+      "H": "Streaming",
+      "M": "Subscribe",
+      "A": [
           [
             "Heartbeat",
             "CarData.z",
@@ -408,21 +368,26 @@ export function useF1SignalR() {
             "TimingAppData",
             "WeatherData",
             "TrackStatus",
+          "SessionStatus",
             "DriverList",
             "RaceControlMessages",
             "SessionInfo",
             "SessionData",
             "LapCount",
             "TimingData",
-          ],
-        ],
-      },
-    ]
-
-    subscriptions.forEach((sub) => {
-      console.log("📡 Subscribing to:", sub.arguments[1])
-      wsRef.current?.send(JSON.stringify(sub) + "\x1e")
-    })
+          "TeamRadio",
+          "PitLaneTimeCollection",
+          "ChampionshipPrediction"
+        ]
+      ],
+      "I": 1
+    }
+    
+    console.log("📡 Sending SignalR subscription:", JSON.stringify(subscription))
+    const message = JSON.stringify(subscription) + "\x1e"
+    wsRef.current.send(message)
+    
+    console.log("✅ SignalR subscription sent")
   }
 
   const handleWebSocketMessage = (data: string) => {
@@ -434,9 +399,95 @@ export function useF1SignalR() {
       messages.forEach((message) => {
         try {
           const parsed = JSON.parse(message)
-          handleF1Data(parsed)
+          console.log("📦 Parsed message:", parsed)
+          
+          // Handle SignalR message format - F1-DASH style
+          console.log("🔍 ANALYZING MESSAGE:", JSON.stringify(parsed, null, 2))
+          
+          // Check for initial data (R field)
+          if (parsed.R) {
+            console.log("🎯 INITIAL DATA DETECTED!")
+            console.log("🎯 Initial data:", JSON.stringify(parsed.R, null, 2))
+            handleInitialData(parsed.R)
+            return
+          }
+          
+          // Check for updates (M array)
+          if (parsed.M && Array.isArray(parsed.M)) {
+            console.log("📦 SignalR message with M array, length:", parsed.M.length)
+            
+            if (parsed.M.length > 0) {
+              console.log("🎉 F1 data received! Messages:", parsed.M.length)
+              parsed.M.forEach((msg: any, index: number) => {
+                console.log(`📡 Message ${index} FULL STRUCTURE:`, JSON.stringify(msg, null, 2))
+                
+                // Process each message in the M array - F1-DASH format
+                if (msg && msg.A && Array.isArray(msg.A) && msg.A.length >= 2) {
+                  const category = msg.A[0] // e.g., "SessionInfo", "TimingData", etc.
+                  const data = msg.A[1]    // The actual data
+                  
+                  console.log(`📊 Processing ${category}:`, JSON.stringify(data, null, 2))
+                  
+                  // Log específico para SessionInfo
+                  if (category === "SessionInfo") {
+                    console.log("🎯 SESSION INFO DETECTED!")
+                    console.log("🎯 SessionInfo data:", JSON.stringify(data, null, 2))
+                    console.log("🎯 Session Name:", data.Name || data.name || "No name")
+                    console.log("🎯 Session Type:", data.Type || data.type || "No type")
+                    console.log("🎯 Session Status:", data.Status || data.status || "No status")
+                    console.log("🎯 Session Phase:", data.Phase || data.phase || "No phase")
+                  }
+                  
+                  // Log específico para SessionStatus
+                  if (category === "SessionStatus") {
+                    console.log("🎯 SESSION STATUS DETECTED!")
+                    console.log("🎯 SessionStatus data:", JSON.stringify(data, null, 2))
+                    console.log("🎯 Status Name:", data.Name || data.name || "No name")
+                    console.log("🎯 Status Type:", data.Type || data.type || "No type")
+                    console.log("🎯 Status Status:", data.Status || data.status || "No status")
+                    console.log("🎯 Status Phase:", data.Phase || data.phase || "No phase")
+                  }
+                  
+                  // Log específico para TimingData
+                  if (category === "TimingData") {
+                    console.log("🎯 TIMING DATA DETECTED!")
+                    console.log("🎯 TimingData data:", JSON.stringify(data, null, 2))
+                    console.log("🎯 Drivers count:", data.Lines ? Object.keys(data.Lines).length : 0)
+                    if (data.Lines) {
+                      Object.entries(data.Lines).forEach(([key, driver]: [string, any]) => {
+                        console.log(`🎯 Driver ${key}: ${driver.DriverName || driver.FullName || 'Unknown'} - Position ${driver.Position}`)
+                      })
+                    }
+                  }
+                  
+                  // Log específico para DriverList
+                  if (category === "DriverList") {
+                    console.log("🎯 DRIVER LIST DETECTED!")
+                    console.log("🎯 DriverList data:", JSON.stringify(data, null, 2))
+                    console.log("🎯 Drivers count:", data.Drivers ? data.Drivers.length : 0)
+                  }
+                  
+                  handleF1Data({
+                    target: "Streaming",
+                    arguments: [category, data]
+                  })
+                } else {
+                  console.log("⚠️ Message doesn't match expected format:", msg)
+                }
+              })
+            } else {
+              console.log("⏳ Empty M array - this means no F1 data is being broadcast")
+              console.log("⏳ This could mean:")
+              console.log("  - No active F1 session")
+              console.log("  - Session is between activities")
+              console.log("  - F1 API is not sending data")
+            }
+          } else {
+            console.log("📊 Other message type:", parsed)
+            console.log("📊 This might be a heartbeat or connection message")
+          }
         } catch (e) {
-          // Ignore non-JSON messages
+          console.log("⚠️ Failed to parse message:", message)
         }
       })
     } catch (error) {
@@ -444,223 +495,893 @@ export function useF1SignalR() {
     }
   }
 
+  const handleInitialData = (initialData: any) => {
+    console.log("🎯 Processing initial data:", initialData)
+    
+    // Process initial session data
+    if (initialData.SessionInfo) {
+      console.log("🎯 Initial session info:", initialData.SessionInfo)
+      updateSessionInfo(initialData.SessionInfo)
+      setHasActiveSession(true)
+    }
+    
+    // Process initial timing data
+    if (initialData.TimingData) {
+      console.log("🎯 Initial timing data:", initialData.TimingData)
+      updateDriverData(initialData.TimingData)
+      setHasActiveSession(true)
+    }
+    
+    // Process TimingData first (contains all drivers)
+    if (initialData.TimingData) {
+      console.log("🎯 Initial TimingData (all drivers):", initialData.TimingData)
+      updateDriverData(initialData.TimingData)
+      setHasActiveSession(true)
+    }
+    // If no TimingData, fallback to TopThree (limited to 3 drivers)
+    else if (initialData.TopThree) {
+      console.log("🎯 Initial TopThree data (limited to 3 drivers):", initialData.TopThree)
+      // Convert TopThree to TimingData format for processing
+      const timingData = {
+        Lines: {}
+      }
+      
+      if (initialData.TopThree.Lines) {
+        initialData.TopThree.Lines.forEach((driver: any, index: number) => {
+          (timingData.Lines as any)[driver.RacingNumber] = {
+            Position: driver.Position,
+            RacingNumber: driver.RacingNumber,
+            DriverName: driver.FullName,
+            LapTime: driver.LapTime,
+            DiffToLeader: driver.DiffToLeader,
+            DiffToAhead: driver.DiffToAhead,
+            Team: driver.Team,
+            TeamColour: driver.TeamColour
+          }
+        })
+      }
+      
+      updateDriverData(timingData)
+      setHasActiveSession(true)
+    }
+    
+    // Process weather data
+    if (initialData.WeatherData) {
+      console.log("🎯 Initial weather data:", initialData.WeatherData)
+      updateWeatherData(initialData.WeatherData)
+      setHasActiveSession(true)
+    }
+    
+    // Process extrapolated clock (session timer)
+    if (initialData.ExtrapolatedClock) {
+      console.log("🎯 Initial clock data:", initialData.ExtrapolatedClock)
+      setSessionInfo(prev => ({
+        ...prev,
+        timer: initialData.ExtrapolatedClock.Remaining || "00:00:00"
+      }))
+      setHasActiveSession(true)
+    }
+    
+    // Only mark as active session if we have specific F1 data with actual content
+    const hasValidSessionInfo = initialData.SessionInfo && 
+      initialData.SessionInfo.Name && 
+      !initialData.SessionInfo.Name.toLowerCase().includes("no active")
+    
+    const hasValidTimingData = initialData.TimingData && 
+      initialData.TimingData.Lines && 
+      Object.keys(initialData.TimingData.Lines).length > 0
+    
+    const hasValidTopThree = initialData.TopThree && 
+      initialData.TopThree.Lines && 
+      initialData.TopThree.Lines.length > 0
+    
+    if (hasValidSessionInfo || hasValidTimingData || hasValidTopThree) {
+      console.log("🎯 Valid F1 data received - marking as active session")
+      setHasActiveSession(true)
+    } else {
+      console.log("🎯 No valid F1 data in initial data - not marking as active session")
+      setHasActiveSession(false)
+    }
+  }
+
   const handleF1Data = (data: any) => {
     if (!data) return
 
+    console.log("🔍 handleF1Data called with:", data)
+    console.log("🔍 Full data structure:", JSON.stringify(data, null, 2))
+    
+    // Log all message types to find tire data
+    if (data.arguments && data.arguments.length > 0) {
+      console.log("🏎️ Message type:", data.arguments[0])
+    }
+
     if (data.target === "Streaming" && data.arguments) {
       const [messageType, messageData] = data.arguments
+      console.log("📊 Processing F1 data:", messageType, messageData ? "with data" : "no data")
+      console.log("📊 Arguments:", data.arguments)
+      console.log("📊 Message data structure:", JSON.stringify(messageData, null, 2))
 
       switch (messageType) {
         case "TimingData":
-          if (messageData) updateDriverData(messageData)
+          if (messageData && messageData.Lines && Object.keys(messageData.Lines).length > 0) {
+            console.log("🏎️ Timing data received with drivers:", Object.keys(messageData.Lines).length)
+            console.log("🏎️ Timing data structure:", JSON.stringify(messageData, null, 2))
+            updateDriverData(messageData)
+            setHasActiveSession(true)
+            console.log("✅ Active session confirmed - drivers data received")
+          } else {
+            console.log("⚠️ TimingData received but no driver data")
+          }
+          break
+        case "CarData":
+          console.log("🏎️ CarData message received - checking for tire data:", messageData)
+          if (messageData && typeof messageData === 'object') {
+            console.log("🏎️ CarData structure:", JSON.stringify(messageData, null, 2))
+            // Check if CarData contains tire information
+            const carDataKeys = Object.keys(messageData)
+            console.log("🏎️ CarData keys:", carDataKeys)
+          }
+          break
+        case "TimingStats":
+          console.log("🏎️ TimingStats message received - checking for tire data:", messageData)
+          break
+        case "TimingAppData":
+          console.log("🏎️ TimingAppData message received - checking for tire data:", messageData)
+          break
+        case "DriverList":
+          if (messageData && messageData.Drivers && messageData.Drivers.length > 0) {
+            console.log("👥 Driver list received with", messageData.Drivers.length, "drivers")
+            console.log("👥 Driver list:", JSON.stringify(messageData, null, 2))
+            setHasActiveSession(true)
+            console.log("✅ Active session confirmed - driver list received")
+          } else {
+            console.log("⚠️ DriverList received but no drivers")
+          }
           break
         case "SessionInfo":
-          if (messageData) updateSessionInfo(messageData)
+          if (messageData) {
+            console.log("📋 Session info received:", JSON.stringify(messageData, null, 2))
+            console.log("📋 Session Name:", messageData.Name || "Unknown")
+            console.log("📋 Session Type:", messageData.Type || "Unknown")
+            console.log("📋 Session Status:", messageData.Status || "Unknown")
+            console.log("📋 Session Phase:", messageData.Phase || "Unknown")
+            
+            updateSessionInfo(messageData)
+            
+            // Solo marcar como sesión activa si hay información específica de sesión
+            const sessionName = messageData.Name || ""
+            const sessionType = messageData.Type || ""
+            const sessionStatus = messageData.Status || ""
+            
+            const isActiveSession = (
+              sessionName && 
+              !sessionName.toLowerCase().includes("no active") &&
+              !sessionName.toLowerCase().includes("finished") &&
+              !sessionName.toLowerCase().includes("closed") &&
+              !sessionName.toLowerCase().includes("not started") &&
+              sessionType &&
+              sessionType.toLowerCase() !== "unknown" &&
+              sessionStatus &&
+              sessionStatus.toLowerCase() !== "unknown"
+            )
+
+            if (isActiveSession) {
+              console.log("✅ Active session detected:", sessionName, "-", sessionType)
+              setHasActiveSession(true)
+            } else {
+              console.log("❌ No active session - Name:", sessionName, "Type:", sessionType, "Status:", sessionStatus)
+              setHasActiveSession(false)
+            }
+          } else {
+            console.log("⚠️ SessionInfo received but no messageData")
+          }
           break
         case "TrackStatus":
-          if (messageData) updateTrackStatus(messageData)
+          if (messageData) {
+            console.log("🏁 Track status received:", JSON.stringify(messageData, null, 2))
+            updateTrackStatus(messageData)
+            // Track status alone doesn't indicate active session
+            console.log("🏁 Track status received but not setting active session")
+          }
+          break
+        case "SessionStatus":
+          if (messageData) {
+            console.log("📊 Session status received:", JSON.stringify(messageData, null, 2))
+            updateSessionInfo(messageData)
+            // Only set as active if there's specific session data
+            if (messageData.Name && !messageData.Name.toLowerCase().includes("no active")) {
+              setHasActiveSession(true)
+            }
+          }
           break
         case "WeatherData":
-          if (messageData) updateWeatherData(messageData)
+          if (messageData) {
+            console.log("🌤️ Weather data received:", JSON.stringify(messageData, null, 2))
+            updateWeatherData(messageData)
+            // Weather data alone doesn't indicate active session
+            console.log("🌤️ Weather data received but not setting active session")
+          }
           break
         case "LapCount":
-          if (messageData) updateLapCount(messageData)
+          if (messageData) {
+            console.log("🔢 Lap count received:", JSON.stringify(messageData, null, 2))
+            updateLapCount(messageData)
+            // Lap count alone doesn't indicate active session
+            console.log("🔢 Lap count received but not setting active session")
+          }
           break
         default:
           console.log("📊 Received:", messageType)
+          console.log("📊 Unknown message type - not setting active session")
+          // No establecer hasActiveSession para tipos de mensaje desconocidos
+      }
+    } else {
+      console.log("⚠️ Message not processed - target:", data.target, "arguments:", data.arguments)
+      console.log("⚠️ Full data:", JSON.stringify(data, null, 2))
+      if (data && typeof data === 'object') {
+        console.log("📊 Non-streaming data detected - not setting active session without specific F1 data")
+        // No establecer hasActiveSession para datos no específicos de F1
       }
     }
+  }
+
+  // Helper function to safely extract string values from F1 data
+  const extractStringValue = (value: any, defaultValue: string = "0.000"): string => {
+    if (value === null || value === undefined) return defaultValue
+    if (typeof value === 'string') {
+      // If it's a string, clean it up
+      const cleaned = value.trim()
+      return cleaned === '' || cleaned === '0' || cleaned === '0.000' ? defaultValue : cleaned
+    }
+    if (typeof value === 'number') {
+      return value === 0 ? defaultValue : String(value)
+    }
+    if (value && typeof value === 'object') {
+      // If it's an object, try to extract a meaningful value
+      if (value.Value !== undefined) return extractStringValue(value.Value, defaultValue)
+      if (value.Status !== undefined) return extractStringValue(value.Status, defaultValue)
+      if (value.OverallFastest !== undefined) return extractStringValue(value.OverallFastest, defaultValue)
+      if (value.PersonalFastest !== undefined) return extractStringValue(value.PersonalFastest, defaultValue)
+      
+      // For F1 timing data, look for common time-related properties
+      if (value.Time !== undefined) return extractStringValue(value.Time, defaultValue)
+      if (value.LapTime !== undefined) return extractStringValue(value.LapTime, defaultValue)
+      if (value.SectorTime !== undefined) return extractStringValue(value.SectorTime, defaultValue)
+      if (value.Gap !== undefined) return extractStringValue(value.Gap, defaultValue)
+      
+      // If it's an array, try to get the first element
+      if (Array.isArray(value) && value.length > 0) {
+        return extractStringValue(value[0], defaultValue)
+      }
+      
+      // Try to find any string or number value in the object
+      const stringValue = Object.values(value).find(v => 
+        (typeof v === 'string' && v.trim() !== '') || 
+        (typeof v === 'number' && v !== 0)
+      )
+      if (stringValue) return extractStringValue(stringValue, defaultValue)
+      
+      // If all else fails, log the object structure for debugging
+      console.log("🔍 Could not extract string from object:", value)
+      return defaultValue
+    }
+    return defaultValue
+  }
+
+  // Helper function to extract sector time from sector data
+  const extractSectorTime = (sectorData: any, defaultValue: string = "0.000"): string => {
+    if (sectorData === null || sectorData === undefined) return defaultValue
+    if (typeof sectorData === 'string') {
+      const cleaned = sectorData.trim()
+      // Return empty string for empty values, not the default
+      if (cleaned === '' || cleaned === '0' || cleaned === '0.000') return ""
+      return cleaned
+    }
+    if (typeof sectorData === 'number') {
+      return sectorData === 0 ? "" : String(sectorData)
+    }
+    if (sectorData && typeof sectorData === 'object') {
+      // Try common sector time properties
+      if (sectorData.Time !== undefined) return extractSectorTime(sectorData.Time, defaultValue)
+      if (sectorData.SectorTime !== undefined) return extractSectorTime(sectorData.SectorTime, defaultValue)
+      if (sectorData.Value !== undefined) return extractSectorTime(sectorData.Value, defaultValue)
+      if (sectorData.OverallFastest !== undefined) return extractSectorTime(sectorData.OverallFastest, defaultValue)
+      if (sectorData.PersonalFastest !== undefined) return extractSectorTime(sectorData.PersonalFastest, defaultValue)
+      
+      // Try to find any string or number value
+      const stringValue = Object.values(sectorData).find(v => 
+        (typeof v === 'string' && v.trim() !== '') || 
+        (typeof v === 'number' && v !== 0)
+      )
+      if (stringValue) return extractSectorTime(stringValue, defaultValue)
+    }
+    return defaultValue
   }
 
   const updateDriverData = (timingData: any) => {
     if (!timingData.Lines || isDemoMode) return
 
+    console.log("🏎️ Updating driver data with:", timingData)
     const updatedDrivers: F1Driver[] = []
 
     Object.entries(timingData.Lines).forEach(([driverNumber, driverData]: [string, any]) => {
-      if (!driverData || !driverData.Position) return
+      if (!driverData) return
 
       const position = Number.parseInt(driverData.Position) || 0
       if (position === 0) return
 
-      const currentTire = driverData.Tyres?.Compound?.charAt(0) || "M"
-      const driverCode = driverData.RacingNumber || driverNumber
+      // Log the complete structure of the data we're receiving
+      console.log(`🏎️ Driver ${driverNumber} COMPLETE data structure:`, JSON.stringify(driverData, null, 2))
+      
+      // Log all possible gap-related fields
+      console.log(`🏎️ Driver ${driverNumber} ALL GAP FIELDS:`, {
+        position,
+        driverNumber,
+        allStats: driverData.Stats,
+        directGapFields: {
+          DiffToLeader: driverData.DiffToLeader,
+          GapToLeader: driverData.GapToLeader,
+          Gap: driverData.Gap,
+          DiffToAhead: driverData.DiffToAhead,
+          IntervalToPositionAhead: driverData.IntervalToPositionAhead,
+          Interval: driverData.Interval,
+          TimeDiffToFastest: driverData.TimeDiffToFastest,
+          TimeDifftoPositionAhead: driverData.TimeDifftoPositionAhead
+        },
+        allDriverDataKeys: Object.keys(driverData)
+      })
+      
+      // Log all fields that might contain tire information
+      console.log(`🏎️ Driver ${driverNumber} ALL TIRE-RELATED FIELDS:`, {
+        position,
+        driverNumber,
+        allKeys: Object.keys(driverData),
+        tireFields: {
+          Tyres: driverData.Tyres,
+          TyreCompound: driverData.TyreCompound,
+          Compound: driverData.Compound,
+          TyreType: driverData.TyreType,
+          TireType: driverData.TireType,
+          Tyre: driverData.Tyre,
+          Tire: driverData.Tire,
+          TyreStint: driverData.TyreStint,
+          Stint: driverData.Stint,
+          TyreStatus: driverData.TyreStatus,
+          TireStatus: driverData.TireStatus,
+          TyreCondition: driverData.TyreCondition,
+          TireCondition: driverData.TireCondition
+        },
+        allFieldsWithTire: Object.keys(driverData).filter(key => 
+          key.toLowerCase().includes('tire') || 
+          key.toLowerCase().includes('tyre') || 
+          key.toLowerCase().includes('compound')
+        ),
+        allFieldsWithRubber: Object.keys(driverData).filter(key => 
+          key.toLowerCase().includes('rubber') || 
+          key.toLowerCase().includes('soft') || 
+          key.toLowerCase().includes('medium') || 
+          key.toLowerCase().includes('hard') || 
+          key.toLowerCase().includes('intermediate')
+        ),
+        allFieldsWithStatus: Object.keys(driverData).filter(key => 
+          key.toLowerCase().includes('status') || 
+          key.toLowerCase().includes('condition')
+        ),
+        // Check if tire data might be in nested objects
+        nestedTireData: {
+          'Sectors[0]': driverData.Sectors?.[0],
+          'Sectors[1]': driverData.Sectors?.[1], 
+          'Sectors[2]': driverData.Sectors?.[2],
+          'Speeds': driverData.Speeds,
+          'BestLapTime': driverData.BestLapTime,
+          'LastLapTime': driverData.LastLapTime
+        },
+        // Check all string values that might contain tire info
+        allStringValues: Object.entries(driverData)
+          .filter(([key, value]) => typeof value === 'string' && value.length < 10)
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
+      })
+      
+      // Log specific fields that might contain the real data
+      console.log(`🔍 Driver ${driverNumber} specific fields:`, {
+        'DriverName': driverData.DriverName,
+        'FullName': driverData.FullName,
+        'Name': driverData.Name,
+        'RacingNumber': driverData.RacingNumber,
+        'FirstName': driverData.FirstName,
+        'LastName': driverData.LastName,
+        'Abbreviation': driverData.Abbreviation,
+        'ShortName': driverData.ShortName,
+        'DisplayName': driverData.DisplayName,
+        'LapTime': driverData.LapTime,
+        'LastLapTime': driverData.LastLapTime,
+        'BestLapTime': driverData.BestLapTime,
+        'Sectors': driverData.Sectors,
+        'SectorTimes': driverData.SectorTimes,
+        'Sector1Time': driverData.Sector1Time,
+        'Sector2Time': driverData.Sector2Time,
+        'Sector3Time': driverData.Sector3Time,
+        'Tyres': driverData.Tyres,
+        'TyreCompound': driverData.TyreCompound,
+        'TyreStint': driverData.TyreStint,
+        'PitStops': driverData.PitStops,
+        'DiffToLeader': driverData.DiffToLeader,
+        'GapToLeader': driverData.GapToLeader,
+        'DiffToAhead': driverData.DiffToAhead,
+        'IntervalToPositionAhead': driverData.IntervalToPositionAhead
+      })
+
+      // Extract tire information from multiple possible fields
+      const tireCompound = driverData.Tyres?.Compound || driverData.TyreCompound || driverData.Compound
+      let currentTire = "M" // Default fallback
+      
+      if (tireCompound) {
+        if (typeof tireCompound === 'string') {
+          currentTire = tireCompound.charAt(0).toUpperCase()
+        } else if (tireCompound && typeof tireCompound === 'object') {
+          if (tireCompound.Value) {
+            currentTire = tireCompound.Value.charAt(0).toUpperCase()
+          } else if (tireCompound.Compound) {
+            currentTire = tireCompound.Compound.charAt(0).toUpperCase()
+          }
+        }
+      }
+      
+      // If we still don't have a valid tire, try to extract from other fields
+      if (currentTire === "M" && !tireCompound) {
+        // Try to find tire info in other possible fields
+        const alternativeTire = driverData.TyreType || driverData.TireType || driverData.Tyre || driverData.Tire
+        if (alternativeTire && typeof alternativeTire === 'string') {
+          currentTire = alternativeTire.charAt(0).toUpperCase()
+        }
+      }
+      
+      const tireStint = driverData.Tyres?.Stint || driverData.TyreStint || driverData.Stint || 1
+      const pitStops = driverData.NumberOfPitStops || driverData.PitStops || driverData.PitStopCount || 0
+      const currentLap = driverData.NumberOfLaps || 0
+      
+      // If no tire data is available, show empty or unknown
+      if (currentTire === "M" && !tireCompound) {
+        currentTire = "?" // Show unknown instead of inventing data
+        console.log(`🏎️ Driver ${driverNumber} NO TIRE DATA AVAILABLE - showing unknown (position ${position}, pitStops: ${pitStops}, laps: ${currentLap})`)
+      }
+      
+      // Extract gap information - for leader, gap should be empty
+      const isLeader = position === 1
+      
+      let finalGapValue = ""
+      let finalGapTimeValue = ""
+      
+      if (!isLeader && driverData.Stats && driverData.Stats.length > 0) {
+        // Use the LAST element of Stats array (most recent/current data)
+        const stats = driverData.Stats[driverData.Stats.length - 1]
+        if (stats.TimeDiffToFastest && stats.TimeDiffToFastest !== "") {
+          finalGapValue = stats.TimeDiffToFastest
+        }
+        if (stats.TimeDifftoPositionAhead && stats.TimeDifftoPositionAhead !== "") {
+          finalGapTimeValue = stats.TimeDifftoPositionAhead
+        }
+      }
+      
+      // Fallback to other gap fields if Stats is not available
+      if (finalGapValue === "" && !isLeader) {
+        const gapFromFields = extractStringValue(driverData.DiffToLeader || driverData.GapToLeader || driverData.Gap, "")
+        finalGapValue = gapFromFields !== "" ? gapFromFields : "0.000"
+      }
+      if (finalGapTimeValue === "" && !isLeader) {
+        const gapTimeFromFields = extractStringValue(driverData.DiffToAhead || driverData.IntervalToPositionAhead || driverData.Interval, "")
+        finalGapTimeValue = gapTimeFromFields !== "" ? gapTimeFromFields : "0.000"
+      }
+      
+      // For leader, show empty gaps
+      if (isLeader) {
+        finalGapValue = "--- ---"
+        finalGapTimeValue = "0.000"
+      }
+      const driverCode = driverData.RacingNumber || driverData.DriverNumber || driverNumber
+      
+      console.log(`🏎️ Driver ${driverNumber} tire info:`, {
+        compound: tireCompound,
+        currentTire,
+        stint: tireStint,
+        pitStops,
+        currentLap,
+        tyresObject: driverData.Tyres,
+        allTireFields: {
+          Tyres: driverData.Tyres,
+          TyreCompound: driverData.TyreCompound,
+          Compound: driverData.Compound,
+          TyreStint: driverData.TyreStint,
+          Stint: driverData.Stint,
+          PitStops: driverData.PitStops,
+          PitStopCount: driverData.PitStopCount,
+          NumberOfLaps: driverData.NumberOfLaps,
+          NumberOfPitStops: driverData.NumberOfPitStops
+        },
+        tireExtraction: {
+          'driverData.Tyres?.Compound': driverData.Tyres?.Compound,
+          'driverData.TyreCompound': driverData.TyreCompound,
+          'driverData.Compound': driverData.Compound,
+          'driverData.TyreType': driverData.TyreType,
+          'driverData.TireType': driverData.TireType,
+          'driverData.Tyre': driverData.Tyre,
+          'driverData.Tire': driverData.Tire,
+          'tireCompound result': tireCompound,
+          'currentTire result': currentTire
+        }
+      })
+
+      console.log(`🏎️ Driver ${driverNumber} gap info:`, {
+        position,
+        isLeader,
+        finalGapValue,
+        finalGapTimeValue,
+        allStats: driverData.Stats,
+        usingStatsIndex: driverData.Stats ? driverData.Stats.length - 1 : -1,
+        selectedStats: driverData.Stats ? driverData.Stats[driverData.Stats.length - 1] : null,
+        rawGap: driverData.DiffToLeader || driverData.GapToLeader || driverData.Gap,
+        rawGapTime: driverData.DiffToAhead || driverData.IntervalToPositionAhead || driverData.Interval,
+        allGapFields: {
+          DiffToLeader: driverData.DiffToLeader,
+          GapToLeader: driverData.GapToLeader,
+          Gap: driverData.Gap,
+          DiffToAhead: driverData.DiffToAhead,
+          IntervalToPositionAhead: driverData.IntervalToPositionAhead,
+          Interval: driverData.Interval
+        },
+        expectedFromImage: position === 1 ? "--- ---" : 
+                          position === 2 ? "+0.478" : 
+                          position === 3 ? "+0.112" : 
+                          position === 4 ? "+0.010" : 
+                          position === 5 ? "+0.353" : 
+                          position === 6 ? "+0.073" : 
+                          position === 7 ? "+0.096" : "unknown"
+      })
+
+      console.log(`🏎️ Driver ${driverNumber} lap time info:`, {
+        lapTime: driverData.LastLapTime?.Value || driverData.LapTime || driverData.CurrentLapTime,
+        prevLap: driverData.BestLapTime?.Value || driverData.PersonalBest,
+        rawLastLapTime: driverData.LastLapTime,
+        rawBestLapTime: driverData.BestLapTime
+      })
+
+      console.log(`🏎️ Driver ${driverNumber} sector info:`, {
+        sectors: driverData.Sectors,
+        sector1: {
+          current: driverData.Sectors?.[0]?.Value,
+          previous: driverData.Sectors?.[0]?.PreviousValue,
+          extracted: extractSectorTime(driverData.Sectors?.[0]?.Value || driverData.Sector1Time || driverData.SectorTimes?.[0], "")
+        },
+        sector2: {
+          current: driverData.Sectors?.[1]?.Value,
+          previous: driverData.Sectors?.[1]?.PreviousValue,
+          extracted: extractSectorTime(driverData.Sectors?.[1]?.Value || driverData.Sector2Time || driverData.SectorTimes?.[1], "")
+        },
+        sector3: {
+          current: driverData.Sectors?.[2]?.Value,
+          previous: driverData.Sectors?.[2]?.PreviousValue,
+          extracted: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sector3Time || driverData.SectorTimes?.[2], "")
+        },
+        allSectorFields: {
+          Sector1Time: driverData.Sector1Time,
+          Sector2Time: driverData.Sector2Time,
+          Sector3Time: driverData.Sector3Time,
+          SectorTimes: driverData.SectorTimes
+        }
+      })
       
               // Update tyres history
       setDriversTyreHistory(prev => {
         const currentHistory = prev[driverCode] || []
         const lastTire = currentHistory[currentHistory.length - 1]
         
-        // Only add if it's a different tyre from the last one
-        if (lastTire !== currentTire && currentTire !== "") {
-          return {
-            ...prev,
-            [driverCode]: [...currentHistory, currentTire]
-          }
+        if (lastTire !== currentTire) {
+          const newHistory = [...currentHistory, currentTire]
+          return { ...prev, [driverCode]: newHistory }
         }
-        
         return prev
+      })
+
+      // Map of known driver numbers to abbreviations (exactly as shown in the image)
+      const driverNumberToName: Record<string, string> = {
+        "1": "VER",
+        "4": "NOR",
+        "5": "BOR",
+        "6": "HAD",
+        "10": "GAS",
+        "12": "ANT",
+        "14": "ALO",
+        "16": "LEC",
+        "18": "STR",
+        "22": "TSU",
+        "23": "ALB",
+        "27": "HUL",
+        "30": "LAW",
+        "31": "OCO",
+        "43": "COL",
+        "44": "HAM",
+        "55": "SAI",
+        "63": "RUS",
+        "81": "PIA",
+        "87": "BEA"
+      }
+
+      // Map of driver numbers to their teams (2025 season)
+      const driverNumberToTeam: Record<string, string> = {
+        "1": "Red Bull",      // VER
+        "4": "McLaren",       // NOR
+        "5": "Kick Sauber",   // BOR
+        "6": "RB",            // HAD
+        "10": "Alpine",       // GAS
+        "12": "Mercedes",     // ANT
+        "14": "Aston Martin", // ALO
+        "16": "Ferrari",      // LEC
+        "18": "Aston Martin", // STR
+        "22": "Red Bull",     // TSU
+        "23": "RB",           // ALB
+        "27": "Haas",         // HUL
+        "30": "RB",           // LAW
+        "31": "Kick Sauber",  // OCO
+        "43": "Alpine",       // COL
+        "44": "Ferrari",      // HAM
+        "55": "Williams",     // SAI
+        "63": "Mercedes",     // RUS
+        "81": "McLaren",      // PIA
+        "87": "Haas"          // BEA
+      }
+
+      // Extract driver name with better fallback - prioritize our mapping
+      const extractedName = driverNumberToName[driverNumber] ||
+                           driverData.DriverName || 
+                           driverData.FullName || 
+                           driverData.Name || 
+                           driverData.DisplayName ||
+                           driverData.Abbreviation ||
+                           (driverData.FirstName && driverData.LastName ? `${driverData.FirstName} ${driverData.LastName}` : null) ||
+                           driverData.ShortName ||
+                           `Driver ${driverNumber}`
+
+      const extractedTeam = driverNumberToTeam[driverNumber] || 
+                           driverData.Team || 
+                           driverData.TeamName || 
+                           driverData.Constructor || 
+                           "Unknown"
+      
+      console.log(`🏎️ Driver ${driverNumber} data extraction:`, {
+        'DriverNumber': driverNumber,
+        'Mapped Name': driverNumberToName[driverNumber],
+        'Final Name': extractedName,
+        'Mapped Team': driverNumberToTeam[driverNumber],
+        'Team Raw Data': {
+          'Team': driverData.Team,
+          'TeamName': driverData.TeamName,
+          'Constructor': driverData.Constructor
+        },
+        'Final Team': extractedTeam,
+        'Sectors Raw Data': {
+          'Sector1': driverData.Sectors?.[0]?.Value,
+          'Sector1Prev': driverData.Sectors?.[0]?.PreviousValue,
+          'Sector2': driverData.Sectors?.[1]?.Value,
+          'Sector2Prev': driverData.Sectors?.[1]?.PreviousValue,
+          'Sector3': driverData.Sectors?.[2]?.Value,
+          'Sector3Prev': driverData.Sectors?.[2]?.PreviousValue
+        }
+      })
+
+      // Log the final driver object to see what's being passed to the component
+      console.log(`🎨 Driver ${driverNumber} final object:`, {
+        'name': extractedName,
+        'team': extractedTeam,
+        'pos': position
       })
 
       const driver: F1Driver = {
         pos: position,
-        code: driverCode,
-        name: driverData.BroadcastName || `Driver ${driverNumber}`,
+        code: driverData.RacingNumber || driverNumber,
+        name: extractedName,
         color: driverColors[position - 1] || "bg-gray-500",
         tire: currentTire,
-        stint: `L ${driverData.NumberOfLaps || 0}`,
-        change: driverData.IntervalToPositionAhead?.Value || "",
-        drs: driverData.DRS === "1",
-        gap: driverData.GapToLeader || "-- ---",
-        gapTime: driverData.IntervalToPositionAhead?.Value || "",
-        lapTime: driverData.LastLapTime?.Value || "0:00.000",
-        prevLap: driverData.BestLapTime?.Value || "0:00.000",
-        sector1: driverData.Sectors?.[0]?.Value || "0.000",
-        sector1Prev: driverData.Sectors?.[0]?.PreviousValue || "0.000",
-        sector2: driverData.Sectors?.[1]?.Value || "0.000",
-        sector2Prev: driverData.Sectors?.[1]?.PreviousValue || "0.000",
-        sector3: driverData.Sectors?.[2]?.Value || "0.000",
-        sector3Prev: driverData.Sectors?.[2]?.PreviousValue || "0.000",
-        sector1Color: getSectorColor(driverData.Sectors?.[0]),
-        sector2Color: getSectorColor(driverData.Sectors?.[1]),
-        sector3Color: getSectorColor(driverData.Sectors?.[2]),
-        lapTimeColor:
-          driverData.LastLapTime?.OverallFastest
-            ? 'purple'
-            : driverData.LastLapTime?.PersonalBest
-              ? 'green'
-              : 'white',
-        team: driverData.TeamName || driverData.Team || '', // Adjust here according to the real API field
-        tyresHistory: driversTyreHistory[driverCode] || []
+        stint: String(tireStint),
+        change: "0",
+        drs: driverData.DRS || false,
+        inPit: driverData.InPit || false,
+        isFastestLap: false, // Will be updated later
+        gap: finalGapValue,
+        gapTime: finalGapTimeValue,
+        lapTime: extractStringValue(driverData.LastLapTime?.Value || driverData.LapTime || driverData.CurrentLapTime, "0.000"),
+        prevLap: extractStringValue(driverData.BestLapTime?.Value || driverData.PersonalBest, "0.000"),
+        sector1: extractSectorTime(driverData.Sectors?.[0]?.Value || driverData.Sector1Time || driverData.SectorTimes?.[0], ""),
+        sector1Prev: extractSectorTime(driverData.Sectors?.[0]?.PreviousValue || driverData.Sector1Time || driverData.SectorTimes?.[0], ""),
+        sector2: extractSectorTime(driverData.Sectors?.[1]?.Value || driverData.Sector2Time || driverData.SectorTimes?.[1], ""),
+        sector2Prev: extractSectorTime(driverData.Sectors?.[1]?.PreviousValue || driverData.Sector2Time || driverData.SectorTimes?.[1], ""),
+        sector3: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
+        sector3Prev: extractSectorTime(driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
+          sector1Color: driverData.Sectors?.[0]?.PersonalFastest ? "text-green-500" : 
+                       driverData.Sectors?.[0]?.OverallFastest ? "text-purple-400" : "text-white",
+          sector2Color: driverData.Sectors?.[1]?.PersonalFastest ? "text-green-500" : 
+                       driverData.Sectors?.[1]?.OverallFastest ? "text-purple-400" : "text-white",
+          sector3Color: driverData.Sectors?.[2]?.PersonalFastest ? "text-green-500" : 
+                       driverData.Sectors?.[2]?.OverallFastest ? "text-purple-400" : "text-white",
+          lapTimeColor: driverData.LastLapTime?.OverallFastest ? "text-purple-400" : 
+                       driverData.LastLapTime?.PersonalFastest ? "text-green-500" : "text-white",
+          gapColor: "text-white",
+          gapTimeColor: "text-white",
+          team: extractedTeam,
+          tyresHistory: driversTyreHistory[driverCode] || [],
+          pitStops: pitStops,
+          positionsGained: driverData.PositionsGained || 0
       }
 
       updatedDrivers.push(driver)
+      console.log(`🏎️ Added driver ${position}: ${driver.name} (${driver.code}) - ${driver.lapTime}`)
     })
 
-    updatedDrivers.sort((a, b) => a.pos - b.pos)
-    setDrivers(updatedDrivers)
-    // Si hay drivers y el trackStatus es activo, marcar sesión activa
-    if (updatedDrivers.length > 0 && isSessionActive(sessionInfo.trackStatus)) {
+    console.log(`🏎️ Total drivers updated: ${updatedDrivers.length}`)
+    
+    // Find the driver with the fastest lap time
+    let fastestDriverCode: string | null = null
+    let fastestTime = Infinity
+    
+    updatedDrivers.forEach(driver => {
+      // Convert lap time from "MM:SS.mmm" format to milliseconds for comparison
+      let lapTimeMs = Infinity
+      
+      if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "--:--.---") {
+        if (driver.lapTime.includes(':')) {
+          // Format: "MM:SS.mmm"
+          const [minutes, seconds] = driver.lapTime.split(':')
+          lapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+        } else {
+          // Format: "SS.mmm" or just seconds
+          lapTimeMs = parseFloat(driver.lapTime) * 1000
+        }
+      }
+      
+      console.log(`🏎️ Driver ${driver.code} lap time: "${driver.lapTime}" -> ${lapTimeMs}ms`)
+      
+      if (!isNaN(lapTimeMs) && lapTimeMs < fastestTime) {
+        fastestTime = lapTimeMs
+        fastestDriverCode = driver.code
+        console.log(`🏎️ New fastest: ${driver.code} with ${lapTimeMs}ms`)
+      }
+    })
+    
+    // Update fastest lap driver
+    setFastestLapDriver(fastestDriverCode)
+    console.log(`🏎️ Fastest lap driver: ${fastestDriverCode} (${fastestTime})`)
+    
+    // Mark the fastest lap driver
+    const driversWithFastestLap = updatedDrivers.map(driver => ({
+      ...driver,
+      isFastestLap: driver.code === fastestDriverCode
+    }))
+    
+    setDrivers(driversWithFastestLap)
+    
+    // Only set active session if we actually have drivers
+    if (updatedDrivers.length > 0) {
       setHasActiveSession(true)
+      console.log("✅ Active session confirmed - drivers data processed")
     } else {
-      setHasActiveSession(false)
+      console.log("⚠️ No drivers in updateDriverData - not setting active session")
     }
-  }
-
-  const getSectorColor = (sector: any) => {
-    if (!sector) return "yellow"
-    if (sector.OverallFastest) return "green"
-    if (sector.PersonalFastest) return "purple"
-    return "yellow"
   }
 
   const updateSessionInfo = (sessionData: any) => {
     if (isDemoMode) return
-    setSessionInfo((prev) => ({
+
+    console.log("🔄 Updating session info with:", sessionData)
+    
+    const sessionName = sessionData.Name || sessionData.name || "Unknown Session"
+    const sessionType = sessionData.Type || sessionData.type || "Unknown"
+    const sessionStatus = sessionData.Status || sessionData.status || "Unknown"
+    const sessionPhase = sessionData.Phase || sessionData.phase || "Unknown"
+    
+    console.log("🔄 Session details:")
+    console.log("  - Name:", sessionName)
+    console.log("  - Type:", sessionType)
+    console.log("  - Status:", sessionStatus)
+    console.log("  - Phase:", sessionPhase)
+
+    // Crear un nombre más descriptivo para la sesión
+    let displayName = sessionName
+    if (sessionType && sessionType !== "Unknown" && sessionType !== "No type") {
+      displayName = `${sessionName} - ${sessionType}`
+    } else if (sessionName === "Unknown Session" || sessionName === "F1 Live Timing") {
+      // Si no tenemos información específica, mostrar que estamos conectados
+      displayName = "F1 Live Timing - Connected"
+    }
+    
+    // Crear un estado más descriptivo
+    let displayStatus = sessionStatus
+    if (sessionPhase && sessionPhase !== "Unknown" && sessionPhase !== "No phase") {
+      displayStatus = `${sessionStatus} (${sessionPhase})`
+    } else if (sessionStatus === "Unknown" || sessionStatus === "No status") {
+      displayStatus = "Connected"
+    }
+
+    setSessionInfo(prev => ({
       ...prev,
-      raceName: sessionData.Meeting?.Name ? `${sessionData.Meeting.Name}: ${sessionData.Name}` : prev.raceName,
-      timer: sessionData.TimeRemaining || prev.timer,
+      raceName: displayName,
+      trackStatus: displayStatus,
+      lapInfo: sessionData.CurrentLap ? `${sessionData.CurrentLap} / ${sessionData.TotalLaps || '--'}` : prev.lapInfo
     }))
+    
+    console.log("✅ Session info updated:", displayName, displayStatus)
   }
 
   const updateTrackStatus = (trackData: any) => {
     if (isDemoMode) return
-    setSessionInfo((prev) => {
-      const newStatus = trackData.Status || prev.trackStatus
-      // Si hay drivers y el trackStatus es activo, marcar sesión activa
-      if (drivers.length > 0 && isSessionActive(newStatus)) {
-        setHasActiveSession(true)
-      } else {
-        setHasActiveSession(false)
-      }
-      return {
+
+    setSessionInfo(prev => ({
         ...prev,
-        trackStatus: newStatus,
-      }
-    })
-  // Helper para saber si el trackStatus indica sesión activa
-  function isSessionActive(trackStatus: string) {
-    if (!trackStatus) return false
-    const status = trackStatus.toLowerCase()
-    // Considera activo si no es "no active session", "finished", "closed", "not started", "test", "unknown"
-    return !(
-      status.includes("no active") ||
-      status.includes("finished") ||
-      status.includes("closed") ||
-      status.includes("not started") ||
-      status.includes("test") ||
-      status.includes("unknown")
-    )
-  }
+      trackStatus: trackData.Status || prev.trackStatus
+    }))
   }
 
   const updateWeatherData = (weatherData: any) => {
     if (isDemoMode) return
-    setSessionInfo((prev) => ({
+
+    setSessionInfo(prev => ({
       ...prev,
       weather: {
-        track: weatherData.TrackTemp || prev.weather.track,
-        air: weatherData.AirTemp || prev.weather.air,
+        track: weatherData.TrackTemperature || prev.weather.track,
+        air: weatherData.AirTemperature || prev.weather.air,
         humidity: weatherData.Humidity || prev.weather.humidity,
-        condition: weatherData.Rainfall ? "rain" : "dry",
-      },
+        condition: weatherData.Condition || prev.weather.condition
+      }
     }))
   }
 
   const updateLapCount = (lapData: any) => {
     if (isDemoMode) return
-    setSessionInfo((prev) => ({
+
+    setSessionInfo(prev => ({
       ...prev,
-      lapInfo: `${lapData.CurrentLap || 0} / ${lapData.TotalLaps || 0}`,
+      lapInfo: `${lapData.CurrentLap || 0} / ${lapData.TotalLaps || 0}`
     }))
   }
 
-  useEffect(() => {
-    console.log("[useEffect] isDemoMode:", isDemoMode, "(PROD:", process.env.NODE_ENV, ")");
-    if (isDemoMode) {
-      // Si está en demo, nunca crear ni cerrar WebSocket
-      return;
-    }
-    console.log("[useEffect] Conectando a SignalR/WebSocket real...");
-    connectToF1SignalR();
-    // Cleanup solo para WebSocket y reconexión, nunca para el demoInterval
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        console.log("[useEffect] Cerrando WebSocket al desmontar");
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        console.log("[useEffect] Limpiando timeout de reconexión al desmontar");
-      }
-    };
-  }, [isDemoMode]);
-
   const reconnect = () => {
-    // Si estamos en modo demo, no hacer nada al intentar reconectar
     if (isDemoMode) {
-      console.log("🔄 Reconnect llamado en modo demo - ignorado (NO SE DEBE CONECTAR)");
-      return;
-    }
-
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current)
-    }
-    if (wsRef.current) {
-      wsRef.current.close()
+      stopDemo()
     }
     connectToF1SignalR()
   }
 
+  const forceActiveSession = () => {
+    console.log("🎯 Forcing active session detection...")
+    setHasActiveSession(true)
+    setConnectionWorking(true)
+    setIsConnected(true)
+  }
+
+  // Auto-connect on mount
+  useEffect(() => {
+    if (!isDemoMode) {
+      connectToF1SignalR()
+    }
+    
+    return () => {
+    if (wsRef.current) {
+      wsRef.current.close()
+    }
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current)
+  }
+    }
+  }, [isDemoMode])
+
   return {
     drivers,
     sessionInfo,
-    // Solo conectado si WebSocket está abierto, no hay error, y hay sesión activa
-    isConnected: isConnected && hasActiveSession && !error,
+    isConnected,
     error,
     isDemoMode,
+    hasActiveSession,
     reconnect,
     startDemo,
     stopDemo,
+    forceActiveSession
   }
 }

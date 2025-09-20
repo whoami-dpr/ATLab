@@ -1,0 +1,2 @@
+# Redirecciones para Cloudflare Pages
+/api/* /api/:splat 200
