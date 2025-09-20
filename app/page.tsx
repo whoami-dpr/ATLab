@@ -23,7 +23,7 @@ export default function TelemetryLab() {
       <Navbar />
       <div className="flex-1 bg-transparent">
         <SessionHeader sessionInfo={sessionInfo} isConnected={isConnected} isDemoMode={isDemoMode} error={error} hasActiveSession={hasActiveSession} />
-        <div className="p-6">
+        <div className="px-4 py-6 max-w-full mx-auto">
           {!shouldShowData ? (
             <EmptyState reconnect={reconnect} startDemo={startDemo} />
           ) : (

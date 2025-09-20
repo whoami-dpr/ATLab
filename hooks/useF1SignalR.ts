@@ -14,6 +14,7 @@ export interface F1Driver {
   drs: boolean
   inPit: boolean
   isFastestLap: boolean
+  retired: boolean
   gap: string
   gapTime: string
   lapTime: string
@@ -34,6 +35,9 @@ export interface F1Driver {
   tyresHistory?: string[]
   pitStops?: number
   positionsGained?: number
+  sector1Segments?: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }>
+  sector2Segments?: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }>
+  sector3Segments?: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }>
 }
 
 export interface F1SessionInfo {
@@ -1057,17 +1061,26 @@ export const useF1SignalR = () => {
         sector1: {
           current: driverData.Sectors?.[0]?.Value,
           previous: driverData.Sectors?.[0]?.PreviousValue,
-          extracted: extractSectorTime(driverData.Sectors?.[0]?.Value || driverData.Sector1Time || driverData.SectorTimes?.[0], "")
+          extracted: extractSectorTime(driverData.Sectors?.[0]?.Value || driverData.Sector1Time || driverData.SectorTimes?.[0], ""),
+          segments: driverData.Sectors?.[0]?.Segments,
+          personalFastest: driverData.Sectors?.[0]?.PersonalFastest,
+          overallFastest: driverData.Sectors?.[0]?.OverallFastest
         },
         sector2: {
           current: driverData.Sectors?.[1]?.Value,
           previous: driverData.Sectors?.[1]?.PreviousValue,
-          extracted: extractSectorTime(driverData.Sectors?.[1]?.Value || driverData.Sector2Time || driverData.SectorTimes?.[1], "")
+          extracted: extractSectorTime(driverData.Sectors?.[1]?.Value || driverData.Sector2Time || driverData.SectorTimes?.[1], ""),
+          segments: driverData.Sectors?.[1]?.Segments,
+          personalFastest: driverData.Sectors?.[1]?.PersonalFastest,
+          overallFastest: driverData.Sectors?.[1]?.OverallFastest
         },
         sector3: {
           current: driverData.Sectors?.[2]?.Value,
           previous: driverData.Sectors?.[2]?.PreviousValue,
-          extracted: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sector3Time || driverData.SectorTimes?.[2], "")
+          extracted: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
+          segments: driverData.Sectors?.[2]?.Segments,
+          personalFastest: driverData.Sectors?.[2]?.PersonalFastest,
+          overallFastest: driverData.Sectors?.[2]?.OverallFastest
         },
         allSectorFields: {
           Sector1Time: driverData.Sector1Time,
@@ -1179,7 +1192,28 @@ export const useF1SignalR = () => {
       console.log(`🎨 Driver ${driverNumber} final object:`, {
         'name': extractedName,
         'team': extractedTeam,
-        'pos': position
+        'pos': position,
+        'inPit': driverData.InPit,
+        'retired': driverData.Retired,
+        'knockedOut': driverData.KnockedOut,
+        'stopped': driverData.Stopped,
+        'status': driverData.Status,
+        'sector1Color': driverData.Sectors?.[0]?.OverallFastest ? "purple" : 
+                       driverData.Sectors?.[0]?.PersonalFastest ? "green" : 
+                       driverData.Sectors?.[0]?.Value && driverData.Sectors?.[0]?.PreviousValue && 
+                       parseFloat(driverData.Sectors[0].Value) < parseFloat(driverData.Sectors[0].PreviousValue) ? "yellow" : "white",
+        'sector2Color': driverData.Sectors?.[1]?.OverallFastest ? "purple" : 
+                       driverData.Sectors?.[1]?.PersonalFastest ? "green" : 
+                       driverData.Sectors?.[1]?.Value && driverData.Sectors?.[1]?.PreviousValue && 
+                       parseFloat(driverData.Sectors[1].Value) < parseFloat(driverData.Sectors[1].PreviousValue) ? "yellow" : "white",
+        'sector3Color': driverData.Sectors?.[2]?.OverallFastest ? "purple" : 
+                       driverData.Sectors?.[2]?.PersonalFastest ? "green" : 
+                       driverData.Sectors?.[2]?.Value && driverData.Sectors?.[2]?.PreviousValue && 
+                       parseFloat(driverData.Sectors[2].Value) < parseFloat(driverData.Sectors[2].PreviousValue) ? "yellow" : "white",
+        'lapTimeColor': driverData.LastLapTime?.OverallFastest ? "purple" : 
+                       driverData.LastLapTime?.PersonalFastest ? "green" : 
+                       driverData.LastLapTime?.Value && driverData.BestLapTime?.Value && 
+                       parseFloat(driverData.LastLapTime.Value.replace(':', '.')) < parseFloat(driverData.BestLapTime.Value.replace(':', '.')) ? "yellow" : "white"
       })
 
       const driver: F1Driver = {
@@ -1192,6 +1226,7 @@ export const useF1SignalR = () => {
         change: "0",
         drs: driverData.DRS || false,
         inPit: driverData.InPit || false,
+        retired: driverData.Retired || driverData.KnockedOut || driverData.Stopped || false,
         isFastestLap: false, // Will be updated later
         gap: finalGapValue,
         gapTime: finalGapTimeValue,
@@ -1203,20 +1238,43 @@ export const useF1SignalR = () => {
         sector2Prev: extractSectorTime(driverData.Sectors?.[1]?.PreviousValue || driverData.Sector2Time || driverData.SectorTimes?.[1], ""),
         sector3: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
         sector3Prev: extractSectorTime(driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
-          sector1Color: driverData.Sectors?.[0]?.PersonalFastest ? "text-green-500" : 
-                       driverData.Sectors?.[0]?.OverallFastest ? "text-purple-400" : "text-white",
-          sector2Color: driverData.Sectors?.[1]?.PersonalFastest ? "text-green-500" : 
-                       driverData.Sectors?.[1]?.OverallFastest ? "text-purple-400" : "text-white",
-          sector3Color: driverData.Sectors?.[2]?.PersonalFastest ? "text-green-500" : 
-                       driverData.Sectors?.[2]?.OverallFastest ? "text-purple-400" : "text-white",
-          lapTimeColor: driverData.LastLapTime?.OverallFastest ? "text-purple-400" : 
-                       driverData.LastLapTime?.PersonalFastest ? "text-green-500" : "text-white",
+          sector1Color: driverData.Sectors?.[0]?.OverallFastest ? "purple" : 
+                       driverData.Sectors?.[0]?.PersonalFastest ? "green" : 
+                       driverData.Sectors?.[0]?.Value && driverData.Sectors?.[0]?.PreviousValue && 
+                       parseFloat(driverData.Sectors[0].Value) < parseFloat(driverData.Sectors[0].PreviousValue) ? "yellow" : "white",
+          sector2Color: driverData.Sectors?.[1]?.OverallFastest ? "purple" : 
+                       driverData.Sectors?.[1]?.PersonalFastest ? "green" : 
+                       driverData.Sectors?.[1]?.Value && driverData.Sectors?.[1]?.PreviousValue && 
+                       parseFloat(driverData.Sectors[1].Value) < parseFloat(driverData.Sectors[1].PreviousValue) ? "yellow" : "white",
+          sector3Color: driverData.Sectors?.[2]?.OverallFastest ? "purple" : 
+                       driverData.Sectors?.[2]?.PersonalFastest ? "green" : 
+                       driverData.Sectors?.[2]?.Value && driverData.Sectors?.[2]?.PreviousValue && 
+                       parseFloat(driverData.Sectors[2].Value) < parseFloat(driverData.Sectors[2].PreviousValue) ? "yellow" : "white",
+          lapTimeColor: driverData.LastLapTime?.OverallFastest ? "purple" : 
+                       driverData.LastLapTime?.PersonalFastest ? "green" : 
+                       driverData.LastLapTime?.Value && driverData.BestLapTime?.Value && 
+                       parseFloat(driverData.LastLapTime.Value.replace(':', '.')) < parseFloat(driverData.BestLapTime.Value.replace(':', '.')) ? "yellow" : "white",
           gapColor: "text-white",
           gapTimeColor: "text-white",
           team: extractedTeam,
           tyresHistory: driversTyreHistory[driverCode] || [],
           pitStops: pitStops,
-          positionsGained: driverData.PositionsGained || 0
+          positionsGained: driverData.PositionsGained || 0,
+          sector1Segments: (() => {
+            const segments = driverData.Sectors?.[0]?.Segments || []
+            console.log(`🔍 Driver ${driverNumber} Sector 1 Segments:`, segments)
+            return segments
+          })(),
+          sector2Segments: (() => {
+            const segments = driverData.Sectors?.[1]?.Segments || []
+            console.log(`🔍 Driver ${driverNumber} Sector 2 Segments:`, segments)
+            return segments
+          })(),
+          sector3Segments: (() => {
+            const segments = driverData.Sectors?.[2]?.Segments || []
+            console.log(`🔍 Driver ${driverNumber} Sector 3 Segments:`, segments)
+            return segments
+          })()
       }
 
       updatedDrivers.push(driver)

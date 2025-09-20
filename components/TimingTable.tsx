@@ -14,7 +14,7 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
   }, [drivers])
 
   return (
-    <div className="bg-transparent rounded-xl border border-gray-800/50 overflow-hidden shadow-xl font-inter font-bold">
+    <div className="bg-transparent rounded-xl border border-gray-800/50 overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
       {/* Table Header - Más compacto */}
       <div className="grid grid-cols-12 gap-0.5 px-1 py-1 bg-transparent text-xs font-semibold text-gray-300 border-b border-gray-700/50">
         <div className="col-span-1">Position</div>
@@ -28,7 +28,7 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
       </div>
 
       {/* Driver Rows */}
-      <div className="max-h-[80vh] overflow-y-auto">
+      <div className="max-h-[70vh] overflow-y-auto">
         {sortedDrivers.map((driver, index) => (
           <OptimizedDriverRow key={`${driver.pos}-${driver.code}`} driver={driver} index={index} gapClass="gap-0.5 px-1" />
         ))}
