@@ -29,18 +29,23 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
-      <body className="min-h-screen w-full relative font-sans antialiased">
-        {/* Black background with blue glow at the top */}
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%), #000000",
-          }}
-        />
-        <div className="relative z-10">{children}</div>
-      </body>
-    </html>
+        <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
+          <head>
+            <link rel="stylesheet" href="/fonts/formula1-display.css" />
+          </head>
+          <body className="min-h-screen w-full relative font-sans antialiased">
+            {/* Black background with blue glow at the top */}
+            <div
+              className="absolute inset-0 z-0"
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%), #000000",
+              }}
+            />
+            <div className="relative z-10">
+              {children}
+            </div>
+          </body>
+        </html>
   );
 }

@@ -8,12 +8,11 @@ import { useSchedule } from "../hooks/useSchedule"
 interface SessionHeaderProps {
   sessionInfo: F1SessionInfo
   isConnected: boolean
-  isDemoMode: boolean
   error: string | null
   hasActiveSession: boolean
 }
 
-const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error, hasActiveSession }: SessionHeaderProps) => {
+const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession }: SessionHeaderProps) => {
   const { schedule } = useSchedule()
   
   const getTrackStatusColor = () => {
@@ -131,17 +130,14 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error, hasAc
   // Estado de conexión
   let statusColor = "bg-red-500"
   let statusText = "Offline"
-  if (isDemoMode) {
-    statusColor = "bg-blue-500"
-    statusText = "Demo"
-  } else if (isConnected && !error) {
+  if (isConnected && !error) {
     statusColor = "bg-green-500"
     statusText = "Online"
   }
 
   // Animación para el círculo de estado
   let statusCircleClass = `${statusColor} w-2 h-2 rounded-full inline-block`
-  if (isDemoMode || (isConnected && !error)) {
+  if (isConnected && !error) {
     statusCircleClass += ' animate-pulse'
   } else {
     statusCircleClass += ' animate-ping'
@@ -159,8 +155,8 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error, hasAc
               <h1 className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
                 F1 Live Timing
                 <span
-                  className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isDemoMode && (!isConnected || error)) ? 'animate-blink' : ''}`}
-                  title={isDemoMode ? 'Demo' : isConnected && !error ? 'Online' : 'Offline'}
+                  className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isConnected || error) ? 'animate-blink' : ''}`}
+                  title={isConnected && !error ? 'Online' : 'Offline'}
                 ></span>
               </h1>
             </div>
@@ -187,25 +183,21 @@ const SessionHeader = memo(({ sessionInfo, isConnected, isDemoMode, error, hasAc
               <span className="text-white text-lg font-semibold leading-none">{sessionInfo.lapInfo}</span>
             </div>
             <div className={`px-4 py-2 rounded text-sm font-bold text-white ${
-              isDemoMode 
-                ? 'bg-blue-600' 
-                : sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
-                  ? 'bg-red-600'
-                  : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
-                    ? 'bg-yellow-600'
-                    : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
-                      ? 'bg-green-600'
-                      : 'bg-gray-600'
+              sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
+                ? 'bg-red-600'
+                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
+                  ? 'bg-yellow-600'
+                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
+                    ? 'bg-green-600'
+                    : 'bg-gray-600'
             }`}>
-              {isDemoMode 
-                ? 'Blue Flag' 
-                : sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
-                  ? 'Red Flag'
-                  : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
-                    ? 'Yellow Flag'
-                    : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
-                      ? 'Green Flag'
-                      : 'No Flag'
+              {sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
+                ? 'Red Flag'
+                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
+                  ? 'Yellow Flag'
+                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
+                    ? 'Green Flag'
+                    : 'No Flag'
               }
             </div>
           </div>

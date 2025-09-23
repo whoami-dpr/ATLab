@@ -6,10 +6,9 @@ import { Flag, Clock, Play } from "lucide-react"
 
 interface EmptyStateProps {
   reconnect: () => void
-  startDemo: () => void
 }
 
-const EmptyState = memo(({ reconnect, startDemo }: EmptyStateProps) => {
+const EmptyState = memo(({ reconnect }: EmptyStateProps) => {
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -70,15 +69,6 @@ useEffect(() => {
             <span className="text-gray-400 text-xs">{new Date((nextSession?.start || lastSession?.start)!).toLocaleString()}</span>
           </div>
         )}
-        <div className="flex gap-4 justify-center mt-2">
-          <button
-            onClick={startDemo}
-            className="border border-green-500 text-green-400 hover:bg-green-500/10 px-6 py-2 rounded-xl font-medium text-base transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-400"
-          >
-            <Play className="w-5 h-5" />
-            Demo
-          </button>
-        </div>
       </div>
     </div>
   )

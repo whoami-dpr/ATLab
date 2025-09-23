@@ -177,6 +177,25 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   };
   const getTeamText = (team: string) => TEAM_COLORS[team]?.text || 'white';
 
+  // Function to get team logo path
+  const getTeamLogoPath = (team: string): string => {
+    const teamLogoMap: Record<string, string> = {
+      "Red Bull": "red-bull-racing.svg",
+      "Mercedes": "mercedes.svg",
+      "Ferrari": "ferrari.svg",
+      "McLaren": "mclaren.svg",
+      "Aston Martin": "aston-martin.svg",
+      "Alpine": "alpine.svg",
+      "Williams": "williams.svg",
+      "Haas": "haas-f1-team.svg",
+      "Kick Sauber": "kick-sauber.svg",
+      "RB": "racing-bulls.svg",
+      "Racing Bulls": "racing-bulls.svg",
+    };
+    
+    return teamLogoMap[team] || "red-bull-racing.svg"; // Default fallback
+  };
+
   const getSectorTextColor = (color: string) => {
     // Use the same color logic as the minisectors
     if (color.includes('purple')) {
@@ -241,89 +260,126 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
 
         return (
           <div
-            className={`grid grid-cols-12 gap-0.5 px-1 py-0.5 transition-all duration-200 font-inter font-bold ${
+            className={`px-1 py-0.5 transition-all duration-200 font-inter font-bold ${
               driver.isFastestLap 
                 ? 'bg-gradient-to-r from-purple-900/30 to-purple-800/30' 
                 : 'hover:bg-gradient-to-r hover:from-gray-800/20 hover:to-gray-900/20'
             }`}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(12, 1fr)',
+              gap: '8px'
+            }}
           >
-      {/* Position & Driver - Team background, fixed size */}
+      {/* Position, Team Logo, Driver - Similar to F1 official design */}
       <div className="col-span-1 flex items-center gap-0">
         <div
-          className="flex items-center justify-center"
+          className="flex items-center"
           style={{
-            background: getTeamBg(driver.team || "Unknown"),
-            borderRadius: '0.5rem',
             height: '32px',
-            width: '90px', // Ancho fijo para todos
-            minWidth: '90px',
-            maxWidth: '90px',
-            overflow: 'hidden',
+            width: '165px', // Ancho fijo para consistencia
+            minWidth: '165px',
+            maxWidth: '165px',
+            overflow: 'visible', // Cambiado para evitar cortes
             padding: 0,
           }}
         >
-          {/* Position number, white text */}
+          {/* Position number - fondo del equipo */}
           <div
             style={{
+              background: getTeamBg(driver.team || "Unknown"),
               color: getTeamText(driver.team || "Unknown"),
               fontWeight: 700,
               fontSize: '1.1rem',
+              fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '32px',
-              minWidth: '28px',
-              paddingLeft: '8px',
-              paddingRight: '4px',
+              minWidth: '40px',
+              borderRadius: '0.5rem 0 0 0.5rem',
               margin: 0,
               whiteSpace: 'nowrap',
             }}
           >
             {driver.pos}
           </div>
-          {/* Nombre del piloto, fondo escudería, texto blanco */}
+          
+          {/* Team Logo - fondo blanco */}
           <div
             style={{
-              color: getTeamText(driver.team || "Unknown"),
-              background: getTeamBg(driver.team || "Unknown"),
-              fontWeight: 700,
-              fontSize: '1.1rem',
-              letterSpacing: '0.03em',
-              borderRadius: 0,
-              borderTopRightRadius: '0.5rem',
-              borderBottomRightRadius: '0.5rem',
-              padding: '0 10px',
-              height: '32px',
+              background: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              height: '32px',
+              minWidth: '35px',
+              padding: '0 4px',
               margin: 0,
-              whiteSpace: 'nowrap',
             }}
           >
-            {driver.name}
+            <img
+              src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
+              alt={driver.team || "Unknown"}
+              style={{
+                height: '24px',
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+          </div>
+          
+          {/* Driver name - fondo del equipo */}
+          <div
+            style={{
+              background: getTeamBg(driver.team || "Unknown"),
+              color: getTeamText(driver.team || "Unknown"),
+              fontWeight: 700,
+              fontSize: '1.0rem',
+              fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
+              letterSpacing: '0.03em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              height: '32px',
+              padding: '0 8px 0 5px',
+              borderRadius: '0 0.5rem 0.5rem 0',
+              margin: 0,
+              whiteSpace: 'nowrap',
+              width: '90px',
+              minWidth: '90px',
+              maxWidth: '90px',
+            }}
+          >
+            <span style={{ flex: 1 }}>{driver.name}</span>
+            <span>{driver.racingNumber}</span>
           </div>
         </div>
       </div>
 
       {/* DRS/PIT - Más pequeño */}
-      <div className="col-span-1 flex items-center">
+      <div className="col-span-1 flex items-center px-2" style={{ marginLeft: '6px' }}>
         <div
-          className={`px-3 py-0.5 rounded border-2 transition-all duration-200 ${
+          className={`px-2 py-0.5 rounded border-2 transition-all duration-200 ${
             driver.inPit
               ? "bg-slate-600 text-blue-300 border-blue-300 shadow-md shadow-blue-300/20"
               : driver.drs
                 ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400/30 shadow-md shadow-blue-500/20"
                 : "bg-gradient-to-r from-gray-800 to-gray-900 text-gray-500 border-gray-700/30"
           }`}
-          style={{ borderRadius: '0.25rem' }}
+          style={{ 
+            borderRadius: '0.25rem',
+            fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
+            fontWeight: 700,
+            fontSize: '0.85rem'
+          }}
         >
           {driver.inPit ? "PIT" : "DRS"}
         </div>
       </div>
 
       {/* Tire - Más compacto */}
-      <div className="col-span-1 flex items-center gap-1">
+      <div className="col-span-1 flex items-center gap-0.5 px-1" style={{ marginLeft: '-8px' }}>
         <img
           src={
             driver.tire === 'S' ? '/images/soft.svg'
@@ -336,7 +392,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           className="w-8 h-8"
         />
         <div className="flex flex-col leading-tight">
-          <span className="font-bold text-base text-white">{driver.stint}</span>
+          <span className="font-bold text-base text-white">L {driver.stint}</span>
           <span className="text-xs text-gray-400" style={{ fontFamily: 'Inter, sans-serif' }}>PIT {driver.pitStops ?? 0}</span>
         </div>
       </div>
@@ -357,10 +413,10 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         </span>
         <span className={
           driver.retired
-            ? 'text-red-400 font-bold text-base'
+            ? 'text-red-400 font-light text-base'
             : driver.inPit
-              ? 'text-blue-400 font-bold text-base'
-              : 'text-green-400 font-bold text-base'
+              ? 'text-blue-400 font-light text-base'
+              : 'text-green-400 font-light text-base'
         }>
           {driver.retired ? 'OUT' : driver.inPit ? 'PIT' : 'RACING'}
         </span>

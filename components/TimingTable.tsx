@@ -16,15 +16,22 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
   return (
     <div className="bg-transparent rounded-xl border border-gray-800/50 overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
       {/* Table Header - Más compacto */}
-      <div className="grid grid-cols-12 gap-0.5 px-1 py-1 bg-transparent text-xs font-semibold text-gray-300 border-b border-gray-700/50">
-        <div className="col-span-1">Position</div>
-        <div className="col-span-1">DRS</div>
-        <div className="col-span-1">Tire</div>
-        <div className="col-span-1">Tyres History</div>
-        <div className="col-span-1">Info</div>
-        <div className="col-span-1">Gap</div>
-        <div className="col-span-1">LapTime</div>
-        <div className="col-span-5">Sectors</div>
+      <div 
+        className="px-1 py-1 bg-transparent text-xs font-semibold text-gray-300 border-b border-gray-700/50"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(12, 1fr)',
+          gap: '0px'
+        }}
+      >
+        <div className="col-span-1 flex items-center px-0" style={{ paddingLeft: '0px' }}>Position</div>
+        <div className="col-span-1 flex items-center px-2" style={{ marginLeft: '60px', paddingLeft: '16px' }}>DRS</div>
+        <div className="col-span-1 flex items-center px-1" style={{ marginLeft: '45px' }}>Tire</div>
+        <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '30px' }}>Tyres History</div>
+        <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '40px' }}>Info</div>
+        <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '30px' }}>Gap</div>
+        <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '27px' }}>LapTime</div>
+        <div className="col-span-5 flex items-center px-0" style={{ marginLeft: '30px' }}>Sectors</div>
       </div>
 
       {/* Driver Rows */}

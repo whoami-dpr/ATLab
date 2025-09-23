@@ -1,0 +1,19 @@
+@font-face {
+  font-family: 'Formula1 Display Regular';
+  src: url('./Formula1-Display-Regular.woff2') format('woff2'),
+       url('./Formula1-Display-Regular.woff') format('woff'),
+       url('./Formula1-Display-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Formula1 Display Bold';
+  src: url('./Formula1-Display-Bold.woff2') format('woff2'),
+       url('./Formula1-Display-Bold.woff') format('woff'),
+       url('./Formula1-Display-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}

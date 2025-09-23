@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { getDemoDrivers, getDemoSessionInfo } from '../lib/demoData'
 
 export interface F1Driver {
   pos: number
   code: string
   name: string
+  racingNumber: string
   color: string
   tire: string
   stint: string
@@ -72,14 +72,13 @@ export const useF1SignalR = () => {
   const [hasActiveSession, setHasActiveSession] = useState(false)
   const [connectionWorking, setConnectionWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isDemoMode, setIsDemoMode] = useState(false)
-  const [forceStopDemo, setForceStopDemo] = useState(false)
   const [preventReconnect, setPreventReconnect] = useState(false)
   const [fastestLapDriver, setFastestLapDriver] = useState<string | null>(null)
+  const [fastestLapTime, setFastestLapTime] = useState<number>(Infinity) // Store the fastest lap time in milliseconds
+  const [carDataCache, setCarDataCache] = useState<Record<string, any>>({})
   
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<number | null>(null)
-  const demoIntervalRef = useRef<number | null>(null)
   const messageTimeoutRef = useRef<number | null>(null)
 
   const driverColors = [
@@ -124,56 +123,8 @@ export const useF1SignalR = () => {
     }
   }
 
-  // Demo data con 20 pilotos
-  const startDemo = () => {
-    if (wsRef.current) {
-      wsRef.current.close()
-    }
-    
-    setIsDemoMode(true)
-    setError(null)
-    setIsConnected(true)
-    setHasActiveSession(true)
-    setDrivers(getDemoDrivers(driverColors))
-    setSessionInfo(getDemoSessionInfo())
-
-    // Simular actualizaciones de datos
-      demoIntervalRef.current = window.setInterval(() => {
-      if (!forceStopDemo) {
-        setDrivers(prevDrivers => 
-          prevDrivers.map(driver => ({
-            ...driver,
-            lapTime: `${Math.floor(Math.random() * 60) + 1}:${(Math.random() * 60).toFixed(3)}`,
-            sector1: `${(Math.random() * 30 + 20).toFixed(3)}`,
-            sector2: `${(Math.random() * 30 + 20).toFixed(3)}`,
-            sector3: `${(Math.random() * 30 + 20).toFixed(3)}`,
-          }))
-        )
-      }
-    }, 2000)
-  }
-
-  const stopDemo = () => {
-    setForceStopDemo(true)
-    if (demoIntervalRef.current) {
-      clearInterval(demoIntervalRef.current)
-    }
-    setIsDemoMode(false)
-    setDrivers([])
-    setHasActiveSession(false)
-    setSessionInfo({
-      raceName: "F1 Live Timing",
-      flag: "🏁",
-      timer: "00:00:00",
-      weather: { track: 0, air: 0, humidity: 0, condition: "unknown", windSpeed: 0, windDirection: 0, pressure: 0 },
-      lapInfo: "-- / --",
-      trackStatus: "No Active Session",
-    })
-  }
 
   const connectToF1SignalR = async () => {
-    if (isDemoMode) return
-
     // Clear any existing connection
     if (wsRef.current) {
       console.log("🔄 Closing existing WebSocket connection...")
@@ -608,9 +559,54 @@ export const useF1SignalR = () => {
       const [messageType, messageData] = data.arguments
       console.log("📊 Processing F1 data:", messageType, messageData ? "with data" : "no data")
       console.log("📊 Arguments:", data.arguments)
-      console.log("📊 Message data structure:", JSON.stringify(messageData, null, 2))
+      
+      // Special logging for CarData to debug tire issues
+      if (messageType === "CarData" || messageType === "CarData.z") {
+        console.log("🔍 CAR DATA DEBUG - Message received:", {
+          messageType,
+          hasData: !!messageData,
+          dataType: typeof messageData,
+          dataKeys: messageData ? Object.keys(messageData) : 'no data',
+          fullData: messageData,
+          isString: typeof messageData === 'string',
+          stringLength: typeof messageData === 'string' ? messageData.length : 'not string',
+          isCompressed: messageType === "CarData.z"
+        })
+      } else {
+        console.log("📊 Message data structure:", JSON.stringify(messageData, null, 2))
+      }
 
       switch (messageType) {
+        case "Position.z":
+          console.log("🏎️ Position.z message received - checking for tire data:", messageData)
+          if (messageData && typeof messageData === 'object') {
+            console.log("🏎️ Position.z COMPLETE structure:", JSON.stringify(messageData, null, 2))
+            // Check if Position.z contains tire information
+            const positionKeys = Object.keys(messageData)
+            console.log("🏎️ Position.z keys:", positionKeys)
+            
+            // Process Position.z for tire information
+            if (messageData.Entries) {
+              console.log("🏎️ Position.z.Entries found:", Object.keys(messageData.Entries))
+              // Log tire data for each driver
+              Object.entries(messageData.Entries).forEach(([driverNumber, positionData]: [string, any]) => {
+                console.log(`🏎️ Driver ${driverNumber} Position.z:`, {
+                  driverNumber,
+                  positionData,
+                  tireFields: {
+                    Tyres: positionData.Tyres,
+                    TyreCompound: positionData.TyreCompound,
+                    Compound: positionData.Compound,
+                    TyreType: positionData.TyreType,
+                    TireType: positionData.TireType,
+                    Tyre: positionData.Tyre,
+                    Tire: positionData.Tire
+                  }
+                })
+              })
+            }
+          }
+          break
         case "TimingData":
           if (messageData && messageData.Lines && Object.keys(messageData.Lines).length > 0) {
             console.log("🏎️ Timing data received with drivers:", Object.keys(messageData.Lines).length)
@@ -623,12 +619,77 @@ export const useF1SignalR = () => {
           }
           break
         case "CarData":
+        case "CarData.z":
           console.log("🏎️ CarData message received - checking for tire data:", messageData)
           if (messageData && typeof messageData === 'object') {
-            console.log("🏎️ CarData structure:", JSON.stringify(messageData, null, 2))
+            console.log("🏎️ CarData COMPLETE structure:", JSON.stringify(messageData, null, 2))
             // Check if CarData contains tire information
             const carDataKeys = Object.keys(messageData)
             console.log("🏎️ CarData keys:", carDataKeys)
+            
+            // Check if we have Entries
+            if (messageData.Entries) {
+              console.log("🏎️ CarData.Entries found with drivers:", Object.keys(messageData.Entries))
+            } else {
+              console.log("⚠️ CarData.Entries NOT FOUND - checking other possible structures")
+              // Check for other possible structures
+              if (messageData.Lines) {
+                console.log("🏎️ CarData.Lines found:", Object.keys(messageData.Lines))
+              }
+              if (messageData.Drivers) {
+                console.log("🏎️ CarData.Drivers found:", Object.keys(messageData.Drivers))
+              }
+            }
+            
+            // Process CarData for tire information
+            if (messageData.Entries) {
+              console.log("🏎️ CarData.Entries found:", Object.keys(messageData.Entries))
+              // Store tire data for each driver
+              const newCarDataCache: Record<string, any> = {}
+              Object.entries(messageData.Entries).forEach(([driverNumber, carData]: [string, any]) => {
+                console.log(`🏎️ Driver ${driverNumber} CarData:`, {
+                  driverNumber,
+                  carData,
+                  tireFields: {
+                    Tyres: carData.Tyres,
+                    TyreCompound: carData.TyreCompound,
+                    Compound: carData.Compound,
+                    TyreType: carData.TyreType,
+                    TireType: carData.TireType,
+                    Tyre: carData.Tyre,
+                    Tire: carData.Tire
+                  }
+                })
+                newCarDataCache[driverNumber] = carData
+              })
+              setCarDataCache(newCarDataCache)
+              console.log("✅ CarData cache updated with", Object.keys(newCarDataCache).length, "drivers")
+            } else {
+              console.log("⚠️ CarData.Entries NOT FOUND - checking other possible structures")
+              // Check for other possible structures
+              if (messageData.Lines) {
+                console.log("🏎️ CarData.Lines found:", Object.keys(messageData.Lines))
+                // Try to process Lines structure
+                const newCarDataCache: Record<string, any> = {}
+                Object.entries(messageData.Lines).forEach(([driverNumber, carData]: [string, any]) => {
+                  console.log(`🏎️ Driver ${driverNumber} CarData from Lines:`, carData)
+                  newCarDataCache[driverNumber] = carData
+                })
+                setCarDataCache(newCarDataCache)
+                console.log("✅ CarData cache updated from Lines with", Object.keys(newCarDataCache).length, "drivers")
+              }
+              if (messageData.Drivers) {
+                console.log("🏎️ CarData.Drivers found:", Object.keys(messageData.Drivers))
+                // Try to process Drivers structure
+                const newCarDataCache: Record<string, any> = {}
+                Object.entries(messageData.Drivers).forEach(([driverNumber, carData]: [string, any]) => {
+                  console.log(`🏎️ Driver ${driverNumber} CarData from Drivers:`, carData)
+                  newCarDataCache[driverNumber] = carData
+                })
+                setCarDataCache(newCarDataCache)
+                console.log("✅ CarData cache updated from Drivers with", Object.keys(newCarDataCache).length, "drivers")
+              }
+            }
           }
           break
         case "TimingStats":
@@ -724,6 +785,8 @@ export const useF1SignalR = () => {
         default:
           console.log("📊 Received:", messageType)
           console.log("📊 Unknown message type - not setting active session")
+          // Log all message types to see what we're receiving
+          console.log("📊 ALL MESSAGE TYPES RECEIVED:", messageType, "Data:", messageData)
           // No establecer hasActiveSession para tipos de mensaje desconocidos
       }
     } else {
@@ -810,7 +873,7 @@ export const useF1SignalR = () => {
   }
 
   const updateDriverData = (timingData: any) => {
-    if (!timingData.Lines || isDemoMode) return
+    if (!timingData.Lines) return
 
     console.log("🏎️ Updating driver data with:", timingData)
     const updatedDrivers: F1Driver[] = []
@@ -923,9 +986,20 @@ export const useF1SignalR = () => {
       })
 
       // Extract tire information from multiple possible fields
-      const tireCompound = driverData.Tyres?.Compound || driverData.TyreCompound || driverData.Compound
-      let currentTire = "M" // Default fallback
+      // First try TimingData, then CarData cache
+      const carData = carDataCache[driverNumber]
       
+      // Comprehensive tire compound extraction
+      const tireCompound = driverData.Tyres?.Compound || 
+                          driverData.TyreCompound || 
+                          driverData.Compound ||
+                          carData?.Tyres?.Compound || 
+                          carData?.TyreCompound || 
+                          carData?.Compound
+      
+      let currentTire = "?" // Default fallback - show unknown instead of assuming
+      
+      // Try to extract tire from compound
       if (tireCompound) {
         if (typeof tireCompound === 'string') {
           currentTire = tireCompound.charAt(0).toUpperCase()
@@ -939,15 +1013,40 @@ export const useF1SignalR = () => {
       }
       
       // If we still don't have a valid tire, try to extract from other fields
-      if (currentTire === "M" && !tireCompound) {
-        // Try to find tire info in other possible fields
-        const alternativeTire = driverData.TyreType || driverData.TireType || driverData.Tyre || driverData.Tire
+      if (currentTire === "?" && !tireCompound) {
+        // Try to find tire info in other possible fields from both TimingData and CarData
+        const alternativeTire = driverData.TyreType || 
+                              driverData.TireType || 
+                              driverData.Tyre || 
+                              driverData.Tire ||
+                              carData?.TyreType || 
+                              carData?.TireType || 
+                              carData?.Tyre || 
+                              carData?.Tire
         if (alternativeTire && typeof alternativeTire === 'string') {
           currentTire = alternativeTire.charAt(0).toUpperCase()
         }
       }
       
-      const tireStint = driverData.Tyres?.Stint || driverData.TyreStint || driverData.Stint || 1
+      // Additional fallback: check for tire info in Tyres object
+      if (currentTire === "?" && driverData.Tyres) {
+        if (driverData.Tyres.Type) {
+          currentTire = driverData.Tyres.Type.charAt(0).toUpperCase()
+        } else if (driverData.Tyres.Compound) {
+          currentTire = driverData.Tyres.Compound.charAt(0).toUpperCase()
+        }
+      }
+      
+      // Additional fallback: check CarData Tyres object
+      if (currentTire === "?" && carData?.Tyres) {
+        if (carData.Tyres.Type) {
+          currentTire = carData.Tyres.Type.charAt(0).toUpperCase()
+        } else if (carData.Tyres.Compound) {
+          currentTire = carData.Tyres.Compound.charAt(0).toUpperCase()
+        }
+      }
+      
+      const tireStint = driverData.Tyres?.Stint || driverData.TyreStint || driverData.Stint || driverData.NumberOfLaps || 1
       const pitStops = driverData.NumberOfPitStops || driverData.PitStops || driverData.PitStopCount || 0
       const currentLap = driverData.NumberOfLaps || 0
       
@@ -998,6 +1097,24 @@ export const useF1SignalR = () => {
         pitStops,
         currentLap,
         tyresObject: driverData.Tyres,
+        rawTireData: {
+          'Tyres': driverData.Tyres,
+          'TyreCompound': driverData.TyreCompound,
+          'Compound': driverData.Compound,
+          'TyreType': driverData.TyreType,
+          'TireType': driverData.TireType,
+          'Tyre': driverData.Tyre,
+          'Tire': driverData.Tire
+        },
+        carDataTireFields: carData ? {
+          'Tyres': carData.Tyres,
+          'TyreCompound': carData.TyreCompound,
+          'Compound': carData.Compound,
+          'TyreType': carData.TyreType,
+          'TireType': carData.TireType,
+          'Tyre': carData.Tyre,
+          'Tire': carData.Tire
+        } : 'no carData',
         allTireFields: {
           Tyres: driverData.Tyres,
           TyreCompound: driverData.TyreCompound,
@@ -1017,8 +1134,13 @@ export const useF1SignalR = () => {
           'driverData.TireType': driverData.TireType,
           'driverData.Tyre': driverData.Tyre,
           'driverData.Tire': driverData.Tire,
-          'tireCompound result': tireCompound,
-          'currentTire result': currentTire
+          'carData?.Tyres?.Compound': carData?.Tyres?.Compound,
+          'carData?.TyreCompound': carData?.TyreCompound,
+          'carData?.Compound': carData?.Compound,
+          'carData?.TyreType': carData?.TyreType,
+          'carData?.TireType': carData?.TireType,
+          'carData?.Tyre': carData?.Tyre,
+          'carData?.Tire': carData?.Tire
         }
       })
 
@@ -1053,7 +1175,10 @@ export const useF1SignalR = () => {
         lapTime: driverData.LastLapTime?.Value || driverData.LapTime || driverData.CurrentLapTime,
         prevLap: driverData.BestLapTime?.Value || driverData.PersonalBest,
         rawLastLapTime: driverData.LastLapTime,
-        rawBestLapTime: driverData.BestLapTime
+        rawBestLapTime: driverData.BestLapTime,
+        isBestLapTime: !!driverData.BestLapTime?.Value,
+        isLastLapTime: !!driverData.LastLapTime?.Value,
+        displayOrder: "Current lap (top) -> Best lap (bottom, purple)"
       })
 
       console.log(`🏎️ Driver ${driverNumber} sector info:`, {
@@ -1220,6 +1345,7 @@ export const useF1SignalR = () => {
         pos: position,
         code: driverData.RacingNumber || driverNumber,
         name: extractedName,
+        racingNumber: driverData.RacingNumber || driverNumber,
         color: driverColors[position - 1] || "bg-gray-500",
         tire: currentTire,
         stint: String(tireStint),
@@ -1283,42 +1409,47 @@ export const useF1SignalR = () => {
 
     console.log(`🏎️ Total drivers updated: ${updatedDrivers.length}`)
     
-    // Find the driver with the fastest lap time
-    let fastestDriverCode: string | null = null
-    let fastestTime = Infinity
+    // Find the driver with the fastest lap time (compare with historical best)
+    let currentFastestDriverCode: string | null = null
+    let currentFastestTime = Infinity
     
     updatedDrivers.forEach(driver => {
-      // Convert lap time from "MM:SS.mmm" format to milliseconds for comparison
+      // Use BestLapTime (prevLap) for fastest lap comparison since that's the best time
       let lapTimeMs = Infinity
       
-      if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "--:--.---") {
-        if (driver.lapTime.includes(':')) {
+      if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "--:--.---") {
+        if (driver.prevLap.includes(':')) {
           // Format: "MM:SS.mmm"
-          const [minutes, seconds] = driver.lapTime.split(':')
+          const [minutes, seconds] = driver.prevLap.split(':')
           lapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
-    } else {
+        } else {
           // Format: "SS.mmm" or just seconds
-          lapTimeMs = parseFloat(driver.lapTime) * 1000
+          lapTimeMs = parseFloat(driver.prevLap) * 1000
         }
       }
       
-      console.log(`🏎️ Driver ${driver.code} lap time: "${driver.lapTime}" -> ${lapTimeMs}ms`)
+      console.log(`🏎️ Driver ${driver.code} best lap time: "${driver.prevLap}" -> ${lapTimeMs}ms (current: "${driver.lapTime}")`)
       
-      if (!isNaN(lapTimeMs) && lapTimeMs < fastestTime) {
-        fastestTime = lapTimeMs
-        fastestDriverCode = driver.code
-        console.log(`🏎️ New fastest: ${driver.code} with ${lapTimeMs}ms`)
+      if (!isNaN(lapTimeMs) && lapTimeMs < currentFastestTime) {
+        currentFastestTime = lapTimeMs
+        currentFastestDriverCode = driver.code
+        console.log(`🏎️ New current fastest: ${driver.code} with ${lapTimeMs}ms`)
       }
     })
     
-    // Update fastest lap driver
-    setFastestLapDriver(fastestDriverCode)
-    console.log(`🏎️ Fastest lap driver: ${fastestDriverCode} (${fastestTime})`)
+    // Check if we have a new overall fastest lap (better than historical best)
+    if (currentFastestTime < fastestLapTime) {
+      setFastestLapTime(currentFastestTime)
+      setFastestLapDriver(currentFastestDriverCode)
+      console.log(`🏎️ NEW OVERALL FASTEST LAP: ${currentFastestDriverCode} with ${currentFastestTime}ms`)
+    } else {
+      console.log(`🏎️ Current fastest: ${currentFastestDriverCode} (${currentFastestTime}ms), Overall fastest: ${fastestLapDriver} (${fastestLapTime}ms)`)
+    }
     
-    // Mark the fastest lap driver
+    // Mark drivers with fastest lap (only the overall fastest gets purple)
     const driversWithFastestLap = updatedDrivers.map(driver => ({
       ...driver,
-      isFastestLap: driver.code === fastestDriverCode
+      isFastestLap: driver.code === fastestLapDriver // Use the overall fastest, not current fastest
     }))
     
     setDrivers(driversWithFastestLap)
@@ -1333,12 +1464,19 @@ export const useF1SignalR = () => {
   }
 
   const updateSessionInfo = (sessionData: any) => {
-    if (isDemoMode) return
-
     console.log("🔄 Updating session info with:", sessionData)
     
+    // Reset fastest lap when starting a new session
     const sessionName = sessionData.Name || sessionData.name || "Unknown Session"
     const sessionType = sessionData.Type || sessionData.type || "Unknown"
+    
+    // Reset fastest lap for qualifying sessions or when session changes
+    if (sessionType.toLowerCase().includes('qualifying') || sessionType.toLowerCase().includes('race')) {
+      setFastestLapTime(Infinity)
+      setFastestLapDriver(null)
+      console.log("🔄 Reset fastest lap for new session:", sessionName)
+    }
+    
     const sessionStatus = sessionData.Status || sessionData.status || "Unknown"
     const sessionPhase = sessionData.Phase || sessionData.phase || "Unknown"
     
@@ -1376,8 +1514,6 @@ export const useF1SignalR = () => {
   }
 
   const updateTrackStatus = (trackData: any) => {
-    if (isDemoMode) return
-
     setSessionInfo(prev => ({
         ...prev,
       trackStatus: trackData.Status || prev.trackStatus
@@ -1385,8 +1521,6 @@ export const useF1SignalR = () => {
   }
 
   const updateWeatherData = (weatherData: any) => {
-    if (isDemoMode) return
-
     console.log("🌤️ COMPLETE weather data structure:", JSON.stringify(weatherData, null, 2))
     console.log("🌤️ TrackTemp:", weatherData.TrackTemp)
     console.log("🌤️ AirTemp:", weatherData.AirTemp)
@@ -1410,8 +1544,6 @@ export const useF1SignalR = () => {
   }
 
   const updateLapCount = (lapData: any) => {
-    if (isDemoMode) return
-
     setSessionInfo(prev => ({
       ...prev,
       lapInfo: `${lapData.CurrentLap || 0} / ${lapData.TotalLaps || 0}`
@@ -1419,9 +1551,6 @@ export const useF1SignalR = () => {
   }
 
   const reconnect = () => {
-    if (isDemoMode) {
-      stopDemo()
-    }
     connectToF1SignalR()
   }
 
@@ -1434,30 +1563,22 @@ export const useF1SignalR = () => {
 
   // Auto-connect on mount
   useEffect(() => {
-    if (!isDemoMode) {
-      connectToF1SignalR()
-    }
+    connectToF1SignalR()
     
     return () => {
-    if (wsRef.current) {
-      wsRef.current.close()
+      if (wsRef.current) {
+        wsRef.current.close()
+      }
     }
-      if (demoIntervalRef.current) {
-        clearInterval(demoIntervalRef.current)
-  }
-    }
-  }, [isDemoMode])
+  }, [])
 
   return {
     drivers,
     sessionInfo,
     isConnected,
     error,
-    isDemoMode,
     hasActiveSession,
     reconnect,
-    startDemo,
-    stopDemo,
     forceActiveSession
   }
 }
