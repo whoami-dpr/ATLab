@@ -1067,20 +1067,20 @@ export const useF1SignalR = () => {
         // Use the LAST element of Stats array (most recent/current data)
         const stats = driverData.Stats[driverData.Stats.length - 1]
         if (stats.TimeDiffToFastest && stats.TimeDiffToFastest !== "") {
-          finalGapValue = stats.TimeDiffToFastest
+          finalGapTimeValue = stats.TimeDiffToFastest  // Gap acumulativo va abajo
         }
         if (stats.TimeDifftoPositionAhead && stats.TimeDifftoPositionAhead !== "") {
-          finalGapTimeValue = stats.TimeDifftoPositionAhead
+          finalGapValue = stats.TimeDifftoPositionAhead  // Gap individual va arriba
         }
       }
       
       // Fallback to other gap fields if Stats is not available
       if (finalGapValue === "" && !isLeader) {
-        const gapFromFields = extractStringValue(driverData.DiffToLeader || driverData.GapToLeader || driverData.Gap, "")
+        const gapFromFields = extractStringValue(driverData.DiffToAhead || driverData.IntervalToPositionAhead || driverData.Interval, "")
         finalGapValue = gapFromFields !== "" ? gapFromFields : "0.000"
       }
       if (finalGapTimeValue === "" && !isLeader) {
-        const gapTimeFromFields = extractStringValue(driverData.DiffToAhead || driverData.IntervalToPositionAhead || driverData.Interval, "")
+        const gapTimeFromFields = extractStringValue(driverData.DiffToLeader || driverData.GapToLeader || driverData.Gap, "")
         finalGapTimeValue = gapTimeFromFields !== "" ? gapTimeFromFields : "0.000"
       }
       
@@ -1264,7 +1264,7 @@ export const useF1SignalR = () => {
         "16": "Ferrari",      // LEC
         "18": "Aston Martin", // STR
         "22": "Red Bull",     // TSU
-        "23": "RB",           // ALB
+        "23": "Williams",     // ALB
         "27": "Haas",         // HUL
         "30": "RB",           // LAW
         "31": "Kick Sauber",  // OCO

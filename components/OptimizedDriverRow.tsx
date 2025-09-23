@@ -160,7 +160,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     "McLaren":       { bg: "#ff8700", text: "white" },
     "Aston Martin":  { bg: "#229971", text: "white" },
     "Alpine":        { bg: "#2293d1", text: "white" },
-    "Williams":      { bg: "#37bedd", text: "white" },
+    "Williams":      { bg: "#003d82", text: "white" },
     "Haas":          { bg: "#b6babd", text: "white" },
     "Kick Sauber":   { bg: "#52e252", text: "white" },
     "RB":            { bg: "#6692ff", text: "white" }, // Racing Bulls
@@ -416,9 +416,9 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             ? 'text-red-400 font-light text-base'
             : driver.inPit
               ? 'text-blue-400 font-light text-base'
-              : 'text-green-400 font-light text-base'
+              : 'hidden'
         }>
-          {driver.retired ? 'OUT' : driver.inPit ? 'PIT' : 'RACING'}
+          {driver.retired ? 'OUT' : driver.inPit ? 'PIT' : ''}
         </span>
       </div>
 
