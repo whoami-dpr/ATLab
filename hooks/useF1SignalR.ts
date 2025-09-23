@@ -14,6 +14,7 @@ export interface F1Driver {
   drs: boolean
   inPit: boolean
   isFastestLap: boolean
+  isPersonalBest: boolean
   retired: boolean
   gap: string
   gapTime: string
@@ -1354,6 +1355,7 @@ export const useF1SignalR = () => {
         inPit: driverData.InPit || false,
         retired: driverData.Retired || driverData.KnockedOut || driverData.Stopped || false,
         isFastestLap: false, // Will be updated later
+        isPersonalBest: false, // Will be updated later
         gap: finalGapValue,
         gapTime: finalGapTimeValue,
         lapTime: extractStringValue(driverData.LastLapTime?.Value || driverData.LapTime || driverData.CurrentLapTime, "0.000"),
@@ -1403,54 +1405,105 @@ export const useF1SignalR = () => {
           })()
       }
 
+      // Debug logging for lap times
+      console.log(`🏎️ Driver ${driver.code} lap times: LastLapTime="${driver.lapTime}", BestLapTime="${driver.prevLap}"`)
+
       updatedDrivers.push(driver)
       console.log(`🏎️ Added driver ${position}: ${driver.name} (${driver.code}) - ${driver.lapTime}`)
     })
 
     console.log(`🏎️ Total drivers updated: ${updatedDrivers.length}`)
     
-    // Find the driver with the fastest lap time (compare with historical best)
+    // Find the driver with the fastest lap time in current session
     let currentFastestDriverCode: string | null = null
     let currentFastestTime = Infinity
     
     updatedDrivers.forEach(driver => {
-      // Use BestLapTime (prevLap) for fastest lap comparison since that's the best time
-      let lapTimeMs = Infinity
+      // Check both LastLapTime (current) and BestLapTime (best) to find the absolute fastest
+      let bestTimeMs = Infinity
+      let currentTimeMs = Infinity
       
+      // Convert BestLapTime (prevLap)
       if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "--:--.---") {
         if (driver.prevLap.includes(':')) {
-          // Format: "MM:SS.mmm"
           const [minutes, seconds] = driver.prevLap.split(':')
-          lapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+          bestTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
         } else {
-          // Format: "SS.mmm" or just seconds
-          lapTimeMs = parseFloat(driver.prevLap) * 1000
+          bestTimeMs = parseFloat(driver.prevLap) * 1000
         }
       }
       
-      console.log(`🏎️ Driver ${driver.code} best lap time: "${driver.prevLap}" -> ${lapTimeMs}ms (current: "${driver.lapTime}")`)
+      // Convert LastLapTime (current)
+      if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "--:--.---") {
+        if (driver.lapTime.includes(':')) {
+          const [minutes, seconds] = driver.lapTime.split(':')
+          currentTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+        } else {
+          currentTimeMs = parseFloat(driver.lapTime) * 1000
+        }
+      }
       
-      if (!isNaN(lapTimeMs) && lapTimeMs < currentFastestTime) {
-        currentFastestTime = lapTimeMs
+      // Find the fastest time for this driver (either current or best)
+      const driverFastestTime = Math.min(bestTimeMs, currentTimeMs)
+      
+      console.log(`🏎️ Driver ${driver.code} times: current="${driver.lapTime}" (${currentTimeMs}ms), best="${driver.prevLap}" (${bestTimeMs}ms), fastest=${driverFastestTime}ms`)
+      
+      if (!isNaN(driverFastestTime) && driverFastestTime < currentFastestTime) {
+        currentFastestTime = driverFastestTime
         currentFastestDriverCode = driver.code
-        console.log(`🏎️ New current fastest: ${driver.code} with ${lapTimeMs}ms`)
+        console.log(`🏎️ New current fastest: ${driver.code} with ${driverFastestTime}ms`)
       }
     })
     
-    // Check if we have a new overall fastest lap (better than historical best)
-    if (currentFastestTime < fastestLapTime) {
+    // Always update the fastest lap for current session (even if no historical data)
+    if (currentFastestDriverCode && currentFastestTime < Infinity) {
       setFastestLapTime(currentFastestTime)
       setFastestLapDriver(currentFastestDriverCode)
-      console.log(`🏎️ NEW OVERALL FASTEST LAP: ${currentFastestDriverCode} with ${currentFastestTime}ms`)
+      console.log(`🏎️ FASTEST LAP OF SESSION: ${currentFastestDriverCode} with ${currentFastestTime}ms`)
     } else {
-      console.log(`🏎️ Current fastest: ${currentFastestDriverCode} (${currentFastestTime}ms), Overall fastest: ${fastestLapDriver} (${fastestLapTime}ms)`)
+      console.log(`🏎️ NO FASTEST LAP FOUND - currentFastestDriverCode: ${currentFastestDriverCode}, currentFastestTime: ${currentFastestTime}`)
     }
     
-    // Mark drivers with fastest lap (only the overall fastest gets purple)
-    const driversWithFastestLap = updatedDrivers.map(driver => ({
-      ...driver,
-      isFastestLap: driver.code === fastestLapDriver // Use the overall fastest, not current fastest
-    }))
+    // Mark drivers with fastest lap and personal best logic
+    const driversWithFastestLap = updatedDrivers.map(driver => {
+      // Check if this driver's best time (prevLap) is the fastest of the session
+      let driverBestTimeMs = Infinity
+      if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "--:--.---") {
+        if (driver.prevLap.includes(':')) {
+          const [minutes, seconds] = driver.prevLap.split(':')
+          driverBestTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+        } else {
+          driverBestTimeMs = parseFloat(driver.prevLap) * 1000
+        }
+      }
+      
+      // Check if current lap (lapTime) is the personal best for this driver
+      let currentLapTimeMs = Infinity
+      if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "--:--.---") {
+        if (driver.lapTime.includes(':')) {
+          const [minutes, seconds] = driver.lapTime.split(':')
+          currentLapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+        } else {
+          currentLapTimeMs = parseFloat(driver.lapTime) * 1000
+        }
+      }
+      
+      const isFastestLap = !isNaN(driverBestTimeMs) && driverBestTimeMs === currentFastestTime
+      
+      // Check if current lap is personal best (with tolerance for floating point precision)
+      const timeDifference = Math.abs(currentLapTimeMs - driverBestTimeMs)
+      const isPersonalBest = !isNaN(currentLapTimeMs) && !isNaN(driverBestTimeMs) && timeDifference < 10 // 10ms tolerance
+      
+      console.log(`🏎️ Driver ${driver.code} personal best check: current="${driver.lapTime}" (${currentLapTimeMs}ms), best="${driver.prevLap}" (${driverBestTimeMs}ms), diff=${timeDifference}ms, isPersonalBest=${isPersonalBest}`)
+      
+      return {
+        ...driver,
+        isFastestLap,
+        isPersonalBest
+      }
+    })
+    
+    console.log(`🏎️ Drivers with fastest lap marked:`, driversWithFastestLap.map(d => ({ code: d.code, isFastestLap: d.isFastestLap, prevLap: d.prevLap })))
     
     setDrivers(driversWithFastestLap)
     

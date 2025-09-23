@@ -436,7 +436,11 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       {/* Lap Time - Nueva fuente Inter */}
       <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-lg">
         <div
-          className={`font-bold ${getLapTimeColor(driver.lapTimeColor, driver.isFastestLap)}`}
+          className={`font-bold ${
+            driver.isPersonalBest
+              ? 'text-green-400'
+              : 'text-white'
+          }`}
           style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem' }}
         >
           {formatLapTime(driver.lapTime)}
@@ -445,11 +449,9 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           className={`text-sm ${
             driver.isFastestLap
               ? 'text-purple-400'
-              : driver.lapTimeColor.includes('purple')
-                ? 'text-purple-400'
-                : driver.lapTimeColor.includes('green')
-                  ? 'text-green-400'
-                  : 'text-gray-500'
+              : driver.isPersonalBest
+                ? 'text-green-400'
+                : 'text-gray-500'
           } font-normal`}
           style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
         >
