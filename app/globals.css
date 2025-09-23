@@ -16,29 +16,57 @@
   }
   body {
     @apply font-poppins transition-colors;
+  }
+  
+  .light {
     @apply bg-white text-black;
-    @apply dark:bg-black dark:text-white;
+  }
+  
+  .dark {
+    @apply bg-black text-white;
   }
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
+.light ::-webkit-scrollbar {
+  width: 10px;
+  background: #f3f4f6;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 8px;
+  border: 2px solid #f3f4f6;
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+.light ::-webkit-scrollbar-corner {
+  background: #f3f4f6;
+}
+
+.dark ::-webkit-scrollbar {
   width: 10px;
   background: #18181b;
 }
-::-webkit-scrollbar-thumb {
-  background: #6b7280; /* gris Tailwind gray-500 */
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
   border-radius: 8px;
   border: 2px solid #18181b;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af; /* gris Tailwind gray-400 */
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
-::-webkit-scrollbar-corner {
+.dark ::-webkit-scrollbar-corner {
   background: #18181b;
 }
+
 /* Firefox */
-* {
+.light * {
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 #f3f4f6;
+}
+
+.dark * {
   scrollbar-width: thin;
   scrollbar-color: #6b7280 #18181b;
 }
