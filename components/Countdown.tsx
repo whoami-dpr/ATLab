@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useThemeOptimized } from '../hooks/useThemeOptimized';
 
 interface CountdownProps {
   targetDate: Date | string;
@@ -17,6 +18,7 @@ function getTimeLeft(target: Date) {
 }
 
 export const Countdown: React.FC<CountdownProps> = ({ targetDate, label, className }) => {
+  const { theme } = useThemeOptimized();
   const target = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
   const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(target));
 
@@ -31,22 +33,26 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate, label, classNa
     <div className={`flex flex-col items-start font-inter ${className || ''}`}>
       {label && <span className="text-lg font-medium mb-1">{label}</span>}
       <div className="flex gap-4 text-4xl font-inter font-bold tracking-widest select-none">
-        <TimeUnit value={timeLeft.days} label="days" />
-        <TimeUnit value={timeLeft.hours} label="hrs" />
-        <TimeUnit value={timeLeft.minutes} label="min" />
-        <TimeUnit value={timeLeft.seconds} label="sec" />
+        <TimeUnit value={timeLeft.days} label="days" theme={theme} />
+        <TimeUnit value={timeLeft.hours} label="hrs" theme={theme} />
+        <TimeUnit value={timeLeft.minutes} label="min" theme={theme} />
+        <TimeUnit value={timeLeft.seconds} label="sec" theme={theme} />
       </div>
     </div>
   );
 };
 
-function TimeUnit({ value, label }: { value: number; label: string }) {
+function TimeUnit({ value, label, theme }: { value: number; label: string; theme: string }) {
   return (
     <div className="flex flex-col items-center min-w-[60px] font-inter">
-      <span className="transition-all duration-300 ease-in-out text-white drop-shadow-sm font-inter">
+      <span className={`transition-all duration-300 ease-in-out drop-shadow-sm font-inter ${
+        theme === 'light' ? 'text-black' : 'text-white'
+      }`}>
         {value.toString().padStart(2, '0')}
       </span>
-      <span className="text-xs text-gray-400 font-normal mt-1 uppercase tracking-wider font-inter">{label}</span>
+      <span className={`text-xs font-normal mt-1 uppercase tracking-wider font-inter ${
+        theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+      }`}>{label}</span>
     </div>
   );
 } 
