@@ -36,9 +36,12 @@ export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
       <div className="ml-auto flex gap-4 items-center">
         <button
           onClick={toggleTheme}
-          className="flex items-center justify-center theme-transition text-gray-300 hover:text-white"
+          className="flex items-center gap-2 theme-transition text-gray-300 hover:text-white"
           aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
+          <span className="text-xs font-light tracking-wide">
+            {theme === 'light' ? 'Light' : 'Dark'}
+          </span>
           {theme === 'light' ? (
             <Moon className="w-5 h-5" />
           ) : (

@@ -3,31 +3,31 @@
 import { Navbar } from "../../components/Navbar";
 import { useThemeOptimized } from "../../hooks/useThemeOptimized";
 import React from "react";
-import { ArrowRight, Github, Linkedin, Zap, Globe, Shield, Cpu, Database, Wifi, BarChart3, Clock, Users } from "lucide-react";
+import { ArrowRight, Github, Linkedin, Gauge, Target, Timer, Building2, Cpu, Database, Wifi, BarChart3, Clock } from "lucide-react";
 
 export default function AboutUs() {
   const { theme } = useThemeOptimized();
 
   const features = [
     {
-      title: "Real-time Data",
-      description: "Live timing, positions, and telemetry updated every second during F1 sessions",
-      icon: <Zap className="w-6 h-6" />
+      title: "Live Timing Data",
+      description: "Real-time driver positions, lap times, sector times, and gap calculations updated every 100ms during F1 sessions",
+      icon: <Gauge className="w-6 h-6" />
     },
     {
-      title: "Professional UI",
-      description: "Inspired by official F1 timing screens with modern, clean design",
-      icon: <BarChart3 className="w-6 h-6" />
+      title: "Driver Analytics",
+      description: "Track driver performance with positions gained/lost, fastest laps, pit stop times, and retirement status",
+      icon: <Target className="w-6 h-6" />
     },
     {
-      title: "Weather Integration",
-      description: "Track conditions, temperature, and atmospheric data in real-time",
-      icon: <Globe className="w-6 h-6" />
+      title: "Session Management",
+      description: "Complete F1 weekend schedule with practice, qualifying, sprint, and race sessions with accurate timing",
+      icon: <Timer className="w-6 h-6" />
     },
     {
-      title: "Secure & Reliable",
-      description: "Built with enterprise-grade security and 99.9% uptime",
-      icon: <Shield className="w-6 h-6" />
+      title: "Team Information",
+      description: "Real-time team standings, driver assignments, and team-specific color coding for easy identification",
+      icon: <Building2 className="w-6 h-6" />
     }
   ];
 
@@ -118,41 +118,33 @@ export default function AboutUs() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className={`group p-8 rounded-3xl border transition-all duration-500 ${
-                theme === 'light'
-                  ? 'bg-white/50 border-gray-200/50 hover:border-gray-300/50 hover:bg-white/70'
-                  : 'bg-gray-900/30 border-gray-800/50 hover:border-gray-700/50 hover:bg-gray-900/50'
-              }`}>
-                <div className="flex items-start gap-4">
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-300 ${
-                    theme === 'light'
-                      ? 'bg-blue-500/20 text-blue-600 group-hover:bg-blue-500/30'
-                      : 'bg-blue-500/20 text-blue-400 group-hover:bg-blue-500/30'
-                  }`}>
-                    {feature.icon}
-                  </div>
-                  <div>
-                    <h3 className={`text-xl font-semibold mb-3 transition-colors duration-500 ${
-                      theme === 'light' ? 'text-gray-900' : 'text-white'
-                    }`}>
-                      {feature.title}
-                    </h3>
-                    <p className={`leading-relaxed transition-colors duration-500 ${
-                      theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-                    }`}>
-                      {feature.description}
-                    </p>
-                  </div>
+              <div key={index} className="group text-center">
+                <div className={`inline-flex items-center justify-center w-12 h-12 mb-6 transition-all duration-300 group-hover:scale-110 ${
+                  theme === 'light'
+                    ? 'text-gray-600 group-hover:text-blue-600'
+                    : 'text-gray-400 group-hover:text-blue-400'
+                }`}>
+                  {feature.icon}
                 </div>
+                <h3 className={`text-xl font-bold mb-3 transition-colors duration-300 ${
+                  theme === 'light' ? 'text-gray-900' : 'text-white'
+                }`}>
+                  {feature.title}
+                </h3>
+                <p className={`text-base leading-relaxed transition-colors duration-300 ${
+                  theme === 'light' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  {feature.description}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Tech Stack Section */}
-        <section className="py-24 px-6 max-w-4xl mx-auto">
+        <section className="py-10 px-6 max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-900' : 'text-white'
@@ -165,7 +157,7 @@ export default function AboutUs() {
               Modern tools for modern performance
             </p>
           </div>
-
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {techStack.map((tech, index) => (
               <div key={index} className={`group text-center p-6 rounded-2xl border transition-all duration-300 ${
@@ -188,104 +180,6 @@ export default function AboutUs() {
                 }`}>{tech.category}</p>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Developer Section */}
-        <section className="py-24 px-6 max-w-3xl mx-auto text-center">
-          <div className="mb-12">
-            <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
-              Developer
-            </h2>
-            <p className={`text-xl transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              Systems Engineer & F1 Enthusiast
-            </p>
-          </div>
-
-          <div className={`rounded-3xl p-12 border transition-all duration-500 ${
-            theme === 'light'
-              ? 'bg-white/50 border-gray-200/50'
-              : 'bg-gray-900/30 border-gray-800/50'
-          }`}>
-            <div className={`w-24 h-24 rounded-full mx-auto mb-6 overflow-hidden border-2 transition-colors duration-500 ${
-              theme === 'light' ? 'border-gray-300' : 'border-gray-700'
-            }`}>
-              <img 
-                src="https://github.com/whoami-dpr.png" 
-                alt="Developer" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            
-            <h3 className={`text-2xl font-semibold mb-4 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
-              Joaquín Montes
-            </h3>
-            
-            <p className={`mb-8 leading-relaxed max-w-2xl mx-auto transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              Systems Engineer specialized in cybersecurity and real-time data processing. 
-              Passionate about Formula 1 and building tools that bring fans closer to the action.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-3 mb-8">
-              <span className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors duration-500 ${
-                theme === 'light'
-                  ? 'bg-blue-500/20 text-blue-600 border-blue-500/30'
-                  : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-              }`}>
-                Real-time Systems
-              </span>
-              <span className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors duration-500 ${
-                theme === 'light'
-                  ? 'bg-green-500/20 text-green-600 border-green-500/30'
-                  : 'bg-green-500/20 text-green-400 border-green-500/30'
-              }`}>
-                Data Engineering
-              </span>
-              <span className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors duration-500 ${
-                theme === 'light'
-                  ? 'bg-purple-500/20 text-purple-600 border-purple-500/30'
-                  : 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-              }`}>
-                Cybersecurity
-              </span>
-            </div>
-
-            <div className="flex justify-center gap-6">
-              <a 
-                href="https://github.com/whoami-dpr" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className={`group inline-flex items-center gap-2 transition-colors duration-300 ${
-                  theme === 'light'
-                    ? 'text-gray-600 hover:text-gray-900'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <Github className="w-5 h-5" />
-                <span className="font-medium">@whoami-dpr</span>
-              </a>
-              <a 
-                href="https://www.linkedin.com/in/joaquinmontes10/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className={`group inline-flex items-center gap-2 transition-colors duration-300 ${
-                  theme === 'light'
-                    ? 'text-gray-600 hover:text-gray-900'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <Linkedin className="w-5 h-5" />
-                <span className="font-medium">@joaquinmontes10</span>
-              </a>
-            </div>
           </div>
         </section>
 
@@ -319,7 +213,76 @@ export default function AboutUs() {
           </div>
         </section>
 
-         {/* Footer */}
+        {/* Developer Section */}
+        <section className="py-12 px-6 max-w-2xl mx-auto">
+          <div className="text-center">
+            <h2 className={`text-2xl font-bold mb-8 transition-colors duration-500 ${
+              theme === 'light' ? 'text-gray-900' : 'text-white'
+            }`}>
+              Meet the Developer
+            </h2>
+            
+            <div className={`w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 ${
+              theme === 'light' ? 'ring-2 ring-gray-200' : 'ring-2 ring-gray-700'
+            }`}>
+              <img 
+                src="https://github.com/whoami-dpr.png" 
+                alt="Joaquín Montes" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            <h3 className={`text-xl font-semibold mb-1 transition-colors duration-500 ${
+              theme === 'light' ? 'text-gray-900' : 'text-white'
+            }`}>
+              Joaquín Montes
+            </h3>
+            
+            <p className={`text-sm font-medium mb-3 transition-colors duration-500 ${
+              theme === 'light' ? 'text-blue-600' : 'text-blue-400'
+            }`}>
+              Systems Engineer
+            </p>
+
+            <p className={`text-sm leading-relaxed mb-6 max-w-md mx-auto transition-colors duration-500 ${
+              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
+              Specialized in cybersecurity and real-time data processing. 
+              Passionate about Formula 1 and building tools that bring fans closer to the action.
+            </p>
+
+            <div className="flex justify-center gap-3">
+              <a 
+                href="https://github.com/whoami-dpr" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/25 ${
+                  theme === 'light'
+                    ? 'bg-gray-900 text-white hover:bg-gray-800'
+                    : 'bg-white text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Github className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="text-sm font-medium">GitHub</span>
+              </a>
+              <a 
+                href="https://www.linkedin.com/in/joaquinmontes10/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 ${
+                  theme === 'light'
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                <Linkedin className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="text-sm font-medium">LinkedIn</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+      {/* Footer */}
          <footer className={`border-t backdrop-blur-sm transition-all duration-500 ${
            theme === 'light'
              ? 'border-gray-800/50 bg-black/80'
@@ -333,8 +296,8 @@ export default function AboutUs() {
               <p className={`transition-colors duration-500 ${
                 theme === 'light' ? 'text-gray-300' : 'text-gray-400'
               }`}>ARSIM Telemetry Lab</p>
-            </div>
-            
+      </div>
+
             <p className={`text-sm max-w-2xl mx-auto leading-relaxed mb-8 transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-400' : 'text-gray-500'
             }`}>
@@ -367,10 +330,10 @@ export default function AboutUs() {
               >
                 <Linkedin className="w-5 h-5" />
               </a>
-            </div>
           </div>
-        </footer>
+        </div>
+      </footer>
       </div>
     </div>
   );
-}
+} 
