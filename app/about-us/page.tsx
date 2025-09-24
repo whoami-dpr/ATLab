@@ -10,23 +10,23 @@ export default function AboutUs() {
 
   const features = [
     {
-      title: "Live Timing Data",
-      description: "Real-time driver positions, lap times, sector times, and gap calculations updated every 100ms during F1 sessions",
+      title: "Live Positions",
+      description: "See exactly where each driver is on track. Positions update every 100ms during F1 sessions, just like the official F1 app.",
       icon: <Gauge className="w-6 h-6" />
     },
     {
-      title: "Driver Analytics",
-      description: "Track driver performance with positions gained/lost, fastest laps, pit stop times, and retirement status",
+      title: "Gap Times",
+      description: "Individual sector times and cumulative gaps to the leader. Know if a driver is gaining or losing time in real-time.",
       icon: <Target className="w-6 h-6" />
     },
     {
-      title: "Session Management",
-      description: "Complete F1 weekend schedule with practice, qualifying, sprint, and race sessions with accurate timing",
+      title: "Session Schedule",
+      description: "Complete F1 weekend calendar with practice, qualifying, sprint, and race sessions. Never miss a session again.",
       icon: <Timer className="w-6 h-6" />
     },
     {
-      title: "Team Information",
-      description: "Real-time team standings, driver assignments, and team-specific color coding for easy identification",
+      title: "Team Colors",
+      description: "Each team has their official colors. Ferrari red, Mercedes silver, McLaren orange - just like on TV.",
       icon: <Building2 className="w-6 h-6" />
     }
   ];
@@ -66,8 +66,8 @@ export default function AboutUs() {
             <p className={`text-xl md:text-2xl font-light leading-relaxed max-w-3xl mx-auto transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-600' : 'text-gray-400'
             }`}>
-              Professional Formula 1 live timing and telemetry dashboard. 
-              Built for enthusiasts who demand precision and performance.
+              Live timing data from F1's official timing system. 
+              Real-time positions, lap times, and gaps updated every 100ms during sessions.
             </p>
           </div>
           
@@ -109,12 +109,12 @@ export default function AboutUs() {
             <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-900' : 'text-white'
             }`}>
-              Built for Performance
+              What ATLab Does
             </h2>
             <p className={`text-xl max-w-2xl mx-auto transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-600' : 'text-gray-400'
             }`}>
-              Every feature designed with Formula 1 professionals in mind
+              Real F1 data, real-time updates, real performance insights
             </p>
           </div>
 
@@ -144,38 +144,34 @@ export default function AboutUs() {
         </section>
 
         {/* Tech Stack Section */}
-        <section className="py-10 px-6 max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-500 ${
+        <section className="py-16 px-6 max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className={`text-3xl font-bold mb-4 transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-900' : 'text-white'
             }`}>
-              Technology Stack
+              How It's Built
             </h2>
-            <p className={`text-xl transition-colors duration-500 ${
+            <p className={`text-lg transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-600' : 'text-gray-400'
             }`}>
-              Modern tools for modern performance
+              The tech behind real-time F1 data
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {techStack.map((tech, index) => (
-              <div key={index} className={`group text-center p-6 rounded-2xl border transition-all duration-300 ${
-                theme === 'light'
-                  ? 'bg-white/30 border-gray-200/30 hover:border-gray-300/50 hover:bg-white/50'
-                  : 'bg-gray-900/20 border-gray-800/30 hover:border-gray-700/50 hover:bg-gray-900/40'
-              }`}>
-                <div className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              <div key={index} className="group text-center">
+                <div className={`inline-flex items-center justify-center w-10 h-10 mb-4 transition-all duration-300 group-hover:scale-110 ${
                   theme === 'light'
-                    ? 'bg-gray-200/50 text-gray-600 group-hover:text-gray-900 group-hover:bg-gray-300/50'
-                    : 'bg-gray-800/50 text-gray-400 group-hover:text-white group-hover:bg-gray-700/50'
+                    ? 'text-gray-600 group-hover:text-blue-600'
+                    : 'text-gray-400 group-hover:text-blue-400'
                 }`}>
                   {tech.icon}
                 </div>
-                <h3 className={`font-semibold mb-1 transition-colors duration-500 ${
+                <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
                   theme === 'light' ? 'text-gray-900' : 'text-white'
                 }`}>{tech.name}</h3>
-                <p className={`text-sm transition-colors duration-500 ${
+                <p className={`text-sm transition-colors duration-300 ${
                   theme === 'light' ? 'text-gray-500' : 'text-gray-500'
                 }`}>{tech.category}</p>
               </div>
@@ -197,7 +193,7 @@ export default function AboutUs() {
             <div className="text-center">
               <div className={`text-4xl font-bold mb-2 transition-colors duration-500 ${
                 theme === 'light' ? 'text-gray-900' : 'text-white'
-              }`}>&lt;100ms</div>
+              }`}>&gt;100ms</div>
               <div className={`transition-colors duration-500 ${
                 theme === 'light' ? 'text-gray-600' : 'text-gray-400'
               }`}>Latency</div>
@@ -247,8 +243,8 @@ export default function AboutUs() {
             <p className={`text-sm leading-relaxed mb-6 max-w-md mx-auto transition-colors duration-500 ${
               theme === 'light' ? 'text-gray-600' : 'text-gray-400'
             }`}>
-              Specialized in cybersecurity and real-time data processing. 
-              Passionate about Formula 1 and building tools that bring fans closer to the action.
+              Built this app because I wanted better F1 timing data than what's available. 
+              Uses the same data source as the official F1 app, but with a cleaner interface.
             </p>
 
             <div className="flex justify-center gap-3">
