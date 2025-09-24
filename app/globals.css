@@ -91,9 +91,19 @@
   scrollbar-color: #cbd5e1 #f8fafc;
 }
 
-/* Smooth transitions */
+/* Optimized transitions for better theme switching */
 * {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.1s ease-out, background-color 0.1s ease-out, border-color 0.1s ease-out, box-shadow 0.1s ease-out;
+}
+
+/* Faster theme transitions */
+.theme-transition {
+  transition: color 0.05s ease-out, background-color 0.05s ease-out, border-color 0.05s ease-out;
+}
+
+/* Disable transitions during theme change for instant switching */
+.theme-changing * {
+  transition: none !important;
 }
 
 /* Focus styles */

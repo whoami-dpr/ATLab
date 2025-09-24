@@ -1,38 +1,12 @@
 "use client";
 
 import { Navbar } from "../../components/Navbar";
-import React, { useState, useEffect } from "react";
+import { useThemeOptimized } from "../../hooks/useThemeOptimized";
+import React from "react";
 import { ArrowRight, Github, Linkedin, Zap, Globe, Shield, Cpu, Database, Wifi, BarChart3, Clock, Users } from "lucide-react";
 
 export default function AboutUs() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  useEffect(() => {
-    // Leer tema del localStorage
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-
-    // Escuchar cambios en el DOM
-    const observer = new MutationObserver(() => {
-      const htmlElement = document.documentElement;
-      if (htmlElement.classList.contains('light') && theme !== 'light') {
-        setTheme('light');
-      } else if (htmlElement.classList.contains('dark') && theme !== 'dark') {
-        setTheme('dark');
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [theme]);
+  const { theme } = useThemeOptimized();
 
   const features = [
     {
@@ -65,7 +39,7 @@ export default function AboutUs() {
   ];
 
   return (
-    <div className={`min-h-screen w-full relative transition-colors duration-500 ${
+    <div className={`min-h-screen w-full relative theme-transition ${
       theme === 'light' 
         ? 'bg-gray-50 text-gray-900' 
         : 'bg-black text-white'

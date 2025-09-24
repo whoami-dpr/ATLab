@@ -3,7 +3,7 @@
 import { Info, Github, Sun, Moon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { GitHubStarsButton } from "./animate-ui/buttons/github-stars";
-import { useState } from "react";
+import { useThemeOptimized } from "../hooks/useThemeOptimized";
 
 const navItems = [
   { href: "/", label: "Live Timing" },
@@ -15,26 +15,10 @@ const navItems = [
 
 export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  const toggleTheme = () => {
-    setTheme(prev => {
-      const newTheme = prev === 'light' ? 'dark' : 'light';
-      
-      // Aplicar tema al HTML
-      const root = document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(newTheme);
-      
-      // Guardar en localStorage
-      localStorage.setItem('theme', newTheme);
-      
-      return newTheme;
-    });
-  };
+  const { theme, toggleTheme } = useThemeOptimized();
 
   return (
-    <nav className={`w-full h-12 bg-black/80 border-b border-gray-800 px-8 flex items-center gap-6 sticky top-0 z-20 font-inter`}>
+    <nav className={`w-full h-12 bg-black/80 border-b border-gray-800 px-8 flex items-center gap-6 sticky top-0 z-20 font-inter theme-transition`}>
       <a href="/about-us" className="font-bold text-2xl text-white cursor-pointer">ATLab</a>
       {navItems.map((item) => (
         <a
@@ -52,7 +36,7 @@ export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
       <div className="ml-auto flex gap-4 items-center">
         <button
           onClick={toggleTheme}
-          className="flex items-center justify-center transition-colors duration-200 text-gray-300 hover:text-white"
+          className="flex items-center justify-center theme-transition text-gray-300 hover:text-white"
           aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
           {theme === 'light' ? (
