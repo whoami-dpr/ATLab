@@ -3,10 +3,23 @@
 import { Navbar } from "../../components/Navbar";
 import { useThemeOptimized } from "../../hooks/useThemeOptimized";
 import React from "react";
-import { ArrowRight, Github, Linkedin, Gauge, Target, Timer, Building2, Cpu, Database, Wifi, BarChart3, Clock } from "lucide-react";
+import { ArrowRight, Github, Linkedin, Gauge, Target, Timer, Building2, Cpu, Database, Wifi, BarChart3, Clock, ChevronUp } from "lucide-react";
 
 export default function AboutUs() {
   const { theme } = useThemeOptimized();
+  const [scrollProgress, setScrollProgress] = React.useState(0);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+      setScrollProgress(scrollPercent);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const features = [
     {
@@ -53,6 +66,16 @@ export default function AboutUs() {
       
       <div className="relative z-10">
         <Navbar />
+        
+        {/* Mini Scroll Progress Bar */}
+        <div className="fixed top-16 right-4 w-1 h-20 z-50">
+          <div className="w-full h-full bg-gray-600 dark:bg-gray-300 rounded-full overflow-hidden">
+            <div 
+              className="w-full bg-gray-200 dark:bg-gray-700 transition-all duration-150 ease-out"
+              style={{ height: `${scrollProgress}%` }}
+            />
+          </div>
+        </div>
         
         
         {/* Hero Section */}
