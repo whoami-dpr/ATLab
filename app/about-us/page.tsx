@@ -41,13 +41,13 @@ export default function AboutUs() {
   return (
     <div className={`min-h-screen w-full relative theme-transition ${
       theme === 'light' 
-        ? 'bg-gray-50 text-gray-900' 
+        ? 'text-gray-900' 
         : 'bg-black text-white'
     }`}>
-      {/* Subtle background gradient */}
+      {/* Background gradient */}
       <div className="absolute inset-0 z-0" style={{
         background: theme === 'light'
-          ? "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59, 130, 246, 0.08), transparent 70%), #f8fafc"
+          ? "linear-gradient(180deg, #f0f8ff 0%, #cce7ff 100%)"
           : "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.15), transparent 70%), #000000"
       }} />
       
@@ -319,24 +319,24 @@ export default function AboutUs() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className={`border-t backdrop-blur-sm transition-all duration-500 ${
-          theme === 'light'
-            ? 'border-gray-200/50 bg-white/50'
-            : 'border-gray-800/50 bg-black/50'
-        }`}>
+         {/* Footer */}
+         <footer className={`border-t backdrop-blur-sm transition-all duration-500 ${
+           theme === 'light'
+             ? 'border-gray-800/50 bg-black/80'
+             : 'border-gray-800/50 bg-black/50'
+         }`}>
           <div className="max-w-4xl mx-auto px-6 py-12 text-center">
             <div className="mb-6">
               <h3 className={`text-2xl font-bold mb-2 transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-900' : 'text-white'
+                theme === 'light' ? 'text-white' : 'text-white'
               }`}>ATLab</h3>
               <p className={`transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                theme === 'light' ? 'text-gray-300' : 'text-gray-400'
               }`}>ARSIM Telemetry Lab</p>
             </div>
             
             <p className={`text-sm max-w-2xl mx-auto leading-relaxed mb-8 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-500' : 'text-gray-500'
+              theme === 'light' ? 'text-gray-400' : 'text-gray-500'
             }`}>
               Unofficial project. F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, 
               GRAND PRIX and related marks are trademarks of Formula One Licensing B.V.
@@ -349,7 +349,7 @@ export default function AboutUs() {
                 rel="noopener noreferrer" 
                 className={`transition-colors duration-300 ${
                   theme === 'light'
-                    ? 'text-gray-500 hover:text-gray-900'
+                    ? 'text-gray-400 hover:text-white'
                     : 'text-gray-500 hover:text-white'
                 }`}
               >
@@ -361,7 +361,7 @@ export default function AboutUs() {
                 rel="noopener noreferrer" 
                 className={`transition-colors duration-300 ${
                   theme === 'light'
-                    ? 'text-gray-500 hover:text-gray-900'
+                    ? 'text-gray-400 hover:text-white'
                     : 'text-gray-500 hover:text-white'
                 }`}
               >
