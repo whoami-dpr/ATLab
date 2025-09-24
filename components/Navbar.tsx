@@ -3,7 +3,6 @@
 import { Info, Github } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { GitHubStarsButton } from "./animate-ui/buttons/github-stars";
-import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { href: "/", label: "Live Timing" },
@@ -16,27 +15,24 @@ const navItems = [
 export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
   const pathname = usePathname();
   return (
-    <nav className={`w-full h-12 bg-black/80 dark:bg-black/80 light:bg-white/90 border-b border-gray-800 dark:border-gray-800 light:border-gray-200 ${hideLogo ? 'pl-8 pr-8' : 'px-8'} flex items-center gap-8 sticky top-0 z-20 font-inter`}>
-      {!hideLogo && (
-        <a href="/about-us" className="font-bold text-2xl text-white dark:text-white light:text-black cursor-pointer">ATLab</a>
-      )}
+    <nav className={`w-full h-12 bg-black/80 border-b border-gray-800 px-8 flex items-center gap-6 sticky top-0 z-20 font-inter`}>
+      <a href="/about-us" className="font-bold text-2xl text-white cursor-pointer">ATLab</a>
       {navItems.map((item) => (
         <a
           key={item.href}
           href={item.href}
           className={
             pathname === item.href
-              ? "text-white dark:text-white light:text-black underline underline-offset-8 decoration-2"
-              : "text-white dark:text-white light:text-black hover:text-gray-200 dark:hover:text-gray-200 light:hover:text-gray-600 transition"
+              ? "text-white underline underline-offset-8 decoration-2"
+              : "text-white hover:text-gray-200 transition"
           }
         >
           {item.label}
         </a>
       ))}
       <div className="ml-auto flex gap-4">
-        <ThemeToggle />
-        <GitHubStarsButton username="whoami-dpr" repo="ATLab" className="bg-transparent text-white dark:text-white light:text-black hover:bg-transparent hover:scale-100" />
-        <a href="/about-us" className="text-gray-400 dark:text-gray-400 light:text-gray-600 hover:text-white dark:hover:text-white light:hover:text-black transition flex items-center gap-1"><Info className="w-4 h-4 mr-1" /> About Us</a>
+        <GitHubStarsButton username="whoami-dpr" repo="ATLab" className="bg-transparent text-white hover:bg-transparent hover:scale-100" />
+        <a href="/about-us" className="text-gray-400 hover:text-white transition flex items-center gap-1"><Info className="w-4 h-4 mr-1" /> About Us</a>
       </div>
     </nav>
   );

@@ -42,6 +42,52 @@ function getFlagUrl(country: string, country_key?: string) {
   return code ? `/country-flags/${code.toLowerCase()}.svg` : undefined;
 }
 
+function getSessionName(kind: string, allSessions: any[], currentIndex: number) {
+  // Si es una sesión de práctica, contar cuántas sesiones de práctica han aparecido antes
+  if (kind === 'Pract' || kind === 'Prac' || kind === 'Practice' || kind.toLowerCase().includes('practice')) {
+    let practiceCount = 0;
+    for (let i = 0; i < currentIndex; i++) {
+      if (allSessions[i] && (allSessions[i].kind === 'Pract' || allSessions[i].kind === 'Prac' || allSessions[i].kind === 'Practice' || allSessions[i].kind.toLowerCase().includes('practice'))) {
+        practiceCount++;
+      }
+    }
+    return `Practice ${practiceCount + 1}`;
+  }
+  
+  // Lógica especial para sesiones de Sprint
+  if (kind === 'Sprint' || kind === 'Sp' || kind === 'Spri' || kind === 'Sprint R') {
+    // Si hay una sesión de Sprint después de esta en el fin de semana, esta es Qualification
+    const hasSprintAfter = allSessions.slice(currentIndex + 1).some(session => 
+      session && (session.kind === 'Sprint' || session.kind === 'Sp' || session.kind === 'Spri' || session.kind === 'Sprint R')
+    );
+    
+    if (hasSprintAfter) {
+      return 'Sprint Qualification';
+    } else {
+      return 'Sprint Race';
+    }
+  }
+  
+  const sessionNames: Record<string, string> = {
+    'Qua': 'Qualifying',
+    'Qu': 'Qualifying',
+    'Qualify': 'Qualifying',
+    'Qualif': 'Qualifying',
+    'Race': 'Race',
+    'Sprint Quali': 'Sprint Qualification',
+    'FP1': 'Practice 1',
+    'FP2': 'Practice 2', 
+    'FP3': 'Practice 3',
+    'Q1': 'Qualifying 1',
+    'Q2': 'Qualifying 2',
+    'Q3': 'Qualifying 3',
+    'Sprint Qualifying': 'Sprint Qualification',
+    'Sprint Race': 'Sprint Race'
+  };
+  
+  return sessionNames[kind] || kind;
+}
+
 export default function SchedulePage() {
   const { schedule, loading, error, nextSession, nextRace } = useSchedule();
   const now = new Date();
@@ -129,26 +175,41 @@ export default function SchedulePage() {
                     <div className="border-b border-gray-700 my-3" />
                     {/* Grid de días y sesiones más grande */}
                     <div className="grid grid-cols-3 gap-4 w-full mt-4">
-                      {['Friday', 'Saturday', 'Sunday'].map((day) => {
-                        const sessions = getRaceDays(nextRace.round.sessions).find(d => d.day === day)?.sessions || [];
-                        return (
-                          <div key={day}>
-                            <div className="font-bold text-white mb-2 text-base">{day}</div>
-                            {sessions.length === 0 ? (
-                              <div className="text-gray-600 text-xs italic">—</div>
-                            ) : (
-                              sessions.map((session: any) => (
-                                <div key={session.kind + session.start} className="mb-1">
-                                  <div className="font-bold text-white text-sm">{session.kind}</div>
-                                  <div className="text-gray-300 text-xs">
-                                    {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        );
-                      })}
+                      {(() => {
+                        // Obtener todas las sesiones del fin de semana para la numeración correcta
+                        const allWeekendSessions = getRaceDays(nextRace.round.sessions)
+                          .flatMap(day => day.sessions)
+                          .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+                        
+                        return ['Friday', 'Saturday', 'Sunday'].map((day) => {
+                          const sessions = getRaceDays(nextRace.round.sessions).find(d => d.day === day)?.sessions || [];
+                          return (
+                            <div key={day}>
+                              <div className="font-bold text-white mb-2 text-base">{day}</div>
+                              {sessions.length === 0 ? (
+                                <div className="text-gray-600 text-xs italic">—</div>
+                              ) : (
+                                sessions.map((session: any, index: number) => {
+                                  // Encontrar el índice global de esta sesión en todas las sesiones del fin de semana
+                                  const globalIndex = allWeekendSessions.findIndex(s => 
+                                    s.kind === session.kind && 
+                                    s.start === session.start && 
+                                    s.end === session.end
+                                  );
+                                  return (
+                                    <div key={session.kind + session.start} className="mb-1">
+                                      <div className="font-bold text-white text-sm">{getSessionName(session.kind, allWeekendSessions, globalIndex)}</div>
+                                      <div className="text-gray-300 text-xs">
+                                        {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 )}
@@ -178,26 +239,41 @@ export default function SchedulePage() {
                       <div className="border-b border-gray-700 my-2" />
                       {/* Grid de días y sesiones */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                        {['Friday', 'Saturday', 'Sunday'].map((day) => {
-                          const sessions = getRaceDays(round.sessions).find(d => d.day === day)?.sessions || [];
-                          return (
-                            <div key={day}>
-                              <div className="font-semibold text-white mb-2">{day}</div>
-                              {sessions.length === 0 ? (
-                                <div className="text-gray-600 text-sm italic">—</div>
-                              ) : (
-                                sessions.map((session: any) => (
-                                  <div key={session.kind + session.start} className="mb-1">
-                                    <div className="font-bold text-white text-sm">{session.kind}</div>
-                                    <div className="text-gray-300 text-xs">
-                                      {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
-                                    </div>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          );
-                        })}
+                        {(() => {
+                          // Obtener todas las sesiones del fin de semana para la numeración correcta
+                          const allWeekendSessions = getRaceDays(round.sessions)
+                            .flatMap(day => day.sessions)
+                            .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+                          
+                          return ['Friday', 'Saturday', 'Sunday'].map((day) => {
+                            const sessions = getRaceDays(round.sessions).find(d => d.day === day)?.sessions || [];
+                            return (
+                              <div key={day}>
+                                <div className="font-semibold text-white mb-2">{day}</div>
+                                {sessions.length === 0 ? (
+                                  <div className="text-gray-600 text-sm italic">—</div>
+                                ) : (
+                                  sessions.map((session: any, index: number) => {
+                                    // Encontrar el índice global de esta sesión en todas las sesiones del fin de semana
+                                    const globalIndex = allWeekendSessions.findIndex(s => 
+                                      s.kind === session.kind && 
+                                      s.start === session.start && 
+                                      s.end === session.end
+                                    );
+                                    return (
+                                      <div key={session.kind + session.start} className="mb-1">
+                                        <div className="font-bold text-white text-sm">{getSessionName(session.kind, allWeekendSessions, globalIndex)}</div>
+                                        <div className="text-gray-300 text-xs">
+                                          {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -215,9 +291,25 @@ export default function SchedulePage() {
 function getRaceDays(sessions: any[]) {
   const daysMap: Record<string, any> = {};
   sessions.forEach(session => {
-    const day = format(new Date(session.start), 'EEEE');
-    if (!daysMap[day]) daysMap[day] = [];
-    daysMap[day].push(session);
+    // Usar UTC para evitar problemas de zona horaria
+    const date = new Date(session.start);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const day = dayNames[date.getUTCDay()];
+    console.log(`Session ${session.kind} on ${day} at ${session.start}`);
+    // Mapear días a nombres consistentes
+    const dayMapping: Record<string, string> = {
+      'Monday': 'Monday',
+      'Tuesday': 'Tuesday', 
+      'Wednesday': 'Wednesday',
+      'Thursday': 'Thursday',
+      'Friday': 'Friday',
+      'Saturday': 'Saturday',
+      'Sunday': 'Sunday'
+    };
+    const mappedDay = dayMapping[day] || day;
+    if (!daysMap[mappedDay]) daysMap[mappedDay] = [];
+    daysMap[mappedDay].push(session);
   });
+  console.log('Days found:', Object.keys(daysMap));
   return Object.entries(daysMap).map(([day, sessions]) => ({ day, sessions }));
 } 

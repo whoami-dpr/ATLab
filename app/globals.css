@@ -81,6 +81,17 @@ button:focus-visible {
   @apply outline-none ring-2 ring-blue-500/50 ring-offset-2 ring-offset-gray-900;
 }
 
+/* Custom selection color */
+::selection {
+  background-color: #F1DABF;
+  color: #000000;
+}
+
+::-moz-selection {
+  background-color: #F1DABF;
+  color: #000000;
+}
+
 /* Glass morphism effect */
 .glass {
   backdrop-filter: blur(16px);

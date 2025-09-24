@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Poppins, Inter } from "next/font/google"
 import "./globals.css"
-import { ClientLayout } from "../components/ClientLayout"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -33,10 +32,13 @@ export default function RootLayout({
           <head>
             <link rel="stylesheet" href="/fonts/formula1-display.css" />
           </head>
-          <body>
-            <ClientLayout>
+          <body className="min-h-screen w-full relative font-sans antialiased bg-black text-white">
+            <div className="absolute inset-0 z-0" style={{
+              background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%), #000000"
+            }} />
+            <div className="relative z-10">
               {children}
-            </ClientLayout>
+            </div>
           </body>
         </html>
   );
