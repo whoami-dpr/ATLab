@@ -55,8 +55,7 @@ useEffect(() => {
         <Flag className="w-12 h-12 text-gray-500 mb-2" />
         <h2 className="text-2xl font-semibold text-white mb-1 tracking-tight">No F1 Session</h2>
         <p className="text-gray-400 mb-2 max-w-md text-base leading-relaxed">
-          Waiting for a live session.<br />
-          Try the demo or check if there's an active session.
+          No active F1 session detected.
         </p>
         {(nextSession || lastSession) && (
           <div className="flex flex-col items-center gap-1 mb-2">
