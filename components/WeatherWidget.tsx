@@ -2,6 +2,7 @@
 
 import { memo } from "react"
 import { Thermometer, Wind, Droplets } from "lucide-react"
+import { useThemeOptimized } from "../hooks/useThemeOptimized"
 
 interface WeatherData {
   track: number
@@ -18,6 +19,8 @@ interface WeatherWidgetProps {
 }
 
 const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
+  const { theme } = useThemeOptimized()
+  
   const getWindDirection = (degrees: number) => {
     const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
     const index = Math.round(degrees / 45) % 8
@@ -34,24 +37,48 @@ const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-col items-center justify-center">
-        <Thermometer className="w-5 h-5 text-gray-400 mb-0.5" />
-        <span className="text-white text-xl font-semibold leading-none">{trackTemp}°</span>
-        <span className="text-xs text-gray-400">TRC</span>
+        <Thermometer className={`w-5 h-5 mb-0.5 ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`} />
+        <span className={`text-xl font-semibold leading-none ${
+          theme === 'light' ? 'text-black' : 'text-white'
+        }`}>{trackTemp}°</span>
+        <span className={`text-xs ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`}>TRC</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Thermometer className="w-5 h-5 text-gray-400 mb-0.5" />
-        <span className="text-white text-xl font-semibold leading-none">{airTemp}°</span>
-        <span className="text-xs text-gray-400">AIR</span>
+        <Thermometer className={`w-5 h-5 mb-0.5 ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`} />
+        <span className={`text-xl font-semibold leading-none ${
+          theme === 'light' ? 'text-black' : 'text-white'
+        }`}>{airTemp}°</span>
+        <span className={`text-xs ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`}>AIR</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Droplets className="w-5 h-5 text-gray-400 mb-0.5" />
-        <span className="text-white text-xl font-semibold leading-none">{humidity}%</span>
-        <span className="text-xs text-gray-400">HUM</span>
+        <Droplets className={`w-5 h-5 mb-0.5 ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`} />
+        <span className={`text-xl font-semibold leading-none ${
+          theme === 'light' ? 'text-black' : 'text-white'
+        }`}>{humidity}%</span>
+        <span className={`text-xs ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`}>HUM</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Wind className="w-5 h-5 text-gray-400 mb-0.5" />
-        <span className="text-white text-xl font-semibold leading-none">{windSpeed}</span>
-        <span className="text-xs text-gray-400">{windDirection}</span>
+        <Wind className={`w-5 h-5 mb-0.5 ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`} />
+        <span className={`text-xl font-semibold leading-none ${
+          theme === 'light' ? 'text-black' : 'text-white'
+        }`}>{windSpeed}</span>
+        <span className={`text-xs ${
+          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        }`}>{windDirection}</span>
       </div>
     </div>
   )

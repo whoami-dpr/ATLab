@@ -3,21 +3,27 @@
 import React, { memo, useMemo } from "react"
 import { OptimizedDriverRow } from "./OptimizedDriverRow"
 import type { F1Driver } from "../hooks/useF1SignalR"
+import { useThemeOptimized } from "../hooks/useThemeOptimized"
 
 interface TimingTableProps {
   drivers: F1Driver[]
 }
 
 export const TimingTable = memo(function TimingTable({ drivers }: TimingTableProps) {
+  const { theme } = useThemeOptimized()
   const sortedDrivers = useMemo(() => {
     return [...drivers].sort((a, b) => a.pos - b.pos)
   }, [drivers])
 
   return (
-    <div className="bg-transparent rounded-xl border border-gray-800/50 overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
+    <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
       {/* Table Header - Más compacto */}
       <div 
-        className="px-1 py-1 bg-transparent text-xs font-semibold text-gray-300 border-b border-gray-700/50"
+        className={`px-1 py-0.5 bg-transparent text-xs font-semibold border-b ${
+          theme === 'light' 
+            ? 'text-gray-700 border-gray-300/50' 
+            : 'text-gray-300 border-gray-700/50'
+        }`}
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(12, 1fr)',

@@ -4,6 +4,7 @@ import { memo } from "react"
 import { WeatherWidget } from "./WeatherWidget"
 import type { F1SessionInfo } from "../hooks/useF1SignalR"
 import { useSchedule } from "../hooks/useSchedule"
+import { useThemeOptimized } from "../hooks/useThemeOptimized"
 
 interface SessionHeaderProps {
   sessionInfo: F1SessionInfo
@@ -14,6 +15,7 @@ interface SessionHeaderProps {
 
 const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession }: SessionHeaderProps) => {
   const { schedule } = useSchedule()
+  const { theme } = useThemeOptimized()
   
   const getTrackStatusColor = () => {
     const status = sessionInfo.trackStatus.toLowerCase()
@@ -144,7 +146,9 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
   }
 
   return (
-    <div className="border-b border-gray-800/50 bg-transparent">
+    <div className={`border-b bg-transparent ${
+      theme === 'light' ? 'border-gray-300/50' : 'border-gray-800/50'
+    }`}>
       <div className="flex items-center justify-between p-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-h-[48px]">
           <div className="h-full flex items-center">
@@ -152,7 +156,9 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
           </div>
           <div className="flex flex-col justify-center">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
+              <h1 className={`text-lg font-semibold flex items-center gap-2 ${
+                theme === 'light' ? 'text-black' : 'text-white'
+              }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
                 F1 Live Timing
                 <span
                   className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isConnected || error) ? 'animate-blink' : ''}`}
@@ -160,7 +166,9 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
                 ></span>
               </h1>
             </div>
-            <div className="text-2xl font-bold text-white leading-none" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>{sessionInfo.timer}</div>
+            <div className={`text-2xl font-bold leading-none ${
+              theme === 'light' ? 'text-black' : 'text-white'
+            }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>{sessionInfo.timer}</div>
           </div>
         </div>
 
@@ -171,7 +179,9 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
           <div className="flex items-center gap-4">
             {getCountryFlag(gpInfo.country)}
             <div className="flex flex-col">
-              <div className="text-sm text-white font-medium leading-none">
+              <div className={`text-sm font-medium leading-none ${
+                theme === 'light' ? 'text-black' : 'text-white'
+              }`}>
                 {gpInfo.gpName} - {gpInfo.sessionType}
               </div>
             </div>
@@ -179,8 +189,12 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
 
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-center">
-              <span className="text-xs text-gray-400 font-medium leading-none mb-0.5">Laps</span>
-              <span className="text-white text-lg font-semibold leading-none">{sessionInfo.lapInfo}</span>
+              <span className={`text-xs font-medium leading-none mb-0.5 ${
+                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+              }`}>Laps</span>
+              <span className={`text-lg font-semibold leading-none ${
+                theme === 'light' ? 'text-black' : 'text-white'
+              }`}>{sessionInfo.lapInfo}</span>
             </div>
             <div className={`px-4 py-2 rounded text-sm font-bold text-white ${
               sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
