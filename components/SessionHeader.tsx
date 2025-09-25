@@ -110,7 +110,9 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
     const flagUrl = `/country-flags/${code.toLowerCase()}.svg`
 
     return (
-      <div className="w-8 h-6 rounded overflow-hidden flex items-center justify-center bg-gray-200">
+      <div className={`w-8 h-6 rounded overflow-hidden flex items-center justify-center bg-gray-200 ${
+        theme === 'light' ? 'shadow-md shadow-gray-400/50 hover:bg-gray-100 transition-colors duration-200' : ''
+      }`}>
         <img 
           src={flagUrl} 
           alt={`${country} flag`}

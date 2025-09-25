@@ -269,7 +269,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
              className={`px-1 py-1 transition-all duration-200 font-inter font-bold flex items-center ${
                driver.isFastestLap 
                  ? 'bg-gradient-to-r from-purple-900/30 to-purple-800/30' 
-                 : 'hover:bg-gradient-to-r hover:from-gray-800/20 hover:to-gray-900/20'
+                 : 'hover:bg-gradient-to-r hover:from-gray-300/30 hover:to-gray-400/30'
              }`}
              style={{
                display: 'grid',
@@ -370,7 +370,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             driver.inPit
               ? "bg-slate-600 text-blue-300 border-blue-300 shadow-md shadow-blue-300/20"
               : driver.drs
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-400/30 shadow-md shadow-blue-500/20"
+                ? "bg-slate-600 text-blue-300 border-blue-300 shadow-md shadow-blue-300/20"
                 : "bg-gradient-to-r from-gray-800 to-gray-900 text-gray-500 border-gray-700/30"
           }`}
           style={{ 
@@ -446,7 +446,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       </div>
 
       {/* Lap Time - Nueva fuente Inter */}
-      <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-lg">
+      <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-lg pt-1">
         <div
           className={`font-bold ${
             driver.isPersonalBest
