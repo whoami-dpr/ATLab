@@ -1,0 +1,29 @@
+# Driver Photos Placeholder
+
+This directory contains placeholder images for F1 drivers.
+The images are referenced in the standings API but actual photos
+would need to be added to this directory.
+
+Current driver photos referenced:
+- max-verstappen.jpg
+- sergio-perez.jpg
+- charles-leclerc.jpg
+- lando-norris.jpg
+- oscar-piastri.jpg
+- carlos-sainz.jpg
+- george-russell.jpg
+- lewis-hamilton.jpg
+- fernando-alonso.jpg
+- lance-stroll.jpg
+- pierre-gasly.jpg
+- esteban-ocon.jpg
+- alexander-albon.jpg
+- yuki-tsunoda.jpg
+- valtteri-bottas.jpg
+- nico-hulkenberg.jpg
+- daniel-ricciardo.jpg
+- zhou-guanyu.jpg
+- kevin-magnussen.jpg
+- liam-lawson.jpg
+- logan-sargeant.jpg
+- nyck-de-vries.jpg

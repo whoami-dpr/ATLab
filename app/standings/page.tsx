@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { Navbar } from "../../components/Navbar";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from "../../components/ui/select";
 import { useF1Schedule } from "../../hooks/useF1Schedule";
 import { useF1Standings } from "../../hooks/useF1Standings";
+import { useF1Drivers } from "../../hooks/useF1Drivers";
 import { Progress, ProgressLabel, ProgressTrack, ProgressValue } from "../../components/animate-ui/base/progress";
+import { EnhancedStandingsTable } from "../../components/EnhancedStandingsTable";
 
 // Utilidad mejorada para parsear standings de Wikipedia (ahora acepta ronda)
 function useWikipediaStandings(year: number | undefined, enabled: boolean, round?: number | null) {
@@ -99,7 +102,7 @@ function useWikipediaStandings(year: number | undefined, enabled: boolean, round
     } finally {
       setLoading(false);
     }
-  }, [year]);
+  }, [year, round]);
 
   useEffect(() => {
     if (enabled && year) {
@@ -152,19 +155,16 @@ function useWikipediaRaces(year: number | undefined, enabled: boolean) {
         }
         if (!calendarTable) throw new Error("No se encontró la tabla de calendario en Wikipedia");
         // Parsear filas
-        const rows = Array.from(calendarTable.querySelectorAll("tbody > tr")).slice(1); // saltar header
+        const rows = Array.from(calendarTable.querySelectorAll("tbody > tr")).slice(1);
         const parsed: { round: number, name: string }[] = [];
-        let round = 1;
         for (const row of rows) {
           const cells = row.querySelectorAll("td");
           if (cells.length < 2) continue;
-          // Buscar nombre de la carrera
-          let name = cells[0].textContent?.replace(/\[.*?\]/g, "").replace(/\n/g, " ").trim() || "";
-          // Si el nombre está vacío, intentar con el siguiente cell
-          if (!name && cells.length > 1) name = cells[1].textContent?.replace(/\[.*?\]/g, "").replace(/\n/g, " ").trim() || "";
-          if (name) {
+          const roundText = cells[0].textContent?.trim() || "";
+          const name = cells[1].textContent?.replace(/\[.*?\]/g, "").trim() || "";
+          const round = parseInt(roundText);
+          if (!isNaN(round) && name) {
             parsed.push({ round, name });
-            round++;
           }
         }
         setRaces(parsed);
@@ -175,42 +175,41 @@ function useWikipediaRaces(year: number | undefined, enabled: boolean) {
       }
     })();
   }, [enabled, year]);
+
   return { races, loading, error };
 }
 
-// Utilidad para mapear nombre de Grand Prix a código de país (para bandera)
-const GP_TO_FLAG: Record<string, string> = {
+// Mapeo de Grand Prix a códigos de bandera
+const GP_TO_FLAG: { [key: string]: string } = {
   "Australian": "aus",
-  "Austria": "aut",
+  "Austrian": "aut",
   "Azerbaijan": "aze",
   "Belgian": "bel",
   "Brazilian": "bra",
-  "Bahrain": "brn",
+  "British": "gbr",
   "Canadian": "can",
   "Chinese": "chn",
-  "Spanish": "esp",
+  "Dutch": "ned",
   "French": "fra",
-  "British": "gbr",
   "German": "ger",
   "Hungarian": "hun",
   "Italian": "ita",
   "Japanese": "jpn",
-  "Saudi": "ksa",
   "Mexican": "mex",
   "Monaco": "mon",
-  "Dutch": "ned",
   "Portuguese": "por",
   "Qatar": "qat",
   "Russian": "rus",
+  "Saudi Arabian": "saudi",
   "Singapore": "sgp",
-  "Abu Dhabi": "uae",
+  "Spanish": "esp",
+  "Turkish": "tur",
   "United States": "usa",
-  // Agregar más si es necesario
+  "Abu Dhabi": "uae"
 };
 
 function getFlagCodeFromGP(name: string): string | null {
-  // Buscar la palabra clave del GP en el nombre
-  for (const key in GP_TO_FLAG) {
+  for (const [key, value] of Object.entries(GP_TO_FLAG)) {
     if (name.toLowerCase().includes(key.toLowerCase())) {
       return GP_TO_FLAG[key];
     }
@@ -220,9 +219,9 @@ function getFlagCodeFromGP(name: string): string | null {
 
 export default function StandingsPage() {
   const [mode, setMode] = useState<'actual' | 'past'>('actual');
-  const [actualType, setActualType] = useState<'drivers' | 'constructors'>('drivers');
   const { years, year, setYear, loading: loadingYears } = useF1Schedule();
-  const { drivers, constructors, loading, error } = useF1Standings();
+  const { drivers: standingsDrivers, constructors, loading, error } = useF1Standings();
+  const { drivers: driverImages, teams: teamImages, loading: loadingImages } = useF1Drivers();
 
   // Estado para la carrera seleccionada
   const [selectedRace, setSelectedRace] = useState<number | null>(null);
@@ -231,189 +230,261 @@ export default function StandingsPage() {
   // Hook para standings de Wikipedia (ahora por ronda)
   const { standings: pastStandings, loading: loadingPast, error: errorPast, progress } = useWikipediaStandings(year && selectedRace ? year : undefined, mode === 'past' && !!selectedRace, selectedRace);
 
+  // Función para combinar datos de standings con imágenes
+  const getEnhancedDrivers = () => {
+    if (!standingsDrivers || !driverImages) return standingsDrivers;
+    
+    return standingsDrivers.map(driver => {
+      const driverImage = driverImages.find(img => 
+        img.name.toLowerCase() === driver.driver.toLowerCase()
+      );
+      
+      return {
+        ...driver,
+        driverPhoto: driverImage?.driverImage || driver.driverPhoto,
+        nationality: driverImage?.nationality || undefined
+      };
+    });
+  };
+
+  const enhancedDrivers = getEnhancedDrivers();
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 py-10">
-        <h1 className="text-4xl font-bold mb-2">Standings</h1>
-        <p className="text-gray-400 mb-8 text-lg">Consultá el estado del campeonato de pilotos y constructores o explorá los resultados históricos de la Fórmula 1</p>
-        {/* Card Toggle */}
-        <div className="flex gap-8 mb-8">
-          <button
-            className={`flex-1 rounded-2xl p-8 bg-gradient-to-br from-[#23272b] to-[#181a1d] border-2 transition-all duration-200 shadow-xl flex flex-col items-center justify-center cursor-pointer
-              ${mode === 'actual' ? 'border-blue-500 shadow-blue-500/30 scale-105' : 'border-transparent hover:border-gray-700 hover:scale-102'}`}
-            onClick={() => setMode('actual')}
-          >
-            <span className="text-2xl font-semibold mb-2">Campeonato Actual</span>
-            <span className="text-gray-400">Ver el campeonato en curso</span>
-          </button>
-          <button
-            className={`flex-1 rounded-2xl p-8 bg-gradient-to-br from-[#23272b] to-[#181a1d] border-2 transition-all duration-200 shadow-xl flex flex-col items-center justify-center cursor-pointer
-              ${mode === 'past' ? 'border-blue-500 shadow-blue-500/30 scale-105' : 'border-transparent hover:border-gray-700 hover:scale-102'}`}
-            onClick={() => setMode('past')}
-          >
-            <span className="text-2xl font-semibold mb-2">Campeonatos Pasados</span>
-            <span className="text-gray-400">Explorar temporadas anteriores</span>
-          </button>
-        </div>
-        {/* Tabs minimalistas para pilotos/constructores si es campeonato actual */}
-        {mode === 'actual' && (
-          <div className="flex gap-8 border-b border-gray-700 mb-8 mt-2">
+      <div className="container mx-auto px-4 py-4">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-2">Standings</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+            Consultá el estado del campeonato mundial de pilotos y constructores de F1 2025 o explorá los resultados históricos de la Fórmula 1
+          </p>
+
+          {/* Mode Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             <button
-              className={`pb-2 px-2 text-lg font-semibold transition-colors duration-150
-                ${actualType === 'drivers' ? 'text-white border-b-2 border-white' : 'text-gray-400 hover:text-white border-b-2 border-transparent'}`}
-              onClick={() => setActualType('drivers')}
+              onClick={() => setMode('actual')}
+              className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                mode === 'actual'
+                  ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600'
+              }`}
             >
-              Campeonato de Pilotos
+              <h3 className="text-lg font-semibold mb-1">Campeonato Actual</h3>
+              <p className="text-xs opacity-80">Ver el campeonato en curso</p>
             </button>
+            
             <button
-              className={`pb-2 px-2 text-lg font-semibold transition-colors duration-150
-                ${actualType === 'constructors' ? 'text-white border-b-2 border-white' : 'text-gray-400 hover:text-white border-b-2 border-transparent'}`}
-              onClick={() => setActualType('constructors')}
+              onClick={() => setMode('past')}
+              className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                mode === 'past'
+                  ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600'
+              }`}
             >
-              Campeonato de Constructores
+              <h3 className="text-lg font-semibold mb-1">Campeonatos Pasados</h3>
+              <p className="text-xs opacity-80">Explorar temporadas anteriores</p>
             </button>
           </div>
-        )}
-        {/* Selector de año si es modo pasado */}
-        {mode === 'past' && (
-          <div className="mb-8 flex items-center gap-4">
-            <Select value={year ? String(year) : ""} onValueChange={v => setYear(Number(v))} disabled={loadingYears?.years}>
-              <SelectTrigger className="w-[170px] h-12 bg-[#23272b] border border-[#333] shadow-2xl rounded-xl text-white text-base font-bold uppercase justify-start px-5 focus:ring-2 focus:ring-white focus:border-white transition-all duration-200 hover:bg-[#2d3136] hover:border-white">
-                <SelectValue placeholder="AÑO" className="text-left text-white/90" />
-              </SelectTrigger>
-              <SelectContent className="bg-gradient-to-b from-[#23272b] to-[#181a1d] border border-[#111] shadow-lg rounded-md py-2 animate-fadein">
-                <SelectGroup>
-                  {years.map(y => (
-                    <SelectItem key={y} value={String(y)} className="text-white text-base px-6 py-2 uppercase text-left hover:bg-[#232b44] hover:text-[#e5e5e5] data-[state=checked]:bg-[#2c3138] data-[state=checked]:text-white rounded cursor-pointer transition-all duration-150">
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-            <span className="text-gray-400 text-base">Seleccioná el año</span>
-          </div>
-        )}
-        {/* Espacio para el grid visual de standings */}
-        <div className="mt-12 min-h-[300px]">
-          {/* Loader animado para carreras */}
-          {mode === 'past' && loadingRaces && (
-            <div className="flex flex-col items-center justify-center h-40">
-              <Progress value={30} className="w-[300px] space-y-2">
-                <div className="flex items-center justify-between gap-1">
-                  <ProgressLabel className="text-sm font-medium">
-                    Cargando carreras...
-                  </ProgressLabel>
-                  <span className="text-sm">...</span>
-                </div>
-                <ProgressTrack />
-              </Progress>
-            </div>
-          )}
-          {mode === 'past' && errorRaces && (
-            <div className="flex items-center justify-center h-40 text-red-400 text-lg">Error: {errorRaces}</div>
-          )}
-          {/* Tarjetas de carreras para seleccionar */}
-          {mode === 'past' && !loadingRaces && !selectedRace && races.length > 0 && (
-            <div className="w-full max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-              {races.map(race => {
-                const flagCode = getFlagCodeFromGP(race.name);
-                return (
-                  <button key={race.round} onClick={() => setSelectedRace(race.round)}
-                    className="rounded-xl bg-gradient-to-br from-[#23272b] to-[#181a1d] border border-[#23272b] hover:border-blue-500 shadow p-3 flex items-center gap-3 cursor-pointer transition-all duration-150 min-h-[56px]">
-                    {flagCode ? (
-                      <img src={`/country-flags/${flagCode}.svg`} alt={flagCode} className="w-7 h-5 rounded shadow-sm mr-2" />
-                    ) : (
-                      <span className="w-7 h-5 mr-2 bg-gray-700 rounded" />
-                    )}
-                    <div className="flex flex-col items-start flex-1 min-w-0">
-                      <span className="text-base font-semibold truncate">{race.name}</span>
-                      <span className="text-gray-400 text-xs">Ronda {race.round}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {/* Loader animado para standings de la carrera seleccionada */}
-          {mode === 'past' && selectedRace && loadingPast && (
-            <div className="flex flex-col items-center justify-center h-40">
-              <Progress value={progress} className="w-[300px] space-y-2">
-                <div className="flex items-center justify-between gap-1">
-                  <ProgressLabel className="text-sm font-medium">
-                    Cargando standings...
-                  </ProgressLabel>
-                  <span className="text-sm">
-                    <ProgressValue /> %
-                  </span>
-                </div>
-                <ProgressTrack />
-              </Progress>
-            </div>
-          )}
-          {mode === 'past' && selectedRace && errorPast && (
-            <div className="flex items-center justify-center h-40 text-red-400 text-lg">Error: {errorPast}</div>
-          )}
-          {/* Standings de Wikipedia para la carrera seleccionada */}
-          {mode === 'past' && selectedRace && !loadingPast && pastStandings.length > 0 && (
-            <div className="w-full max-w-2xl mx-auto bg-[#111213] rounded-2xl shadow-lg border border-[#23272b] overflow-hidden mt-8">
-              <div className="px-6 py-4 border-b border-[#23272b] text-lg font-semibold text-white">Driver Championship Standings ({year}, Ronda {selectedRace})</div>
-              <div className="divide-y divide-[#23272b]">
-                {pastStandings.map(driver => (
-                  <div key={driver.position} className="flex items-center px-6 py-3 text-white text-base">
-                    <div className="w-8 text-right font-bold text-xl mr-4">{driver.position}</div>
-                    <div className="flex-1 font-medium">{driver.driver}</div>
-                    <div className="w-16 text-right font-bold text-lg">{driver.points}</div>
-                    <div className={`w-12 text-right ml-4 font-semibold ${driver.change && driver.change.startsWith('+') ? 'text-green-500' : driver.change && driver.change.startsWith('-') ? 'text-red-500' : 'text-gray-400'}`}>{driver.change}</div>
+
+
+          {/* Content */}
+          {mode === 'actual' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Drivers Table */}
+              <div>
+                <EnhancedStandingsTable 
+                  drivers={enhancedDrivers || []} 
+                  loading={loading || loadingImages} 
+                  error={error} 
+                />
+              </div>
+              
+              {/* Constructors Table */}
+              <div>
+                <div className="w-full bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
+                    F1 2025 Constructor Championship
                   </div>
-                ))}
+                  
+                  {loading ? (
+                    <div className="flex items-center justify-center h-32 text-gray-600 dark:text-gray-400 text-base">
+                      Cargando clasificaciones...
+                    </div>
+                  ) : error ? (
+                    <div className="flex items-center justify-center h-32 text-red-600 dark:text-red-400 text-base">
+                      Error: {error}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Header */}
+                      <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-gray-50 dark:bg-[#1a1b1d] text-gray-600 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#23272b]">
+                        <div className="text-center">Pos</div>
+                        <div>Constructor</div>
+                        <div className="text-center">Logo</div>
+                        <div className="text-right">Pts</div>
+                      </div>
+
+                      {/* Constructor Rows */}
+                      <div className="divide-y divide-gray-200 dark:divide-[#23272b]">
+                        {constructors?.map((constructor, index) => {
+                          // Buscar el logo del equipo en los datos de equipos
+                          const teamData = teamImages?.find(team => 
+                            team.name.toLowerCase() === constructor.team.toLowerCase()
+                          );
+                          
+                          return (
+                            <div 
+                              key={constructor.position} 
+                              className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1a1b1d]/50 transition-colors duration-200"
+                            >
+                              <div className="flex items-center justify-center">
+                                <span className="text-lg font-bold text-gray-900 dark:text-white">{constructor.position}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <span className="text-gray-900 dark:text-white font-medium text-sm">{constructor.team}</span>
+                              </div>
+                              <div className="flex items-center justify-center">
+                                <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                                  <Image
+                                    src={teamData?.carLogo || `/team-logos/${constructor.team.toLowerCase().replace(/\s+/g, '-')}.svg`}
+                                    alt={constructor.team}
+                                    width={32}
+                                    height={32}
+                                    className="object-contain"
+                                    onError={(e) => {
+                                      // Fallback to placeholder if logo fails to load
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = '/placeholder-logo.svg';
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-end">
+                                <span className="text-gray-900 dark:text-white font-bold text-lg">{constructor.points}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           )}
-          {/* Botón para volver a seleccionar carrera */}
-          {mode === 'past' && selectedRace && (
-            <div className="flex justify-center mt-6">
-              <button onClick={() => setSelectedRace(null)} className="px-6 py-2 rounded-xl bg-[#23272b] text-white border border-gray-700 hover:bg-[#181a1d] transition">Volver a carreras</button>
+
+          {/* Past Championships */}
+          {mode === 'past' && (
+            <div className="space-y-4">
+              {/* Year Selection */}
+              <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Seleccionar Temporada</h3>
+                <Select value={year?.toString()} onValueChange={(value) => setYear(parseInt(value))}>
+                  <SelectTrigger className="w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 h-10">
+                    <SelectValue placeholder="Seleccionar año" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {years.map((y) => (
+                        <SelectItem key={y} value={y.toString()}>
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Race Selection */}
+              {races.length > 0 && (
+                <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Seleccionar Carrera</h3>
+                  <Select value={selectedRace?.toString()} onValueChange={(value) => setSelectedRace(parseInt(value))}>
+                    <SelectTrigger className="w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 h-10">
+                      <SelectValue placeholder="Seleccionar carrera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {races.map((race) => (
+                          <SelectItem key={race.round} value={race.round.toString()}>
+                            {race.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Progress Bar */}
+              {loadingPast && (
+                <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Cargando datos históricos...</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="w-full">
+                    <ProgressTrack className="bg-gray-200 dark:bg-gray-700">
+                      <ProgressValue className="bg-blue-500" />
+                    </ProgressTrack>
+                  </Progress>
+                </div>
+              )}
+
+              {/* Historical Standings */}
+              {pastStandings.length > 0 && (
+                <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
+                    {year} Driver Championship Standings
+                  </div>
+                  
+                  {/* Header */}
+                  <div className="grid grid-cols-4 gap-4 px-4 py-2 bg-gray-50 dark:bg-[#1a1b1d] text-gray-600 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#23272b]">
+                    <div className="text-center">Pos</div>
+                    <div>Driver</div>
+                    <div className="text-right">Points</div>
+                    <div className="text-right">Change</div>
+                  </div>
+
+                  {/* Driver Rows */}
+                  <div className="divide-y divide-gray-200 dark:divide-[#23272b]">
+                    {pastStandings.map((standing, index) => (
+                      <div 
+                        key={index} 
+                        className="grid grid-cols-4 gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1a1b1d]/50 transition-colors duration-200"
+                      >
+                        <div className="flex items-center justify-center">
+                          <span className="text-lg font-bold text-gray-900 dark:text-white">{standing.position}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-gray-900 dark:text-white font-medium">{standing.driver}</span>
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <span className="text-gray-900 dark:text-white font-bold text-lg">{standing.points}</span>
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <span className={`text-xs font-medium ${
+                            standing.change === '-' ? 'text-gray-500 dark:text-gray-400' : 
+                            standing.change.startsWith('+') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {standing.change}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Error Display */}
+              {errorPast && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 rounded-lg p-4">
+                  <div className="text-red-600 dark:text-red-400 text-base">
+                    Error al cargar datos históricos: {errorPast}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-          {loading ? (
-            <div className="flex items-center justify-center h-40 text-gray-400 text-lg">Cargando standings...</div>
-          ) : error ? (
-            <div className="flex items-center justify-center h-40 text-red-400 text-lg">Error: {error}</div>
-          ) : (
-            <>
-              {mode === 'actual' && actualType === 'drivers' && (
-                <div className="w-full max-w-2xl mx-auto bg-[#111213] rounded-2xl shadow-lg border border-[#23272b] overflow-hidden">
-                  <div className="px-6 py-4 border-b border-[#23272b] text-lg font-semibold text-white">Driver Championship Standings</div>
-                  <div className="divide-y divide-[#23272b]">
-                    {drivers.map(driver => (
-                      <div key={driver.position} className="flex items-center px-6 py-3 text-white text-base">
-                        <div className="w-8 text-right font-bold text-xl mr-4">{driver.position}</div>
-                        <div className="flex-1 font-medium">{driver.driver}</div>
-                        <div className="w-16 text-right font-bold text-lg">{driver.points}</div>
-                        <div className="w-12 text-right ml-4 font-semibold text-green-500">-</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {mode === 'actual' && actualType === 'constructors' && (
-                <div className="w-full max-w-2xl mx-auto bg-[#111213] rounded-2xl shadow-lg border border-[#23272b] overflow-hidden">
-                  <div className="px-6 py-4 border-b border-[#23272b] text-lg font-semibold text-white">Constructor Championship Standings</div>
-                  <div className="divide-y divide-[#23272b]">
-                    {constructors.map(constructor => (
-                      <div key={constructor.position} className="flex items-center px-6 py-3 text-white text-base">
-                        <div className="w-8 text-right font-bold text-xl mr-4">{constructor.position}</div>
-                        <div className="flex-1 font-medium">{constructor.team}</div>
-                        <div className="w-16 text-right font-bold text-lg">{constructor.points}</div>
-                        <div className="w-12 text-right ml-4 font-semibold text-green-500">-</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
           )}
         </div>
       </div>

@@ -1,7 +1,10 @@
-// Cloudflare Pages Edge Runtime Configuration
-export const runtime = 'edge';
+// Node.js Runtime Configuration for F1 API
+export const runtime = 'nodejs';
 
 import { NextResponse } from "next/server"
+
+// Import f1-api-node using require for Node.js compatibility
+const f1Api = require("f1-api-node")
 
 interface DriverStanding {
   position: number
@@ -9,6 +12,10 @@ interface DriverStanding {
   team: string
   points: number
   wins?: number
+  driverNumber: string
+  driverPhoto: string
+  teamLogo: string
+  teamColor: string
 }
 
 interface ConstructorStanding {
@@ -17,76 +24,143 @@ interface ConstructorStanding {
   points: number
 }
 
-// Datos estáticos actualizados manualmente - 2025 F1 Season (Post-Silverstone)
-const CURRENT_DRIVER_STANDINGS: DriverStanding[] = [
-  { position: 1, driver: "Max Verstappen", team: "Red Bull Racing Honda RBPT", points: 195, wins: 4 },
-  { position: 2, driver: "Lewis Hamilton", team: "Ferrari", points: 158, wins: 2 },
-  { position: 3, driver: "Charles Leclerc", team: "Ferrari", points: 142, wins: 1 },
-  { position: 4, driver: "Lando Norris", team: "McLaren Mercedes", points: 128, wins: 1 },
-  { position: 5, driver: "George Russell", team: "Mercedes", points: 115, wins: 1 },
-  { position: 6, driver: "Oscar Piastri", team: "McLaren Mercedes", points: 98, wins: 0 },
-  { position: 7, driver: "Sergio Perez", team: "Red Bull Racing Honda RBPT", points: 85, wins: 0 },
-  { position: 8, driver: "Kimi Antonelli", team: "Mercedes", points: 72, wins: 0 },
-  { position: 9, driver: "Fernando Alonso", team: "Aston Martin Aramco Mercedes", points: 45, wins: 0 },
-  { position: 10, driver: "Lance Stroll", team: "Aston Martin Aramco Mercedes", points: 28, wins: 0 },
-  { position: 11, driver: "Pierre Gasly", team: "Alpine Renault", points: 24, wins: 0 },
-  { position: 12, driver: "Esteban Ocon", team: "Alpine Renault", points: 18, wins: 0 },
-  { position: 13, driver: "Nico Hulkenberg", team: "Haas Ferrari", points: 16, wins: 0 },
-  { position: 14, driver: "Kevin Magnussen", team: "Haas Ferrari", points: 12, wins: 0 },
-  { position: 15, driver: "Yuki Tsunoda", team: "RB Honda RBPT", points: 10, wins: 0 },
-  { position: 16, driver: "Liam Lawson", team: "RB Honda RBPT", points: 8, wins: 0 },
-  { position: 17, driver: "Alex Albon", team: "Williams Mercedes", points: 6, wins: 0 },
-  { position: 18, driver: "Franco Colapinto", team: "Williams Mercedes", points: 4, wins: 0 },
-  { position: 19, driver: "Valtteri Bottas", team: "Kick Sauber Ferrari", points: 2, wins: 0 },
-  { position: 20, driver: "Zhou Guanyu", team: "Kick Sauber Ferrari", points: 0, wins: 0 },
-]
-
-const CURRENT_CONSTRUCTOR_STANDINGS: ConstructorStanding[] = [
-  { position: 1, team: "Ferrari", points: 300 },
-  { position: 2, team: "Red Bull Racing Honda RBPT", points: 280 },
-  { position: 3, team: "McLaren Mercedes", points: 226 },
-  { position: 4, team: "Mercedes", points: 187 },
-  { position: 5, team: "Aston Martin Aramco Mercedes", points: 73 },
-  { position: 6, team: "Alpine Renault", points: 42 },
-  { position: 7, team: "Haas Ferrari", points: 28 },
-  { position: 8, team: "RB Honda RBPT", points: 18 },
-  { position: 9, team: "Williams Mercedes", points: 10 },
-  { position: 10, team: "Kick Sauber Ferrari", points: 2 },
-]
-
-// Información de la última actualización
-const LAST_UPDATED = {
-  date: "2025-01-09",
-  race: "British Grand Prix (Silverstone)",
-  round: 12,
-  season: 2025,
+// Mapeo de equipos para logos y colores
+const TEAM_MAPPING: Record<string, { logo: string; color: string; driverNumbers: Record<string, string> }> = {
+  "Red Bull": { 
+    logo: "red-bull-racing.svg", 
+    color: "#1e41ff",
+    driverNumbers: { "Max Verstappen": "1", "Sergio Pérez": "11" }
+  },
+  "Ferrari": { 
+    logo: "ferrari.svg", 
+    color: "#dc0000",
+    driverNumbers: { "Charles Leclerc": "16", "Lewis Hamilton": "44" }
+  },
+  "McLaren": { 
+    logo: "mclaren.svg", 
+    color: "#ff8700",
+    driverNumbers: { "Lando Norris": "4", "Oscar Piastri": "81" }
+  },
+  "Mercedes": { 
+    logo: "mercedes.svg", 
+    color: "#00d2be",
+    driverNumbers: { "George Russell": "63", "Lewis Hamilton": "44" }
+  },
+  "Aston Martin": { 
+    logo: "aston-martin.svg", 
+    color: "#229971",
+    driverNumbers: { "Fernando Alonso": "14", "Lance Stroll": "18" }
+  },
+  "Alpine": { 
+    logo: "alpine.svg", 
+    color: "#2293d1",
+    driverNumbers: { "Pierre Gasly": "10", "Esteban Ocon": "31" }
+  },
+  "Williams": { 
+    logo: "williams.svg", 
+    color: "#003d82",
+    driverNumbers: { "Alexander Albon": "23", "Logan Sargeant": "2" }
+  },
+  "Haas": { 
+    logo: "haas-f1-team.svg", 
+    color: "#b6babd",
+    driverNumbers: { "Nico Hulkenberg": "27", "Kevin Magnussen": "20" }
+  },
+  "RB": { 
+    logo: "racing-bulls.svg", 
+    color: "#6692ff",
+    driverNumbers: { "Yuki Tsunoda": "22", "Daniel Ricciardo": "3" }
+  },
+  "Sauber": { 
+    logo: "kick-sauber.svg", 
+    color: "#52e252",
+    driverNumbers: { "Valtteri Bottas": "77", "Zhou Guanyu": "24" }
+  }
 }
+
+// Función para mapear datos de f1-api-node a nuestro formato
+function mapF1ApiDriverData(apiData: any[]): DriverStanding[] {
+  return apiData.map((standing: any, index: number) => {
+    const driverName = standing.driver || "Unknown Driver"
+    const teamName = standing.team || "Unknown Team"
+    
+    // Buscar el mapeo del equipo
+    const teamMapping = Object.entries(TEAM_MAPPING).find(([key]) => {
+      const teamLower = teamName.toLowerCase()
+      const keyLower = key.toLowerCase()
+      return teamLower.includes(keyLower) || keyLower.includes(teamLower)
+    })?.[1] || {
+      logo: "red-bull-racing.svg",
+      color: "#1e41ff",
+      driverNumbers: {}
+    }
+    
+    return {
+      position: standing.position || index + 1,
+      driver: driverName,
+      team: teamName,
+      points: parseInt(standing.points) || 0,
+      wins: parseInt(standing.wins) || 0,
+      driverNumber: teamMapping.driverNumbers[driverName] || "00",
+      driverPhoto: `/images/drivers/${driverName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
+      teamLogo: `/team-logos/${teamMapping.logo}`,
+      teamColor: teamMapping.color
+    }
+  })
+}
+
+function mapF1ApiConstructorData(apiData: any[]): ConstructorStanding[] {
+  return apiData.map((standing: any, index: number) => ({
+    position: standing.position || index + 1,
+    team: standing.team || "Unknown Team",
+    points: parseInt(standing.points) || 0
+  }))
+}
+
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get("type") || "drivers"
+  const year = parseInt(searchParams.get("year") || "2025")
 
   try {
-    // Simular un pequeño delay para parecer más realista
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
     if (type === "drivers") {
+      // Usar f1-api-node para obtener las clasificaciones reales
+      const driverStandings = await f1Api.getDriverStandings(year)
+      const mappedDrivers = mapF1ApiDriverData(driverStandings)
+      
       return NextResponse.json({
-        standings: CURRENT_DRIVER_STANDINGS,
-        lastUpdated: LAST_UPDATED,
+        standings: mappedDrivers,
+        lastUpdated: {
+          date: new Date().toISOString().split('T')[0],
+          race: "Current Season",
+          round: 1,
+          season: year,
+        },
         success: true,
       })
     } else if (type === "constructors") {
+      // Usar f1-api-node para obtener las clasificaciones de constructores
+      const constructorStandings = await f1Api.getConstructorStandings(year)
+      const mappedConstructors = mapF1ApiConstructorData(constructorStandings)
+      
       return NextResponse.json({
-        standings: CURRENT_CONSTRUCTOR_STANDINGS,
-        lastUpdated: LAST_UPDATED,
+        standings: mappedConstructors,
+        lastUpdated: {
+          date: new Date().toISOString().split('T')[0],
+          race: "Current Season",
+          round: 1,
+          season: year,
+        },
         success: true,
       })
     } else {
       return NextResponse.json({ error: "Invalid type. Use 'drivers' or 'constructors'" }, { status: 400 })
     }
   } catch (error) {
-    console.error("Standings API error:", error)
-    return NextResponse.json({ error: "Failed to fetch standings" }, { status: 500 })
+    console.error("F1 API error:", error)
+    return NextResponse.json({ 
+      error: `Failed to fetch ${type} standings: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    }, { status: 500 })
   }
 }

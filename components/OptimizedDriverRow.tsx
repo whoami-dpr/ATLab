@@ -367,11 +367,9 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       <div className="col-span-1 flex items-center px-2" style={{ marginLeft: '6px' }}>
         <div
           className={`px-2 py-0.5 rounded border-2 transition-all duration-200 ${
-            driver.inPit
+            driver.inPit || driver.drs
               ? "bg-slate-600 text-blue-300 border-blue-300 shadow-md shadow-blue-300/20"
-              : driver.drs
-                ? "bg-slate-600 text-blue-300 border-blue-300 shadow-md shadow-blue-300/20"
-                : "bg-gradient-to-r from-gray-800 to-gray-900 text-gray-500 border-gray-700/30"
+              : "bg-gradient-to-r from-gray-800 to-gray-900 text-gray-500 border-gray-700/30"
           }`}
           style={{ 
             borderRadius: '0.25rem',
