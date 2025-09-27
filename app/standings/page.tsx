@@ -376,16 +376,16 @@ export default function StandingsPage() {
           {/* Past Championships */}
           {mode === 'past' && (
             <div className="space-y-4">
-              {/* Próximamente */}
-              <div className="bg-white dark:bg-gray-800/50 rounded-lg p-8 border border-gray-200 dark:border-gray-700 text-center">
-                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Próximamente</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Los campeonatos históricos estarán disponibles próximamente
+              {/* Coming Soon Message */}
+              <div className="text-center py-16">
+                <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Próximamente</h3>
+                <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto leading-relaxed">
+                  Estamos trabajando en traerte los campeonatos históricos de F1. ¡Mantente atento para las próximas actualizaciones!
                 </p>
               </div>
 
-              {/* Race Selection - Hidden for now */}
-              {false && races.length > 0 && (
+              {/* Race Selection */}
+              {races.length > 0 && (
                 <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <h3 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Seleccionar Carrera</h3>
                   <Select value={selectedRace?.toString()} onValueChange={(value) => setSelectedRace(parseInt(value))}>
@@ -420,8 +420,8 @@ export default function StandingsPage() {
                 </div>
               )}
 
-              {/* Historical Standings - Hidden for now */}
-              {false && pastStandings.length > 0 && (
+              {/* Historical Standings */}
+              {pastStandings.length > 0 && (
                 <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
                     {year} Driver Championship Standings

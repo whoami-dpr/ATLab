@@ -317,12 +317,61 @@ export default function AboutUs() {
               }`}>ARSIM Telemetry Lab</p>
       </div>
 
-            <p className={`text-sm max-w-2xl mx-auto leading-relaxed mb-8 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              Unofficial project. F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, 
-              GRAND PRIX and related marks are trademarks of Formula One Licensing B.V.
-            </p>
+            {/* Legal Disclaimer and Privacy Section - Horizontal Layout */}
+            <div className="flex flex-col md:flex-row gap-8 md:gap-12 mb-8 max-w-4xl mx-auto">
+              <div className="flex-1">
+                <h4 className={`text-lg font-semibold mb-3 transition-colors duration-500 ${
+                  theme === 'light' ? 'text-white' : 'text-white'
+                }`}>Legal Disclaimer</h4>
+                <p className={`text-sm leading-relaxed transition-colors duration-500 ${
+                  theme === 'light' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  This platform operates as an independent, unofficial service and maintains no affiliation with Formula 1 companies. All trademarks including F1®, FORMULA ONE®, FORMULA 1®, FIA FORMULA ONE WORLD CHAMPIONSHIP®, GRAND PRIX®, and associated marks remain the exclusive property of Formula One Licensing B.V.
+                </p>
+              </div>
+              
+              <div className="flex-1">
+                <h4 className={`text-lg font-semibold mb-3 transition-colors duration-500 ${
+                  theme === 'light' ? 'text-white' : 'text-white'
+                }`}>Data & Privacy</h4>
+                <p className={`text-sm leading-relaxed transition-colors duration-500 ${
+                  theme === 'light' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  We prioritize user privacy and data security. All telemetry data is sourced from publicly available feeds and processed in real-time without permanent storage of personal viewing patterns.
+                </p>
+                <div className="flex flex-wrap gap-4 mt-4">
+                  <a href="#" className={`text-sm transition-colors duration-500 hover:underline ${
+                    theme === 'light' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-300'
+                  }`}>
+                    Privacy Policy
+                  </a>
+                  <a href="#" className={`text-sm transition-colors duration-500 hover:underline ${
+                    theme === 'light' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-300'
+                  }`}>
+                    Terms of Service
+                  </a>
+                  <span className={`text-sm transition-colors duration-500 ${
+                    theme === 'light' ? 'text-gray-300' : 'text-gray-400'
+                  }`}>
+                    © 2025 ATLab
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Built with passion credit */}
+            <div className="text-center mb-8">
+              <p className={`text-sm transition-colors duration-500 ${
+                theme === 'light' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                Built with passion by{' '}
+                <span className={`font-medium transition-colors duration-500 ${
+                  theme === 'light' ? 'text-yellow-500' : 'text-yellow-400'
+                }`}>
+                  Joaquin G. Montes
+                </span>
+              </p>
+            </div>
             
             <div className="flex justify-center gap-8">
               <a 
