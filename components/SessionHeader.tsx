@@ -151,7 +151,85 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
     <div className={`border-b bg-transparent ${
       theme === 'light' ? 'border-gray-300/50' : 'border-gray-800/50'
     }`}>
-      <div className="flex items-center justify-between p-3 min-h-[56px]">
+      {/* Mobile Layout */}
+      <div className="block md:hidden p-3 space-y-3">
+        {/* Top Row: Logo and Timer */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-8 w-auto object-contain" />
+            <h1 className={`text-base font-semibold flex items-center gap-2 ${
+              theme === 'light' ? 'text-black' : 'text-white'
+            }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
+              F1 Live
+              <span
+                className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isConnected || error) ? 'animate-blink' : ''}`}
+                title={isConnected && !error ? 'Online' : 'Offline'}
+              ></span>
+            </h1>
+          </div>
+          <div className={`text-xl font-bold ${
+            theme === 'light' ? 'text-black' : 'text-white'
+          }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
+            {sessionInfo.timer}
+          </div>
+        </div>
+
+        {/* Weather Row */}
+        <div className="flex justify-center">
+          <WeatherWidget weather={sessionInfo.weather} />
+        </div>
+
+        {/* GP Info and Status Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {getCountryFlag(gpInfo.country)}
+            <div className="flex flex-col">
+              <div className={`text-xs font-medium leading-none ${
+                theme === 'light' ? 'text-black' : 'text-white'
+              }`}>
+                {gpInfo.gpName}
+              </div>
+              <div className={`text-xs ${
+                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+              }`}>
+                {gpInfo.sessionType}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center">
+              <span className={`text-xs font-medium leading-none mb-0.5 ${
+                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+              }`}>Laps</span>
+              <span className={`text-sm font-semibold leading-none ${
+                theme === 'light' ? 'text-black' : 'text-white'
+              }`}>{sessionInfo.lapInfo}</span>
+            </div>
+            <div className={`px-2 py-1 rounded text-xs font-bold text-white ${
+              sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
+                ? 'bg-red-600'
+                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
+                  ? 'bg-yellow-600'
+                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
+                    ? 'bg-green-600'
+                    : 'bg-gray-600'
+            }`}>
+              {sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
+                ? 'Red'
+                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
+                  ? 'Yellow'
+                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
+                    ? 'Green'
+                    : 'No Flag'
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:flex items-center justify-between p-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-h-[48px]">
           <div className="h-full flex items-center">
             <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[2.8rem] object-contain" />

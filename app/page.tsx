@@ -28,7 +28,7 @@ export default function TelemetryLab() {
         theme === 'light' ? 'bg-transparent' : 'bg-transparent'
       }`}>
         <SessionHeader sessionInfo={sessionInfo} isConnected={isConnected} error={error} hasActiveSession={hasActiveSession} />
-        <div className="px-4 pt-8 pb-6 max-w-full mx-auto">
+        <div className="px-2 md:px-4 pt-4 md:pt-8 pb-4 md:pb-6 max-w-full mx-auto">
           {!shouldShowData ? (
             <EmptyState reconnect={reconnect} />
           ) : (

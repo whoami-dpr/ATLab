@@ -35,12 +35,12 @@ const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
   const windDirection = weather.windDirection && weather.windDirection > 0 ? getWindDirection(weather.windDirection) : 'E'
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 md:gap-3">
       <div className="flex flex-col items-center justify-center">
-        <Thermometer className={`w-5 h-5 mb-0.5 ${
+        <Thermometer className={`w-4 h-4 md:w-5 md:h-5 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xl font-semibold leading-none ${
+        <span className={`text-lg md:text-xl font-semibold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{trackTemp}°</span>
         <span className={`text-xs ${
@@ -48,10 +48,10 @@ const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
         }`}>TRC</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Thermometer className={`w-5 h-5 mb-0.5 ${
+        <Thermometer className={`w-4 h-4 md:w-5 md:h-5 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xl font-semibold leading-none ${
+        <span className={`text-lg md:text-xl font-semibold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{airTemp}°</span>
         <span className={`text-xs ${
@@ -59,10 +59,10 @@ const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
         }`}>AIR</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Droplets className={`w-5 h-5 mb-0.5 ${
+        <Droplets className={`w-4 h-4 md:w-5 md:h-5 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xl font-semibold leading-none ${
+        <span className={`text-lg md:text-xl font-semibold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{humidity}%</span>
         <span className={`text-xs ${
@@ -70,10 +70,10 @@ const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
         }`}>HUM</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Wind className={`w-5 h-5 mb-0.5 ${
+        <Wind className={`w-4 h-4 md:w-5 md:h-5 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xl font-semibold leading-none ${
+        <span className={`text-lg md:text-xl font-semibold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{windSpeed}</span>
         <span className={`text-xs ${
