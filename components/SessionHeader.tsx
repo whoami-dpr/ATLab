@@ -2,6 +2,7 @@
 
 import { memo } from "react"
 import { WeatherWidget } from "./WeatherWidget"
+import { FastestLapBanner } from "./FastestLapBanner"
 import type { F1SessionInfo } from "../hooks/useF1SignalR"
 import { useSchedule } from "../hooks/useSchedule"
 import { useThemeOptimized } from "../hooks/useThemeOptimized"
@@ -11,9 +12,13 @@ interface SessionHeaderProps {
   isConnected: boolean
   error: string | null
   hasActiveSession: boolean
+  fastestLapDriver?: string | null
+  fastestLapTime?: string | null
+  fastestLapTeam?: string | null
+  fastestLapDriverName?: string | null
 }
 
-const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession }: SessionHeaderProps) => {
+const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLapDriver, fastestLapTime, fastestLapTeam, fastestLapDriverName }: SessionHeaderProps) => {
   const { schedule } = useSchedule()
   const { theme } = useThemeOptimized()
   
@@ -179,6 +184,17 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
           <WeatherWidget weather={sessionInfo.weather} />
         </div>
 
+        {/* Fastest Lap Banner */}
+        <div className="flex justify-center mt-6">
+          <FastestLapBanner 
+            fastestLapDriver={fastestLapDriver}
+            fastestLapTime={fastestLapTime}
+            fastestLapTeam={fastestLapTeam}
+            fastestLapDriverName={fastestLapDriverName}
+            theme={theme}
+          />
+        </div>
+
         {/* GP Info and Status Row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -253,6 +269,15 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
         </div>
 
         <div className="flex items-center gap-8">
+          {/* Fastest Lap Banner */}
+          <FastestLapBanner 
+            fastestLapDriver={fastestLapDriver}
+            fastestLapTime={fastestLapTime}
+            fastestLapTeam={fastestLapTeam}
+            fastestLapDriverName={fastestLapDriverName}
+            theme={theme}
+          />
+
           <WeatherWidget weather={sessionInfo.weather} />
 
           {/* Grand Prix Info with Flag */}

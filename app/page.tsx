@@ -8,7 +8,7 @@ import { F1ConnectionTester } from "../components/F1ConnectionTester";
 import { useThemeOptimized } from "../hooks/useThemeOptimized";
 
 export default function TelemetryLab() {
-  const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession } = useF1SignalR();
+  const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession, fastestLapDriver, fastestLapTime, fastestLapTeam, fastestLapDriverName } = useF1SignalR();
   const { theme } = useThemeOptimized();
 
   // Mostrar datos si hay drivers O si hay una sesión activa (incluso sin drivers aún)
@@ -27,7 +27,16 @@ export default function TelemetryLab() {
       <div className={`flex-1 ${
         theme === 'light' ? 'bg-transparent' : 'bg-transparent'
       }`}>
-        <SessionHeader sessionInfo={sessionInfo} isConnected={isConnected} error={error} hasActiveSession={hasActiveSession} />
+        <SessionHeader 
+          sessionInfo={sessionInfo} 
+          isConnected={isConnected} 
+          error={error} 
+          hasActiveSession={hasActiveSession}
+          fastestLapDriver={fastestLapDriver}
+          fastestLapTime={fastestLapTime}
+          fastestLapTeam={fastestLapTeam}
+          fastestLapDriverName={fastestLapDriverName}
+        />
         <div className="px-2 md:px-4 pt-4 md:pt-8 pb-4 md:pb-6 max-w-full mx-auto">
           {!shouldShowData ? (
             <EmptyState reconnect={reconnect} />

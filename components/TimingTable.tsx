@@ -19,9 +19,9 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
     <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
       {/* Mobile Layout */}
       <div className="block md:hidden">
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="max-h-[70vh] overflow-y-auto space-y-1">
           {sortedDrivers.map((driver, index) => (
-            <div key={`${driver.pos}-${driver.code}`} className="mb-2 p-3 bg-black/20 rounded-lg border border-gray-700/30">
+            <div key={`${driver.pos}-${driver.code}`}>
               <OptimizedDriverRow driver={driver} index={index} isMobile={true} />
             </div>
           ))}

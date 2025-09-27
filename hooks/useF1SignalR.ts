@@ -76,6 +76,8 @@ export const useF1SignalR = () => {
   const [preventReconnect, setPreventReconnect] = useState(false)
   const [fastestLapDriver, setFastestLapDriver] = useState<string | null>(null)
   const [fastestLapTime, setFastestLapTime] = useState<number>(Infinity) // Store the fastest lap time in milliseconds
+  const [fastestLapTeam, setFastestLapTeam] = useState<string | null>(null)
+  const [fastestLapDriverName, setFastestLapDriverName] = useState<string | null>(null)
   const [carDataCache, setCarDataCache] = useState<Record<string, any>>({})
   
   const wsRef = useRef<WebSocket | null>(null)
@@ -1457,9 +1459,16 @@ export const useF1SignalR = () => {
     
     // Always update the fastest lap for current session (even if no historical data)
     if (currentFastestDriverCode && currentFastestTime < Infinity) {
+      // Find the team and name for the fastest lap driver
+      const fastestDriver = updatedDrivers.find(driver => driver.code === currentFastestDriverCode)
+      const fastestTeam = fastestDriver?.team || null
+      const fastestDriverName = fastestDriver?.name || null
+      
       setFastestLapTime(currentFastestTime)
       setFastestLapDriver(currentFastestDriverCode)
-      console.log(`🏎️ FASTEST LAP OF SESSION: ${currentFastestDriverCode} with ${currentFastestTime}ms`)
+      setFastestLapTeam(fastestTeam)
+      setFastestLapDriverName(fastestDriverName)
+      console.log(`🏎️ FASTEST LAP OF SESSION: ${currentFastestDriverCode} (${fastestDriverName}) - ${fastestTeam} with ${currentFastestTime}ms`)
     } else {
       console.log(`🏎️ NO FASTEST LAP FOUND - currentFastestDriverCode: ${currentFastestDriverCode}, currentFastestTime: ${currentFastestTime}`)
     }
@@ -1527,6 +1536,8 @@ export const useF1SignalR = () => {
     if (sessionType.toLowerCase().includes('qualifying') || sessionType.toLowerCase().includes('race')) {
       setFastestLapTime(Infinity)
       setFastestLapDriver(null)
+      setFastestLapTeam(null)
+      setFastestLapDriverName(null)
       console.log("🔄 Reset fastest lap for new session:", sessionName)
     }
     
@@ -1631,6 +1642,10 @@ export const useF1SignalR = () => {
     isConnected,
     error,
     hasActiveSession,
+    fastestLapDriver,
+    fastestLapTime: fastestLapTime === Infinity ? null : fastestLapTime.toString(),
+    fastestLapTeam,
+    fastestLapDriverName,
     reconnect,
     forceActiveSession
   }
