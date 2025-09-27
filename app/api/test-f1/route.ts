@@ -1,8 +1,8 @@
-// Node.js Runtime Configuration
-export const runtime = 'nodejs';
+// Edge Runtime Configuration for Cloudflare Pages
+export const runtime = 'edge';
 
 import { NextResponse } from "next/server"
-import f1Api from "f1-api-node"
+import * as f1Api from "f1-api-node"
 
 export async function GET() {
   try {

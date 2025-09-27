@@ -376,27 +376,16 @@ export default function StandingsPage() {
           {/* Past Championships */}
           {mode === 'past' && (
             <div className="space-y-4">
-              {/* Year Selection */}
-              <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Seleccionar Temporada</h3>
-                <Select value={year?.toString()} onValueChange={(value) => setYear(parseInt(value))}>
-                  <SelectTrigger className="w-full bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 h-10">
-                    <SelectValue placeholder="Seleccionar año" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {years.map((y) => (
-                        <SelectItem key={y} value={y.toString()}>
-                          {y}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+              {/* Próximamente */}
+              <div className="bg-white dark:bg-gray-800/50 rounded-lg p-8 border border-gray-200 dark:border-gray-700 text-center">
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Próximamente</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Los campeonatos históricos estarán disponibles próximamente
+                </p>
               </div>
 
-              {/* Race Selection */}
-              {races.length > 0 && (
+              {/* Race Selection - Hidden for now */}
+              {false && races.length > 0 && (
                 <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <h3 className="text-base font-semibold mb-2 text-gray-900 dark:text-white">Seleccionar Carrera</h3>
                   <Select value={selectedRace?.toString()} onValueChange={(value) => setSelectedRace(parseInt(value))}>
@@ -431,8 +420,8 @@ export default function StandingsPage() {
                 </div>
               )}
 
-              {/* Historical Standings */}
-              {pastStandings.length > 0 && (
+              {/* Historical Standings - Hidden for now */}
+              {false && pastStandings.length > 0 && (
                 <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
                     {year} Driver Championship Standings
