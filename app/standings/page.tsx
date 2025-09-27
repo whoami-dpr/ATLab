@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - STANDINGS PAGE
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -475,6 +476,21 @@ export default function StandingsPage() {
               )}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+*/
+
+// TEMPORARY PLACEHOLDER - STANDINGS PAGE DISABLED
+export default function StandingsPage() {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Standings</h1>
+          <p className="text-gray-400">Esta página está temporalmente deshabilitada.</p>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - STANDINGS API
 // Node.js Runtime Configuration for F1 API
 export const runtime = 'nodejs';
 
@@ -163,4 +164,15 @@ export async function GET(request: Request) {
       error: `Failed to fetch ${type} standings: ${error instanceof Error ? error.message : 'Unknown error'}` 
     }, { status: 500 })
   }
+}
+*/
+
+// TEMPORARY PLACEHOLDER - STANDINGS API DISABLED
+export async function GET() {
+  return new Response(JSON.stringify({ 
+    error: "Standings API temporarily disabled" 
+  }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
