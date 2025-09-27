@@ -256,7 +256,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
           <WeatherWidget weather={sessionInfo.weather} />
 
           {/* Grand Prix Info with Flag */}
-          <div className="flex items-center gap-4
+          <div className="flex items-center gap-4">
             {getCountryFlag(gpInfo.country)}
             <div className="flex flex-col">
               <div className={`text-sm font-medium leading-none ${
