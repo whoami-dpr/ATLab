@@ -229,8 +229,8 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex items-center justify-between p-3 min-h-[56px]">
-        <div className="flex items-center gap-3 min-h-[48px]">
+      <div className="hidden md:flex items-center justify-between p-4 min-h-[60px]">
+        <div className="flex items-center gap-4 min-h-[52px]">
           <div className="h-full flex items-center">
             <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[2.8rem] object-contain" />
           </div>
@@ -256,7 +256,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
           <WeatherWidget weather={sessionInfo.weather} />
 
           {/* Grand Prix Info with Flag */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4
             {getCountryFlag(gpInfo.country)}
             <div className="flex flex-col">
               <div className={`text-sm font-medium leading-none ${
@@ -269,7 +269,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession 
 
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-center">
-              <span className={`text-xs font-medium leading-none mb-0.5 ${
+              <span className={`text-sm font-medium leading-none mb-1 ${
                 theme === 'light' ? 'text-gray-600' : 'text-gray-400'
               }`}>Laps</span>
               <span className={`text-lg font-semibold leading-none ${

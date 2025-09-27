@@ -423,7 +423,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(12, 1fr)',
-        gap: '8px'
+        gap: '2px'
       }}
     >
       {/* Position, Team Logo, Driver - Similar to F1 official design */}
@@ -513,7 +513,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       </div>
 
       {/* DRS/PIT - Más pequeño */}
-      <div className="col-span-1 flex items-center px-2" style={{ marginLeft: '6px' }}>
+      <div className="col-span-1 flex items-center px-1" style={{ marginLeft: '2px' }}>
         <div
           className={`px-2 py-0.5 rounded border-2 transition-all duration-200 ${
             driver.inPit || driver.drs
@@ -532,7 +532,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       </div>
 
       {/* Tire - Más compacto */}
-      <div className="col-span-1 flex items-center gap-0.5 px-1" style={{ marginLeft: '-8px' }}>
+      <div className="col-span-1 flex items-center gap-0.5 px-1" style={{ marginLeft: '-2px' }}>
         <img
           src={
             driver.tire === 'S' ? '/images/soft.svg'
