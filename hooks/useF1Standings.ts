@@ -8,6 +8,10 @@ interface DriverStanding {
   team: string
   points: number
   wins?: number
+  driverNumber: string
+  driverPhoto: string
+  teamLogo: string
+  teamColor: string
 }
 
 interface ConstructorStanding {
@@ -72,7 +76,7 @@ export function useF1Standings(year?: number) {
   }
 
   useEffect(() => {
-    fetchStandings(year)
+    fetchStandings(year || 2025)
   }, [year])
 
   const refresh = () => {

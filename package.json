@@ -45,6 +45,7 @@
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "embla-carousel-react": "8.5.1",
+    "f1-api-node": "^2.2.2",
     "input-otp": "1.4.1",
     "lightweight-charts": "^4.2.3",
     "lucide-react": "^0.454.0",
