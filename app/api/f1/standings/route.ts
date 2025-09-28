@@ -118,7 +118,6 @@ function mapF1ApiConstructorData(apiData: any[]): ConstructorStanding[] {
   }))
 }
 
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get("type") || "drivers"
@@ -165,9 +164,11 @@ export async function GET(request: Request) {
     }, { status: 500 })
   }
 }
-
+*/
 
 // TEMPORARY PLACEHOLDER - STANDINGS API DISABLED
+export const runtime = 'edge';
+
 export async function GET() {
   return new Response(JSON.stringify({ 
     error: "Standings API temporarily disabled" 
@@ -176,4 +177,3 @@ export async function GET() {
     headers: { 'Content-Type': 'application/json' }
   });
 }
-*/

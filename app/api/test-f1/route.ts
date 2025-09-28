@@ -29,9 +29,11 @@ export async function GET() {
     }, { status: 500 });
   }
 }
-
+*/
 
 // TEMPORARY PLACEHOLDER - F1 TEST API DISABLED
+export const runtime = 'edge';
+
 export async function GET() {
   return new Response(JSON.stringify({ 
     error: "F1 Test API temporarily disabled" 
@@ -40,4 +42,3 @@ export async function GET() {
     headers: { 'Content-Type': 'application/json' }
   });
 }
-*/
