@@ -165,7 +165,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
             <h1 className={`text-base font-semibold flex items-center gap-2 ${
               theme === 'light' ? 'text-black' : 'text-white'
             }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
-              F1 Live
+              Live Timing
               <span
                 className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isConnected || error) ? 'animate-blink' : ''}`}
                 title={isConnected && !error ? 'Online' : 'Offline'}
@@ -179,23 +179,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
           </div>
         </div>
 
-        {/* Weather Row */}
-        <div className="flex justify-center">
-          <WeatherWidget weather={sessionInfo.weather} />
-        </div>
-
-        {/* Fastest Lap Banner */}
-        <div className="flex justify-center mt-6">
-          <FastestLapBanner 
-            fastestLapDriver={fastestLapDriver}
-            fastestLapTime={fastestLapTime}
-            fastestLapTeam={fastestLapTeam}
-            fastestLapDriverName={fastestLapDriverName}
-            theme={theme}
-          />
-        </div>
-
-        {/* GP Info and Status Row */}
+        {/* GP Info and Status Row - Moved right below F1 Live */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getCountryFlag(gpInfo.country)}
@@ -241,6 +225,22 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
               }
             </div>
           </div>
+        </div>
+
+        {/* Weather Row */}
+        <div className="flex justify-center">
+          <WeatherWidget weather={sessionInfo.weather} />
+        </div>
+
+        {/* Fastest Lap Banner */}
+        <div className="flex justify-center mt-6">
+          <FastestLapBanner 
+            fastestLapDriver={fastestLapDriver}
+            fastestLapTime={fastestLapTime}
+            fastestLapTeam={fastestLapTeam}
+            fastestLapDriverName={fastestLapDriverName}
+            theme={theme}
+          />
         </div>
       </div>
 

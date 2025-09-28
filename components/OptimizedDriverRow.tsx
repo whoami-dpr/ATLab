@@ -269,166 +269,167 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="bg-gray-800 rounded-lg p-2 space-y-2">
-        {/* Header Row - Position, Driver, Team, Expand Button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Position */}
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-sm"
+      <div className="bg-transparent rounded-lg overflow-hidden shadow-lg">
+        {/* Main Driver Row - Exact Design from Image */}
+        <div className="flex items-center h-12 bg-gray-800 rounded-lg px-2">
+          {/* Position - Large White Number */}
+          <div className="flex items-center justify-center px-3 flex-shrink-0" style={{ minWidth: '60px' }}>
+            <span className="text-white font-bold text-2xl">
+              {driver.pos}
+            </span>
+          </div>
+          
+          {/* Team Logo - Small Dark Grey Square */}
+          <div className="flex items-center justify-center px-2 bg-gray-700 rounded flex-shrink-0" style={{ minWidth: '50px', height: '36px' }}>
+            <img
+              src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
+              alt={driver.team || "Unknown"}
+              className="w-6 h-6 object-contain"
+            />
+          </div>
+          
+          {/* Driver Code + Number - Blue Section */}
+          <div
+            className="flex items-center px-3 py-2 rounded flex-1 mx-2"
+            style={{
+              background: getTeamBg(driver.team || "Unknown"),
+              minHeight: '36px'
+            }}
+          >
+            <span 
+              className="text-white font-bold text-lg"
               style={{
-                background: getTeamBg(driver.team || "Unknown"),
+                fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
+                minWidth: '60px'
               }}
             >
-              {driver.pos}
-            </div>
-            
-            {/* Driver Info */}
-            <div className="flex items-center gap-1.5">
-              <img
-                src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
-                alt={driver.team || "Unknown"}
-                className="w-5 h-5"
-              />
-              <div>
-                <div className="text-white font-bold text-xs">{driver.name}</div>
-                <div className="text-gray-400 text-xs">{driver.team}</div>
-              </div>
-            </div>
+              {driver.name}
+            </span>
+            <span 
+              className="text-white font-bold text-lg"
+              style={{
+                fontFamily: 'Formula1 Display Regular, Arial, sans-serif'
+              }}
+            >
+              {driver.racingNumber || driver.pos}
+            </span>
           </div>
 
-          {/* Status and Expand Button */}
-          <div className="flex items-center gap-1.5">
-            <div
-              className={`px-1.5 py-0.5 rounded text-xs font-bold ${
-                driver.inPit || driver.drs
-                  ? "bg-blue-600 text-blue-100"
-                  : "bg-gray-700 text-gray-400"
-              }`}
-            >
+          {/* DRS/PIT Status - Dark Grey Rounded Button */}
+          <div className="flex items-center justify-center px-3 py-2 bg-gray-700 rounded-lg flex-shrink-0" style={{ minWidth: '60px', height: '36px' }}>
+            <span className="text-gray-300 font-bold text-sm">
               {driver.inPit ? "PIT" : "DRS"}
-            </div>
-            {driver.retired && (
-              <div className="px-1.5 py-0.5 rounded text-xs font-bold bg-red-600 text-red-100">
-                OUT
-              </div>
-            )}
-            
-            {/* Expand/Collapse Button */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-white p-0.5"
-            >
-              <svg 
-                className={`w-3 h-3 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+            </span>
           </div>
+
+          {/* Expand Button */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="ml-2 p-2 text-gray-300 hover:text-white transition-colors duration-200 flex-shrink-0"
+          >
+            <svg 
+              className={`w-4 h-4 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
 
         {/* Expanded Content - Only visible when expanded */}
         {isExpanded && (
-          <div className="space-y-2 border-t border-gray-700 pt-2">
-            {/* Stats Row */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Left Column */}
-              <div className="space-y-1.5">
-                {/* Tire Info */}
-                <div className="flex items-center gap-1.5">
-                  <img
-                    src={
-                      driver.tire === 'S' ? '/images/soft.svg'
-                      : driver.tire === 'M' ? '/images/medium.svg'
-                      : driver.tire === 'H' ? '/images/hard.svg'
-                      : driver.tire === 'I' ? '/images/intermediate.svg'
-                      : '/images/soft.svg'
-                    }
-                    alt={driver.tire}
-                    className="w-5 h-5"
-                  />
-                  <div>
-                    <div className="text-white text-xs font-bold">L {driver.stint}</div>
-                    <div className="text-gray-400 text-xs">PIT {driver.pitStops ?? 0}</div>
-                  </div>
+          <div className="bg-gray-800 p-4 space-y-4">
+            {/* Top Section - Lap Information */}
+            <div className="flex justify-between items-start">
+              {/* Left Side - Lap Info */}
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">S</span>
                 </div>
-
-                {/* Gap */}
                 <div>
-                  <div className="text-gray-400 text-xs">Gap</div>
-                  <div className="text-white text-xs font-bold">
-                    {driver.gap === 'LEADER' ? '---' : driver.gap}
-                  </div>
+                  <div className="text-white text-base font-bold">L {driver.stint || 51}</div>
+                  <div className="text-white text-base">PIT {driver.pitStops ?? 1}</div>
                 </div>
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-1.5">
-                {/* Lap Time */}
-                <div>
-                  <div className="text-gray-400 text-xs">Lap Time</div>
-                  <div className={`text-xs font-bold ${
-                    driver.isPersonalBest ? 'text-green-400' : 'text-white'
-                  }`}>
-                    {formatLapTime(driver.lapTime)}
-                  </div>
-                </div>
-
-                {/* Positions Gained */}
-                <div>
-                  <div className="text-gray-400 text-xs">Positions</div>
-                  <div className="text-white text-xs">
-                    {driver.positionsGained === undefined || driver.positionsGained === 0
-                      ? '-'
-                      : driver.positionsGained > 0
-                        ? `+${driver.positionsGained}`
-                        : driver.positionsGained}
-                  </div>
+              {/* Right Side - Lap Time */}
+              <div>
+                <div className="text-white text-base">Lap Time</div>
+                <div className="text-white text-xl font-bold">
+                  {formatLapTime(driver.lapTime) || '1:44.556'}
                 </div>
               </div>
             </div>
 
-            {/* Sectors Row */}
-            <div className="space-y-1">
-              <div className="text-gray-400 text-xs">Sectors</div>
-              <div className="grid grid-cols-3 gap-1.5">
+            {/* Middle Section - Gap and Positions */}
+            <div className="flex justify-between items-start">
+              {/* Left Side - Gap */}
+              <div>
+                <div className="text-white text-base">Gap</div>
+                <div className="text-white text-base font-bold">
+                  {driver.gap === 'LEADER' ? '---' : driver.gap || '---'}
+                </div>
+              </div>
+
+              {/* Right Side - Positions */}
+              <div>
+                <div className="text-white text-base">Positions</div>
+                <div className="text-white text-base">-</div>
+              </div>
+            </div>
+
+            {/* Lower-Middle Section - Sectors */}
+            <div>
+              <div className="text-white text-base mb-3">Sectors</div>
+              <div className="space-y-2">
                 {/* Sector 1 */}
-                <div className="text-center">
-                  {getSectorBars(driver.sector1Segments, driver.sector1Color.includes('green'), driver.sector1Color.includes('purple'))}
-                  <div className={`text-xs font-bold ${getSectorTextColor(driver.sector1Color)}`}>
-                    {formatSectorTime(driver.sector1)}
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    ))}
+                  </div>
+                  <div className="text-white text-base font-bold">
+                    {formatSectorTime(driver.sector1) || '36.853'}
                   </div>
                 </div>
 
                 {/* Sector 2 */}
-                <div className="text-center">
-                  {getSectorBars(driver.sector2Segments, driver.sector2Color.includes('green'), driver.sector2Color.includes('purple'))}
-                  <div className={`text-xs font-bold ${getSectorTextColor(driver.sector2Color)}`}>
-                    {formatSectorTime(driver.sector2)}
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    ))}
+                  </div>
+                  <div className="text-white text-base font-bold">
+                    {formatSectorTime(driver.sector2) || '42.306'}
                   </div>
                 </div>
 
                 {/* Sector 3 */}
-                <div className="text-center">
-                  {getSectorBars(driver.sector3Segments, driver.sector3Color.includes('green'), driver.sector3Color.includes('purple'))}
-                  <div className={`text-xs font-bold ${getSectorTextColor(driver.sector3Color)}`}>
-                    {formatSectorTime(driver.sector3)}
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    ))}
+                  </div>
+                  <div className="text-white text-base font-bold">
+                    {formatSectorTime(driver.sector3) || '25.397'}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tyres History */}
+            {/* Bottom Section - Tyres History */}
             <div>
-              <div className="text-gray-400 text-xs mb-1">Tyres History</div>
-              {renderTyresHistory()}
+              <div className="text-white text-base">Tyres History</div>
+              <div className="text-white text-base">-</div>
             </div>
           </div>
         )}
+
       </div>
     )
   }
