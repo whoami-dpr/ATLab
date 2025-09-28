@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - F1 TEAMS API
 // Node.js Runtime Configuration
 export const runtime = 'nodejs';
 
@@ -30,4 +31,15 @@ export async function GET(request: Request) {
       error: `Failed to fetch teams: ${error instanceof Error ? error.message : 'Unknown error'}` 
     }, { status: 500 })
   }
+}
+*/
+
+// TEMPORARY PLACEHOLDER - F1 TEAMS API DISABLED
+export async function GET() {
+  return new Response(JSON.stringify({ 
+    error: "Teams API temporarily disabled" 
+  }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }

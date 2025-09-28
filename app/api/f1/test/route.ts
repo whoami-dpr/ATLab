@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - F1 TEST API
 // Cloudflare Pages Edge Runtime Configuration
 export const runtime = 'nodejs';
 
@@ -59,4 +60,15 @@ export async function GET(request: Request) {
       function: functionName
     }, { status: 500 })
   }
+}
+*/
+
+// TEMPORARY PLACEHOLDER - F1 TEST API DISABLED
+export async function GET() {
+  return new Response(JSON.stringify({ 
+    error: "F1 Test API temporarily disabled" 
+  }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }

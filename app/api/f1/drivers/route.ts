@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - F1 DRIVERS API
 // Node.js Runtime Configuration
 export const runtime = 'nodejs';
 
@@ -31,4 +32,15 @@ export async function GET(request: Request) {
       error: `Failed to fetch drivers: ${error instanceof Error ? error.message : 'Unknown error'}` 
     }, { status: 500 })
   }
+}
+*/
+
+// TEMPORARY PLACEHOLDER - F1 DRIVERS API DISABLED
+export async function GET() {
+  return new Response(JSON.stringify({ 
+    error: "Drivers API temporarily disabled" 
+  }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
