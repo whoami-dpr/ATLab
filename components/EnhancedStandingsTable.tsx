@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - ENHANCED STANDINGS TABLE
 "use client"
 
 import React from "react"
@@ -25,121 +26,117 @@ interface EnhancedStandingsTableProps {
 export function EnhancedStandingsTable({ drivers, loading, error }: EnhancedStandingsTableProps) {
   if (loading) {
     return (
-      <div className="w-full bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
-          F1 2025 Driver Championship
-        </div>
-        <div className="flex items-center justify-center h-32 text-gray-600 dark:text-gray-400 text-base">
-          Cargando clasificaciones...
-        </div>
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="w-full bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
-          F1 2025 Driver Championship
-        </div>
-        <div className="flex items-center justify-center h-32 text-red-600 dark:text-red-400 text-base">
-          Error: {error}
-        </div>
+      <div className="text-center py-8">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    )
+  }
+
+  if (!drivers || drivers.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No standings data available</p>
       </div>
     )
   }
 
   return (
-    <div className="w-full bg-white dark:bg-[#111213] rounded-xl shadow-lg border border-gray-200 dark:border-[#23272b] overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-[#23272b] text-base font-semibold text-gray-900 dark:text-white">
-        F1 2025 Driver Championship
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Pos
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Driver
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Team
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Points
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Wins
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {drivers.map((driver, index) => (
+              <tr key={driver.driver} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                  {driver.position}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <Image
+                        src={driver.driverPhoto}
+                        alt={driver.driver}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {driver.driver}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        #{driver.driverNumber}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-8 w-8">
+                      <Image
+                        src={driver.teamLogo}
+                        alt={driver.team}
+                        width={32}
+                        height={32}
+                        className="h-8 w-8 object-contain"
+                      />
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {driver.team}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {driver.points}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {driver.wins || 0}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-      
-      {/* Header */}
-      <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 dark:bg-[#1a1b1d] text-gray-600 dark:text-gray-400 text-xs font-medium border-b border-gray-200 dark:border-[#23272b]">
-        <div className="col-span-1 text-center">Pos</div>
-        <div className="col-span-7">Driver</div>
-        <div className="col-span-2 text-center">Team</div>
-        <div className="col-span-2 text-right">Pts</div>
-      </div>
+    </div>
+  )
+}
+*/
 
-      {/* Driver Rows */}
-      <div className="divide-y divide-gray-200 dark:divide-[#23272b]">
-        {drivers.map((driver, index) => (
-          <div 
-            key={driver.position} 
-            className="grid grid-cols-12 gap-2 px-4 py-2 hover:bg-gray-50 dark:hover:bg-[#1a1b1d]/50 transition-colors duration-200"
-          >
-            {/* Position with colored bar */}
-            <div className="col-span-1 flex items-center justify-center">
-              <div className="flex items-center">
-                <div 
-                  className="w-1 h-5 rounded-full mr-1"
-                  style={{ backgroundColor: driver.teamColor }}
-                />
-                <span className="text-sm font-bold text-gray-900 dark:text-white">{driver.position}</span>
-              </div>
-            </div>
-
-            {/* Driver Info */}
-            <div className="col-span-7 flex items-center space-x-2">
-              {/* Driver Photo */}
-              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                <Image
-                  src={driver.driverPhoto}
-                  alt={driver.driver}
-                  width={32}
-                  height={32}
-                  className="object-cover"
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder-user.jpg';
-                  }}
-                />
-              </div>
-              
-              {/* Driver Name and Number */}
-              <div className="flex flex-col min-w-0">
-                <span className="text-gray-900 dark:text-white font-semibold text-sm truncate">{driver.driver}</span>
-                <div className="flex items-center space-x-1">
-                  <span className="text-gray-600 dark:text-gray-400 text-xs">#{driver.driverNumber}</span>
-                  {driver.nationality && (
-                    <div 
-                      className="text-xs text-gray-500 dark:text-gray-500"
-                      dangerouslySetInnerHTML={{ __html: driver.nationality }}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Team Info */}
-            <div className="col-span-2 flex items-center justify-center">
-              {/* Team Logo */}
-              <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-                <Image
-                  src={driver.teamLogo}
-                  alt={driver.team}
-                  width={20}
-                  height={20}
-                  className="object-contain"
-                  onError={(e) => {
-                    // Fallback to placeholder if logo fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/placeholder-logo.svg';
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Points */}
-            <div className="col-span-2 flex items-center justify-end">
-              <span className="text-gray-900 dark:text-white font-bold text-sm">{driver.points}</span>
-            </div>
-          </div>
-        ))}
-      </div>
+// TEMPORARY PLACEHOLDER - ENHANCED STANDINGS TABLE DISABLED
+export function EnhancedStandingsTable() {
+  return (
+    <div className="text-center py-8">
+      <p className="text-gray-500">Standings table temporarily disabled</p>
     </div>
   )
 }

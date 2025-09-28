@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - F1 SCHEDULE HOOK
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,73 +19,120 @@ export function useF1Schedule() {
   // Fetch years
   useEffect(() => {
     setLoading(l => ({ ...l, years: true }));
-    fetch("https://atlab-backend-production.up.railway.app/api/f1/years")
-      .then(res => res.json())
-      .then(data => {
-        console.log("AÑOS RECIBIDOS:", data.years);
-        setYears(data.years);
-        // Selecciona automáticamente el primer año si no hay uno seleccionado
-        setYear(y => y ?? data.years[0]);
-      })
-      .catch((e) => {
-        console.error("ERROR FETCH AÑOS:", e);
-        setError("Error cargando años")
-      })
-      .finally(() => {
-        console.log("FINALIZA FETCH AÑOS");
-        setLoading(l => ({ ...l, years: false }));
-      });
+    // Mock data for years
+    const mockYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+    setYears(mockYears);
+    setLoading(l => ({ ...l, years: false }));
   }, []);
 
   // Fetch GPs when year changes
   useEffect(() => {
-    if (!year) return;
-    setLoading(l => ({ ...l, gps: true }));
-    fetch(`https://atlab-backend-production.up.railway.app/api/f1/gps?year=${year}`)
-      .then(res => res.json())
-      .then(data => setGps(data.gps))
-      .catch(() => setError("Error cargando GPs"))
-      .finally(() => setLoading(l => ({ ...l, gps: false })));
+    if (year) {
+      setLoading(l => ({ ...l, gps: true }));
+      // Mock data for GPs
+      const mockGps = [
+        "Australian Grand Prix",
+        "Bahrain Grand Prix", 
+        "Saudi Arabian Grand Prix",
+        "Azerbaijan Grand Prix",
+        "Miami Grand Prix",
+        "Monaco Grand Prix",
+        "Spanish Grand Prix",
+        "Canadian Grand Prix",
+        "Austrian Grand Prix",
+        "British Grand Prix",
+        "Hungarian Grand Prix",
+        "Belgian Grand Prix",
+        "Dutch Grand Prix",
+        "Italian Grand Prix",
+        "Singapore Grand Prix",
+        "Japanese Grand Prix",
+        "Qatar Grand Prix",
+        "United States Grand Prix",
+        "Mexico City Grand Prix",
+        "São Paulo Grand Prix",
+        "Las Vegas Grand Prix",
+        "Abu Dhabi Grand Prix"
+      ];
+      setGps(mockGps);
+      setLoading(l => ({ ...l, gps: false }));
+    }
   }, [year]);
 
   // Fetch sessions when GP changes
   useEffect(() => {
-    if (!year || !gp) return;
-    setLoading(l => ({ ...l, sessions: true }));
-    fetch(`https://atlab-backend-production.up.railway.app/api/f1/sessions?year=${year}&gp=${encodeURIComponent(gp)}`)
-      .then(res => res.json())
-      .then(data => setSessions(data.sessions))
-      .catch(() => setError("Error cargando sesiones"))
-      .finally(() => setLoading(l => ({ ...l, sessions: false })));
-  }, [year, gp]);
+    if (gp) {
+      setLoading(l => ({ ...l, sessions: true }));
+      // Mock data for sessions
+      const mockSessions = ["Practice 1", "Practice 2", "Practice 3", "Qualifying", "Race"];
+      setSessions(mockSessions);
+      setLoading(l => ({ ...l, sessions: false }));
+    }
+  }, [gp]);
 
   // Fetch drivers when session changes
   useEffect(() => {
-    // Validación extra: year debe ser número, gp y session no vacíos
-    if (
-      typeof year !== "number" ||
-      !year ||
-      !gp ||
-      typeof gp !== "string" ||
-      !session ||
-      typeof session !== "string"
-    ) {
-      return;
+    if (session) {
+      setLoading(l => ({ ...l, drivers: true }));
+      // Mock data for drivers
+      const mockDrivers = [
+        { code: "VER", name: "Max Verstappen" },
+        { code: "LEC", name: "Charles Leclerc" },
+        { code: "PER", name: "Sergio Pérez" },
+        { code: "RUS", name: "George Russell" },
+        { code: "NOR", name: "Lando Norris" },
+        { code: "HAM", name: "Lewis Hamilton" },
+        { code: "ALO", name: "Fernando Alonso" },
+        { code: "SAI", name: "Carlos Sainz" },
+        { code: "OCO", name: "Esteban Ocon" },
+        { code: "GAS", name: "Pierre Gasly" },
+        { code: "BOT", name: "Valtteri Bottas" },
+        { code: "MAG", name: "Kevin Magnussen" },
+        { code: "ALB", name: "Alexander Albon" },
+        { code: "TSU", name: "Yuki Tsunoda" },
+        { code: "ZHO", name: "Zhou Guanyu" },
+        { code: "HUL", name: "Nico Hülkenberg" },
+        { code: "STR", name: "Lance Stroll" },
+        { code: "RIC", name: "Daniel Ricciardo" },
+        { code: "PIA", name: "Oscar Piastri" },
+        { code: "SAR", name: "Logan Sargeant" }
+      ];
+      setDrivers(mockDrivers);
+      setLoading(l => ({ ...l, drivers: false }));
     }
-    console.log("Fetching drivers with:", { year, gp, session });
-    setLoading(l => ({ ...l, drivers: true }));
-    fetch(`https://atlab-backend-production.up.railway.app/api/f1/drivers?year=${year}&gp=${encodeURIComponent(gp)}&session=${session}`)
-      .then(res => res.json())
-      .then(data => setDrivers(data.drivers))
-      .catch(() => setError("Error cargando pilotos"))
-      .finally(() => setLoading(l => ({ ...l, drivers: false })));
-  }, [year, gp, session]);
+  }, [session]);
 
   return {
-    years, gps, sessions, drivers,
-    year, setYear,
-    gp, setGp,
-    session, setSession,
-    loading, error
+    years,
+    gps,
+    sessions,
+    drivers,
+    year,
+    setYear,
+    gp,
+    setGp,
+    session,
+    setSession,
+    loading,
+    error
   };
-} 
+}
+*/
+
+// TEMPORARY PLACEHOLDER - F1 SCHEDULE HOOK DISABLED
+export function useF1Schedule() {
+  return {
+    years: [],
+    gps: [],
+    sessions: [],
+    drivers: [],
+    year: undefined,
+    setYear: () => {},
+    gp: undefined,
+    setGp: () => {},
+    session: undefined,
+    setSession: () => {},
+    loading: { years: false, gps: false, sessions: false, drivers: false },
+    error: "Schedule hook temporarily disabled"
+  };
+}

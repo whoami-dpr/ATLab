@@ -12,7 +12,7 @@ import {
   SelectGroup,
   SelectLabel,
 } from "../../components/ui/select";
-import { useF1Schedule } from "../../hooks/useF1Schedule";
+// import { useF1Schedule } from "../../hooks/useF1Schedule"; // TEMPORARILY DISABLED
 import { YearSelect } from "../../components/YearSelect";
 import TelemetryPanel from '../../components/telemetry/TelemetryPanel';
 import { useLapChart } from '../../hooks/useTelemetry';
@@ -82,13 +82,24 @@ function DriverSelect({ drivers, driver, setDriver, disabled }: { drivers: { cod
 }
 
 export default function TelemetryPage() {
-  const {
-    years, gps, sessions, drivers,
-    year, setYear,
-    gp, setGp,
-    session, setSession,
-    loading, error
-  } = useF1Schedule();
+  // const {
+  //   years, gps, sessions, drivers,
+  //   year, setYear,
+  //   gp, setGp,
+  //   session, setSession,
+  //   loading, error
+  // } = useF1Schedule(); // TEMPORARILY DISABLED
+  
+  // Mock values for telemetry page
+  const years: number[] = [];
+  const gps: string[] = [];
+  const sessions: string[] = [];
+  const drivers: { code: string; name: string }[] = [];
+  const [year, setYear] = useState<number | undefined>(undefined);
+  const [gp, setGp] = useState<string | undefined>(undefined);
+  const [session, setSession] = useState<string | undefined>(undefined);
+  const loading = { years: false, gps: false, sessions: false, drivers: false };
+  const error = "Schedule temporarily disabled";
   const [driver, setDriver] = useState("");
   const { data, loading: loadingTelemetry, error: errorTelemetry, fetchTelemetry } = useTelemetry();
   const [selectedLap, setSelectedLap] = useState<number | null>(null);

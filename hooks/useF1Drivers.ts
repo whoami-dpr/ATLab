@@ -1,3 +1,4 @@
+/* TEMPORARILY DISABLED - F1 DRIVERS HOOK
 "use client"
 
 import { useState, useEffect } from "react"
@@ -22,56 +23,87 @@ interface F1Team {
 export function useF1Drivers() {
   const [drivers, setDrivers] = useState<F1Driver[]>([])
   const [teams, setTeams] = useState<F1Team[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
-    try {
+  useEffect(() => {
+    const fetchDrivers = async () => {
       setLoading(true)
       setError(null)
       
-      // Fetch both drivers and teams in parallel
-      const [driversResponse, teamsResponse] = await Promise.all([
-        fetch('/api/f1/drivers'),
-        fetch('/api/f1/teams')
-      ])
+      try {
+        // Mock data for drivers
+        const mockDrivers: F1Driver[] = [
+          {
+            name: "Max Verstappen",
+            team: "Red Bull Racing",
+            rank: "1",
+            nationality: "Dutch",
+            driverImage: "/drivers/verstappen.jpg",
+            nationalityCode: "NL"
+          },
+          {
+            name: "Charles Leclerc",
+            team: "Ferrari",
+            rank: "2",
+            nationality: "Monegasque",
+            driverImage: "/drivers/leclerc.jpg",
+            nationalityCode: "MC"
+          },
+          {
+            name: "Sergio Pérez",
+            team: "Red Bull Racing",
+            rank: "3",
+            nationality: "Mexican",
+            driverImage: "/drivers/perez.jpg",
+            nationalityCode: "MX"
+          }
+        ]
 
-      if (!driversResponse.ok || !teamsResponse.ok) {
-        throw new Error("Failed to fetch F1 data")
+        const mockTeams: F1Team[] = [
+          {
+            name: "Red Bull Racing",
+            points: 500,
+            drivers: ["Max Verstappen", "Sergio Pérez"],
+            carLogo: "/teams/redbull-logo.png",
+            carImage: "/teams/redbull-car.jpg"
+          },
+          {
+            name: "Ferrari",
+            points: 400,
+            drivers: ["Charles Leclerc", "Carlos Sainz"],
+            carLogo: "/teams/ferrari-logo.png",
+            carImage: "/teams/ferrari-car.jpg"
+          }
+        ]
+
+        setDrivers(mockDrivers)
+        setTeams(mockTeams)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
       }
-
-      const driversData = await driversResponse.json()
-      const teamsData = await teamsResponse.json()
-
-      if (!driversData.success || !teamsData.success) {
-        throw new Error("Invalid response from F1 API")
-      }
-
-      setDrivers(driversData.drivers)
-      setTeams(teamsData.teams)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
-      setError(errorMessage)
-      setDrivers([])
-      setTeams([])
-    } finally {
-      setLoading(false)
     }
-  }
 
-  useEffect(() => {
-    fetchData()
+    fetchDrivers()
   }, [])
-
-  const refresh = () => {
-    fetchData()
-  }
 
   return {
     drivers,
     teams,
     loading,
-    error,
-    refresh,
+    error
+  }
+}
+*/
+
+// TEMPORARY PLACEHOLDER - F1 DRIVERS HOOK DISABLED
+export function useF1Drivers() {
+  return {
+    drivers: [],
+    teams: [],
+    loading: false,
+    error: "Drivers hook temporarily disabled"
   }
 }
