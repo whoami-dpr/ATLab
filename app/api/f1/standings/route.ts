@@ -165,7 +165,7 @@ export async function GET(request: Request) {
     }, { status: 500 })
   }
 }
-*/
+
 
 // TEMPORARY PLACEHOLDER - STANDINGS API DISABLED
 export async function GET() {
@@ -176,3 +176,4 @@ export async function GET() {
     headers: { 'Content-Type': 'application/json' }
   });
 }
+*/

@@ -29,7 +29,7 @@ export async function GET() {
     }, { status: 500 });
   }
 }
-*/
+
 
 // TEMPORARY PLACEHOLDER - F1 TEST API DISABLED
 export async function GET() {
@@ -40,3 +40,4 @@ export async function GET() {
     headers: { 'Content-Type': 'application/json' }
   });
 }
+*/

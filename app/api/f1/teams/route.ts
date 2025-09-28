@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     }, { status: 500 })
   }
 }
-*/
+
 
 // TEMPORARY PLACEHOLDER - F1 TEAMS API DISABLED
 export async function GET() {
@@ -43,3 +43,4 @@ export async function GET() {
     headers: { 'Content-Type': 'application/json' }
   });
 }
+*/
