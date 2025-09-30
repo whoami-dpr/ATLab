@@ -9,10 +9,11 @@ interface OptimizedDriverRowProps {
   index: number
   gapClass?: string
   isMobile?: boolean
+  drsEnabled?: boolean
 }
 
 export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: OptimizedDriverRowProps) {
-  const { driver, index, isMobile = false } = props
+  const { driver, index, isMobile = false, drsEnabled = true } = props
   const { theme } = useThemeOptimized()
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -271,7 +272,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     return (
       <div className="bg-transparent rounded-lg overflow-hidden shadow-lg">
         {/* Main Driver Row - Exact Design from Image */}
-        <div className="flex items-center h-12 bg-black/80 rounded-lg px-2">
+        <div className="flex items-center h-12 bg-black/80 rounded-lg px-1 justify-between">
           {/* Position - Large White Number */}
           <div className="flex items-center justify-center px-3 flex-shrink-0" style={{ minWidth: '60px' }}>
             <span className="text-white font-bold text-2xl">
@@ -290,17 +291,17 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           
           {/* Driver Code + Number - Blue Section */}
           <div
-            className="flex items-center px-3 py-2 rounded-r flex-1"
+            className="flex items-center justify-between px-3 py-2 rounded-r flex-shrink-0"
             style={{
               background: getTeamBg(driver.team || "Unknown"),
-              height: '40px'
+              height: '40px',
+              width: '110px'
             }}
           >
             <span 
               className="text-white font-bold text-lg"
               style={{
-                fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
-                minWidth: '60px'
+                fontFamily: 'Formula1 Display Regular, Arial, sans-serif'
               }}
             >
               {driver.name}
@@ -315,20 +316,81 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             </span>
           </div>
 
-          {/* DRS/PIT Status - Dark Grey Rounded Button */}
-          <div className="flex items-center justify-center px-3 py-2 bg-black/60 rounded-lg flex-shrink-0" style={{ minWidth: '60px', height: '40px' }}>
-            <span className="text-gray-300 font-bold text-sm">
-              {driver.inPit ? "PIT" : "DRS"}
-            </span>
-          </div>
+          {/* DRS/PIT Status - Dynamic Styling Based on State */}
+          {(() => {
+            // Determine DRS status based on real API data
+            let drsStatus = 'off';
+            let buttonClass = '';
+            let textClass = '';
+            
+            if (driver.inPit) {
+              drsStatus = 'pit';
+              buttonClass = 'bg-transparent border-2 border-blue-600';
+              textClass = 'text-blue-400';
+            } else if (driver.drs) {
+              drsStatus = 'active';
+              buttonClass = 'bg-transparent border-2 border-green-600';
+              textClass = 'text-green-400';
+            } else if (drsEnabled && (driver.drsEligible || driver.drsZone)) {
+              drsStatus = 'possible';
+              buttonClass = 'bg-transparent border-2 border-gray-400';
+              textClass = 'text-gray-300';
+            } else {
+              drsStatus = 'off';
+              buttonClass = 'bg-transparent border-2 border-gray-600';
+              textClass = 'text-gray-500';
+            }
+            
+            return (
+              <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                {/* DRS Button */}
+                <div 
+                  className={`flex items-center justify-center px-3 py-2 rounded-xl ${buttonClass}`} 
+                  style={{ width: '60px', height: '40px' }}
+                >
+                  <span className={`font-bold text-sm ${textClass}`}>
+                    {driver.inPit ? "PIT" : "DRS"}
+                  </span>
+                </div>
+                
+                {/* Tyres - Usando imágenes SVG */}
+                <div className="flex items-center justify-center bg-transparent rounded-full" style={{ width: '40px', height: '40px' }}>
+                  {(() => {
+                    // Debug logging
+                    console.log(`🏎️ Driver ${driver.name} tire data:`, {
+                      tire: driver.tire,
+                      tireType: typeof driver.tire,
+                      imageSrc: `/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`
+                    });
+                    
+                    return (
+                      <img
+                        src={`/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`}
+                        alt={driver.tire || "Unknown"}
+                        className="w-6 h-6 object-contain"
+                        onError={(e) => {
+                          console.log(`🏎️ Error loading tire image for driver ${driver.name}:`, {
+                            tire: driver.tire,
+                            imageSrc: `/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`
+                          });
+                          // Fallback to unknown image
+                          e.currentTarget.src = '/images/unknown.svg';
+                        }}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Expand Button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-2 p-2 text-gray-300 hover:text-white transition-colors duration-200 flex-shrink-0"
+            className="ml-1 p-2 text-gray-300 hover:text-white transition-colors duration-200 flex-shrink-0"
           >
             <svg 
-              className={`w-4 h-4 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+              className={`w-5 h-5 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"

@@ -7,9 +7,10 @@ import { useThemeOptimized } from "../hooks/useThemeOptimized"
 
 interface TimingTableProps {
   drivers: F1Driver[]
+  drsEnabled?: boolean
 }
 
-export const TimingTable = memo(function TimingTable({ drivers }: TimingTableProps) {
+export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = true }: TimingTableProps) {
   const { theme } = useThemeOptimized()
   const sortedDrivers = useMemo(() => {
     return [...drivers].sort((a, b) => a.pos - b.pos)
@@ -19,10 +20,10 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
     <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
       {/* Mobile Layout */}
       <div className="block md:hidden">
-        <div className="max-h-[70vh] overflow-y-auto space-y-1">
+        <div className="space-y-1">
           {sortedDrivers.map((driver, index) => (
             <div key={`${driver.pos}-${driver.code}`}>
-              <OptimizedDriverRow driver={driver} index={index} isMobile={true} />
+              <OptimizedDriverRow driver={driver} index={index} isMobile={true} drsEnabled={drsEnabled} />
             </div>
           ))}
         </div>
@@ -54,9 +55,9 @@ export const TimingTable = memo(function TimingTable({ drivers }: TimingTablePro
         </div>
 
         {/* Driver Rows */}
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div>
           {sortedDrivers.map((driver, index) => (
-            <OptimizedDriverRow key={`${driver.pos}-${driver.code}`} driver={driver} index={index} gapClass="gap-0.5 px-1" />
+            <OptimizedDriverRow key={`${driver.pos}-${driver.code}`} driver={driver} index={index} gapClass="gap-0.5 px-1" drsEnabled={drsEnabled} />
           ))}
         </div>
       </div>

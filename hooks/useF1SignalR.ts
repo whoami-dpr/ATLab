@@ -12,6 +12,8 @@ export interface F1Driver {
   stint: string
   change: string
   drs: boolean
+  drsEligible?: boolean
+  drsZone?: boolean
   inPit: boolean
   isFastestLap: boolean
   isPersonalBest: boolean
@@ -56,6 +58,7 @@ export interface F1SessionInfo {
   }
   lapInfo: string
   trackStatus: string
+  drsEnabled: boolean
 }
 
 export const useF1SignalR = () => {
@@ -67,6 +70,7 @@ export const useF1SignalR = () => {
     weather: { track: 0, air: 0, humidity: 0, condition: "unknown", windSpeed: 0, windDirection: 0, pressure: 0 },
     lapInfo: "-- / --",
     trackStatus: "No Active Session",
+    drsEnabled: true
   })
   const [driversTyreHistory, setDriversTyreHistory] = useState<Record<string, string[]>>({})
   const [isConnected, setIsConnected] = useState(false)
@@ -1059,6 +1063,24 @@ export const useF1SignalR = () => {
         console.log(`🏎️ Driver ${driverNumber} NO TIRE DATA AVAILABLE - showing unknown (position ${position}, pitStops: ${pitStops}, laps: ${currentLap})`)
       }
       
+      // Additional debug logging for tire data
+      console.log(`🏎️ Driver ${driverNumber} FINAL TIRE RESULT:`, {
+        currentTire,
+        tireCompound,
+        driverDataTyres: driverData.Tyres,
+        driverDataTyreCompound: driverData.TyreCompound,
+        carDataTyres: carData?.Tyres,
+        allTireFields: {
+          'Tyres': driverData.Tyres,
+          'TyreCompound': driverData.TyreCompound,
+          'Compound': driverData.Compound,
+          'TyreType': driverData.TyreType,
+          'TireType': driverData.TireType,
+          'Tyre': driverData.Tyre,
+          'Tire': driverData.Tire
+        }
+      })
+      
       // Extract gap information - for leader, gap should be empty
       const isLeader = position === 1
       
@@ -1344,6 +1366,10 @@ export const useF1SignalR = () => {
                        parseFloat(driverData.LastLapTime.Value.replace(':', '.')) < parseFloat(driverData.BestLapTime.Value.replace(':', '.')) ? "yellow" : "white"
       })
 
+      // Determine DRS eligibility based on position and gap
+      const isDrsEligible = position > 1 && parseFloat(finalGapValue.replace(/[^\d.-]/g, '')) < 1.0
+      const isInDrsZone = driverData.DRSZone || false
+      
       const driver: F1Driver = {
         pos: position,
         code: driverData.RacingNumber || driverNumber,
@@ -1354,6 +1380,8 @@ export const useF1SignalR = () => {
         stint: String(tireStint),
         change: "0",
         drs: driverData.DRS || false,
+        drsEligible: isDrsEligible,
+        drsZone: isInDrsZone,
         inPit: driverData.InPit || false,
         retired: driverData.Retired || driverData.KnockedOut || driverData.Stopped || false,
         isFastestLap: false, // Will be updated later
@@ -1578,10 +1606,19 @@ export const useF1SignalR = () => {
   }
 
   const updateTrackStatus = (trackData: any) => {
-    setSessionInfo(prev => ({
+    setSessionInfo(prev => {
+      const trackStatus = trackData.Status || prev.trackStatus
+      // Determine if DRS is enabled based on track status
+      const drsEnabled = !trackStatus?.toLowerCase().includes('safety car') && 
+                        !trackStatus?.toLowerCase().includes('vsc') &&
+                        !trackStatus?.toLowerCase().includes('red flag')
+
+      return {
         ...prev,
-      trackStatus: trackData.Status || prev.trackStatus
-    }))
+        trackStatus,
+        drsEnabled
+      }
+    })
   }
 
   const updateWeatherData = (weatherData: any) => {

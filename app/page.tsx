@@ -37,12 +37,12 @@ export default function TelemetryLab() {
           fastestLapTeam={fastestLapTeam}
           fastestLapDriverName={fastestLapDriverName}
         />
-        <div className="px-2 md:px-4 pt-4 md:pt-8 pb-4 md:pb-6 max-w-full mx-auto">
+        <div className="px-0 md:px-2 pt-4 md:pt-8 pb-4 md:pb-6 max-w-full mx-auto">
           {!shouldShowData ? (
             <EmptyState reconnect={reconnect} />
           ) : (
             <>
-              <TimingTable drivers={drivers} />
+              <TimingTable drivers={drivers} drsEnabled={sessionInfo.drsEnabled} />
             </>
           )}
         </div>
