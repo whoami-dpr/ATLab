@@ -271,7 +271,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     return (
       <div className="bg-transparent rounded-lg overflow-hidden shadow-lg">
         {/* Main Driver Row - Exact Design from Image */}
-        <div className="flex items-center h-12 bg-gray-800 rounded-lg px-2">
+        <div className="flex items-center h-12 bg-black/80 rounded-lg px-2">
           {/* Position - Large White Number */}
           <div className="flex items-center justify-center px-3 flex-shrink-0" style={{ minWidth: '60px' }}>
             <span className="text-white font-bold text-2xl">
@@ -280,7 +280,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           </div>
           
           {/* Team Logo - Small Dark Grey Square */}
-          <div className="flex items-center justify-center px-2 bg-gray-700 rounded flex-shrink-0" style={{ minWidth: '50px', height: '40px' }}>
+          <div className="flex items-center justify-center px-2 bg-gray-800 rounded-l flex-shrink-0" style={{ minWidth: '50px', height: '40px' }}>
             <img
               src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
               alt={driver.team || "Unknown"}
@@ -290,7 +290,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           
           {/* Driver Code + Number - Blue Section */}
           <div
-            className="flex items-center px-3 py-2 rounded flex-1 mx-2"
+            className="flex items-center px-3 py-2 rounded-r flex-1"
             style={{
               background: getTeamBg(driver.team || "Unknown"),
               height: '40px'
@@ -316,7 +316,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           </div>
 
           {/* DRS/PIT Status - Dark Grey Rounded Button */}
-          <div className="flex items-center justify-center px-3 py-2 bg-gray-700 rounded-lg flex-shrink-0" style={{ minWidth: '60px', height: '40px' }}>
+          <div className="flex items-center justify-center px-3 py-2 bg-black/60 rounded-lg flex-shrink-0" style={{ minWidth: '60px', height: '40px' }}>
             <span className="text-gray-300 font-bold text-sm">
               {driver.inPit ? "PIT" : "DRS"}
             </span>
@@ -340,7 +340,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
 
         {/* Expanded Content - Only visible when expanded */}
         {isExpanded && (
-          <div className="bg-gray-800 p-4 space-y-4">
+          <div className="bg-black/80 p-4 space-y-4">
             {/* Top Section - Lap Information */}
             <div className="flex justify-between items-start">
               {/* Left Side - Lap Info */}
