@@ -280,7 +280,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           </div>
           
           {/* Team Logo - Small Dark Grey Square */}
-          <div className="flex items-center justify-center px-2 bg-gray-700 rounded flex-shrink-0" style={{ minWidth: '50px', height: '36px' }}>
+          <div className="flex items-center justify-center px-2 bg-gray-700 rounded flex-shrink-0" style={{ minWidth: '50px', height: '40px' }}>
             <img
               src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
               alt={driver.team || "Unknown"}
@@ -293,7 +293,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             className="flex items-center px-3 py-2 rounded flex-1 mx-2"
             style={{
               background: getTeamBg(driver.team || "Unknown"),
-              minHeight: '36px'
+              height: '40px'
             }}
           >
             <span 
@@ -316,7 +316,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           </div>
 
           {/* DRS/PIT Status - Dark Grey Rounded Button */}
-          <div className="flex items-center justify-center px-3 py-2 bg-gray-700 rounded-lg flex-shrink-0" style={{ minWidth: '60px', height: '36px' }}>
+          <div className="flex items-center justify-center px-3 py-2 bg-gray-700 rounded-lg flex-shrink-0" style={{ minWidth: '60px', height: '40px' }}>
             <span className="text-gray-300 font-bold text-sm">
               {driver.inPit ? "PIT" : "DRS"}
             </span>
@@ -499,7 +499,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
               src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
               alt={driver.team || "Unknown"}
               style={{
-                height: '24px',
+                height: '28px',
                 width: 'auto',
                 objectFit: 'contain',
               }}
