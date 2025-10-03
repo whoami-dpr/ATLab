@@ -20,6 +20,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ATLab - F1 Live Timing",
   description: "Real-time Formula 1 telemetry and timing data",
+  other: {
+    "google-adsense-account": "ca-pub-4944595008155827",
+  },
 }
 
 export default function RootLayout({
