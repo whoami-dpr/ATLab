@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Poppins, Inter } from "next/font/google"
+import Script from "next/script"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -36,6 +37,12 @@ export default function RootLayout({
             <link rel="stylesheet" href="/fonts/formula1-display.css" />
           </head>
           <body className="min-h-screen w-full relative font-sans antialiased bg-black text-white">
+            <Script
+              async
+              src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4944595008155827"
+              crossOrigin="anonymous"
+              strategy="afterInteractive"
+            />
             <div className="absolute inset-0 z-0" style={{
               background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%), #000000"
             }} />
