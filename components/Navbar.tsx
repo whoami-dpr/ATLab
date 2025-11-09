@@ -11,7 +11,7 @@ const navItems = [
   { href: "/telemetry", label: "Telemetry" },
   // { href: "/standings", label: "Standings" }, // TEMPORARILY DISABLED
   { href: "/schedule", label: "Schedule" },
-  { href: "/weather", label: "Weather" },
+  { href: "/calendar", label: "Calendar" },
 ];
 
 export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
@@ -146,4 +146,4 @@ export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
       )}
     </>
   );
-} 
+}
