@@ -12,13 +12,16 @@ interface SessionHeaderProps {
   isConnected: boolean
   error: string | null
   hasActiveSession: boolean
-  fastestLapDriver?: string | null
-  fastestLapTime?: string | null
-  fastestLapTeam?: string | null
-  fastestLapDriverName?: string | null
+  fastestLap?: {
+    time: string
+    driver: string | null
+    driverCode: string | null
+    team: string | null
+    racingNumber: string | null
+  }
 }
 
-const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLapDriver, fastestLapTime, fastestLapTeam, fastestLapDriverName }: SessionHeaderProps) => {
+const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLap }: SessionHeaderProps) => {
   const { schedule } = useSchedule()
   const { theme } = useThemeOptimized()
   
@@ -235,24 +238,21 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
         {/* Fastest Lap Banner */}
         <div className="flex justify-center mt-6">
           <FastestLapBanner 
-            fastestLapDriver={fastestLapDriver}
-            fastestLapTime={fastestLapTime}
-            fastestLapTeam={fastestLapTeam}
-            fastestLapDriverName={fastestLapDriverName}
+            fastestLap={fastestLap}
             theme={theme}
           />
         </div>
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:flex items-center justify-between p-4 min-h-[60px]">
-        <div className="flex items-center gap-4 min-h-[52px]">
+      <div className="hidden md:flex items-center justify-between p-2 min-h-[40px]">
+        <div className="flex items-center gap-2 min-h-[32px]">
           <div className="h-full flex items-center">
-            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[2.8rem] object-contain" />
+            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[2rem] object-contain" />
           </div>
           <div className="flex flex-col justify-center">
             <div className="flex items-center gap-2">
-              <h1 className={`text-lg font-semibold flex items-center gap-2 ${
+              <h1 className={`text-sm font-semibold flex items-center gap-2 ${
                 theme === 'light' ? 'text-black' : 'text-white'
               }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
                 F1 Live Timing
@@ -262,29 +262,26 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
                 ></span>
               </h1>
             </div>
-            <div className={`text-2xl font-bold leading-none ${
+            <div className={`text-lg font-bold leading-none ${
               theme === 'light' ? 'text-black' : 'text-white'
             }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>{sessionInfo.timer}</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
           {/* Fastest Lap Banner */}
           <FastestLapBanner 
-            fastestLapDriver={fastestLapDriver}
-            fastestLapTime={fastestLapTime}
-            fastestLapTeam={fastestLapTeam}
-            fastestLapDriverName={fastestLapDriverName}
+            fastestLap={fastestLap}
             theme={theme}
           />
 
           <WeatherWidget weather={sessionInfo.weather} />
 
           {/* Grand Prix Info with Flag */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {getCountryFlag(gpInfo.country)}
             <div className="flex flex-col">
-              <div className={`text-sm font-medium leading-none ${
+              <div className={`text-xs font-medium leading-none ${
                 theme === 'light' ? 'text-black' : 'text-white'
               }`}>
                 {gpInfo.gpName} - {gpInfo.sessionType}
@@ -292,16 +289,16 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             <div className="flex flex-col items-center">
-              <span className={`text-sm font-medium leading-none mb-1 ${
+              <span className={`text-xs font-medium leading-none mb-1 ${
                 theme === 'light' ? 'text-gray-600' : 'text-gray-400'
               }`}>Laps</span>
-              <span className={`text-lg font-semibold leading-none ${
+              <span className={`text-sm font-semibold leading-none ${
                 theme === 'light' ? 'text-black' : 'text-white'
               }`}>{sessionInfo.lapInfo}</span>
             </div>
-            <div className={`px-4 py-2 rounded text-sm font-bold text-white ${
+            <div className={`px-2 py-1 rounded text-xs font-bold text-white ${
               sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
                 ? 'bg-red-600'
                 : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')

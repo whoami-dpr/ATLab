@@ -4,16 +4,20 @@ import React, { memo, useState } from "react"
 import type { F1Driver } from "../hooks/useF1SignalR"
 import { useThemeOptimized } from "../hooks/useThemeOptimized"
 
+import type { ColumnId } from "../types/ColumnConfig"
+
 interface OptimizedDriverRowProps {
   driver: F1Driver
   index: number
   gapClass?: string
   isMobile?: boolean
   drsEnabled?: boolean
+  columnOrder?: ColumnId[]
+  gridTemplateColumns?: string
 }
 
 export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: OptimizedDriverRowProps) {
-  const { driver, index, isMobile = false, drsEnabled = true } = props
+  const { driver, index, isMobile = false, drsEnabled = true, columnOrder, gridTemplateColumns: customGridTemplate } = props
   const { theme } = useThemeOptimized()
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -86,73 +90,77 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     }
   }
 
-  const getSectorBars = (segments: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }> = [], sectorPersonalFastest: boolean = false, sectorOverallFastest: boolean = false) => {
-    console.log(`🎨 getSectorBars called with:`, {
-      segmentsCount: segments.length,
-      sectorPersonalFastest,
-      sectorOverallFastest,
-      segments: segments.map(s => ({ 
-        Status: s.Status, 
-        PersonalFastest: s.PersonalFastest, 
-        OverallFastest: s.OverallFastest,
-        // Log all properties of each segment
-        allProperties: Object.keys(s),
-        fullSegment: s
-      }))
-    })
-
-    // If no real segment data, show gray bars
-    if (!segments || segments.length === 0) {
-      return (
-        <div className="flex gap-0.5 mb-0.5">
-          {Array(8).fill(0).map((_, i) => (
-            <div key={i} className="w-2.5 h-1.5 rounded bg-gray-700" />
-          ))}
-        </div>
-      )
+  const getSectorBars = (sector1: any[] = [], sector2: any[] = [], sector3: any[] = []) => {
+    const renderBars = () => {
+      const allBars: React.ReactElement[] = []
+      
+      // Render sector 1 bars
+      sector1.forEach((segment, i) => {
+        let barColor = "bg-gray-700"
+        if (segment.Status >= 2048) {
+          if (segment.Status === 2051) {
+            barColor = "bg-purple-500"
+          } else if (segment.Status === 2049) {
+            barColor = "bg-green-500"
+          } else if (segment.Status === 2052 || segment.Status === 2048) {
+            barColor = "bg-yellow-500"
+          }
+        }
+        allBars.push(
+          <div key={`s1-${i}`} className={`w-1 h-3 rounded-sm ${barColor}`} />
+        )
+      })
+      
+      // Add spacing between sector 1 and 2
+      if (sector1.length > 0 && sector2.length > 0) {
+        allBars.push(<div key="gap1" className="w-1" />)
+      }
+      
+      // Render sector 2 bars
+      sector2.forEach((segment, i) => {
+        let barColor = "bg-gray-700"
+        if (segment.Status >= 2048) {
+          if (segment.Status === 2051) {
+            barColor = "bg-purple-500"
+          } else if (segment.Status === 2049) {
+            barColor = "bg-green-500"
+          } else if (segment.Status === 2052 || segment.Status === 2048) {
+            barColor = "bg-yellow-500"
+          }
+        }
+        allBars.push(
+          <div key={`s2-${i}`} className={`w-1 h-3 rounded-sm ${barColor}`} />
+        )
+      })
+      
+      // Add spacing between sector 2 and 3
+      if (sector2.length > 0 && sector3.length > 0) {
+        allBars.push(<div key="gap2" className="w-1" />)
+      }
+      
+      // Render sector 3 bars
+      sector3.forEach((segment, i) => {
+        let barColor = "bg-gray-700"
+        if (segment.Status >= 2048) {
+          if (segment.Status === 2051) {
+            barColor = "bg-purple-500"
+          } else if (segment.Status === 2049) {
+            barColor = "bg-green-500"
+          } else if (segment.Status === 2052 || segment.Status === 2048) {
+            barColor = "bg-yellow-500"
+          }
+        }
+        allBars.push(
+          <div key={`s3-${i}`} className={`w-1 h-3 rounded-sm ${barColor}`} />
+        )
+      })
+      
+      return allBars
     }
 
     return (
-      <div className="flex gap-0.5 mb-0.5">
-        {segments.map((segment, i) => {
-          let barColor = "bg-gray-700" // Default: not passed through
-          let glowColor = ""
-
-          // Check if the segment was passed through
-          if (segment.Status >= 2048) { // Segment completed
-            if (segment.Status === 2051) {
-              // Violet: Overall Fastest Minisector
-              barColor = "bg-gradient-to-r from-purple-400 to-purple-500"
-              glowColor = "shadow-purple-400/20"
-            } else if (segment.Status === 2052) {
-              // Orange: Personal Best / Improved Minisector
-              barColor = "bg-gradient-to-r from-orange-400 to-orange-500"
-              glowColor = "shadow-orange-400/20"
-            } else if (segment.Status === 2049) {
-              // Green: Good / Personal Best Minisector
-              barColor = "bg-gradient-to-r from-green-400 to-green-500"
-              glowColor = "shadow-green-400/20"
-            } else if (segment.Status === 2048) {
-              // Yellow: Completed normally
-              barColor = "bg-gradient-to-r from-yellow-400 to-yellow-500"
-              glowColor = "shadow-yellow-400/20"
-            } else {
-              // Default for other completed statuses if not specifically mapped
-              barColor = "bg-gradient-to-r from-white-400 to-white-500"
-              glowColor = "shadow-white-400/20"
-            }
-          }
-          // If segment.Status is 0 or < 2048, it remains gray (default)
-
-          return (
-            <div
-              key={i}
-              className={`w-2.5 h-1.5 rounded transition-all duration-200 ${
-                segment.Status >= 2048 ? `${barColor} shadow-sm ${glowColor}` : "bg-gray-700"
-              }`}
-            />
-          )
-        })}
+      <div className="flex flex-row gap-[1px] items-center">
+        {renderBars()}
       </div>
     )
   }
@@ -496,272 +504,184 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     )
   }
 
+  // Render individual cell based on column ID
+  const renderCell = (columnId: ColumnId) => {
+    switch (columnId) {
+      case 'driver':
+        return (
+          <div key="driver" className="flex items-center h-6 pl-1">
+            <div className="flex items-center h-5 w-full rounded overflow-hidden">
+              <div
+                style={{
+                  background: getTeamBg(driver.team || "Unknown"),
+                  color: getTeamText(driver.team || "Unknown"),
+                  width: '20px',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                {driver.pos}
+              </div>
+              <div className="bg-white flex items-center justify-center w-6 h-full px-0.5">
+                <img
+                  src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
+                  alt={driver.team || "Unknown"}
+                  className="h-3.5 w-auto object-contain"
+                />
+              </div>
+              <div
+                style={{
+                  background: getTeamBg(driver.team || "Unknown"),
+                  color: getTeamText(driver.team || "Unknown"),
+                  flex: 1,
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 4px',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                <span>{driver.code}</span>
+                <span className="opacity-90">{driver.racingNumber}</span>
+              </div>
+            </div>
+          </div>
+        )
+      
+      case 'leader':
+        return (
+          <div key="leader" className="flex items-center justify-center text-white text-xs font-bold">
+            {driver.pos === 1 ? 'Leader' : driver.gap || '+0.000'}
+          </div>
+        )
+      
+      case 'tyre':
+        return (
+          <div key="tyre" className="flex items-center justify-center gap-1">
+            <span className="text-white text-[10px]">{driver.stint}</span>
+            <div className="w-4 h-4 flex items-center justify-center rounded-full border border-gray-600 bg-[#1a1a1a]">
+              <span className={`text-[9px] font-bold ${
+                driver.tire === 'S' ? 'text-red-500' :
+                driver.tire === 'M' ? 'text-yellow-400' :
+                driver.tire === 'H' ? 'text-gray-300' :
+                driver.tire === 'I' ? 'text-green-400' :
+                driver.tire === 'W' ? 'text-blue-400' : 'text-gray-500'
+              }`}>
+                {driver.tire}
+              </span>
+            </div>
+          </div>
+        )
+      
+      case 'bestLap':
+        return (
+          <div key="bestLap" className={`flex items-center justify-center text-xs font-bold ${
+            driver.isFastestLap ? 'text-purple-400' : 
+            driver.isPersonalBest ? 'text-green-400' : 'text-white'
+          }`}>
+            {formatLapTime(driver.bestLapTime || driver.prevLap)}
+          </div>
+        )
+      
+      case 'interval':
+        return (
+          <div key="interval" className={`flex items-center justify-center text-xs font-bold ${
+            driver.pos === 1 ? 'text-gray-500' : 'text-green-400'
+          }`}>
+            {driver.pos === 1 ? 'Interval' : driver.interval || '+0.000'}
+          </div>
+        )
+      
+      case 'lastLap':
+        return (
+          <div key="lastLap" className={`flex items-center justify-center text-xs font-bold ${
+            driver.isFastestLap ? 'text-purple-400' : 
+            driver.isPersonalBest ? 'text-green-400' : 'text-white'
+          }`}>
+            {formatLapTime(driver.lapTime)}
+          </div>
+        )
+      
+      case 'miniSectors':
+        return (
+          <div key="miniSectors" className="flex items-center justify-center px-1">
+            {getSectorBars(
+              driver.sector1Segments || [], 
+              driver.sector2Segments || [], 
+              driver.sector3Segments || []
+            )}
+          </div>
+        )
+      
+      case 'lastSectors':
+        return (
+          <div key="lastSectors" className="flex items-center justify-center gap-1.5 text-[10px] font-bold">
+            <span className={`${getSectorTextColor(driver.sector1Color)}`}>{formatSectorTime(driver.sector1)}</span>
+            <span className={`${getSectorTextColor(driver.sector2Color)}`}>{formatSectorTime(driver.sector2)}</span>
+            <span className={`${getSectorTextColor(driver.sector3Color)}`}>{formatSectorTime(driver.sector3)}</span>
+          </div>
+        )
+      
+      case 'pitIndicator':
+        return (
+          <div key="pitIndicator" className="flex items-center justify-center">
+            {driver.inPit && (
+              <div className="bg-[#b12074] text-white text-[9px] px-1 rounded-sm font-bold leading-none py-0.5">
+                PIT
+              </div>
+            )}
+          </div>
+        )
+      
+      case 'pitCount':
+        return (
+          <div key="pitCount" className="flex items-center justify-center text-white text-[10px] font-bold gap-0.5">
+            <span>{driver.pitCount}</span>
+            <span className="text-gray-400 text-[8px]">PIT</span>
+          </div>
+        )
+      
+      case 'topSpeed':
+        return (
+          <div key="topSpeed" className={`flex items-center justify-center text-xs font-bold ${
+            driver.topSpeed && parseFloat(driver.topSpeed) > 340 ? 'text-purple-400' : 'text-white'
+          }`}>
+            {driver.topSpeed || '---'}
+          </div>
+        )
+      
+      default:
+        return null
+    }
+  }
+
   // Desktop Layout
+  const defaultColumnOrder: ColumnId[] = ['driver', 'leader', 'tyre', 'bestLap', 'interval', 'lastLap', 'miniSectors', 'lastSectors', 'pitIndicator', 'pitCount', 'topSpeed']
+  const orderedColumns = columnOrder || defaultColumnOrder
+  const defaultGridTemplate = 'minmax(100px, 0.8fr) minmax(60px, 0.8fr) minmax(40px, 0.5fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(90px, 1.2fr) minmax(140px, 1.8fr) minmax(35px, 0.4fr) minmax(35px, 0.4fr) minmax(45px, 0.5fr)'
+
   return (
     <div
-      className={`px-1 py-1 transition-all duration-200 font-inter font-bold flex items-center ${
+      className={`px-1 py-[1px] transition-all duration-200 font-bold flex items-center border-b border-gray-800/50 ${
         driver.isFastestLap 
-          ? 'bg-gradient-to-r from-purple-900/30 to-purple-800/30' 
-          : 'hover:bg-gradient-to-r hover:from-gray-300/30 hover:to-gray-400/30'
+          ? 'bg-[#1a1a2e]' 
+          : 'hover:bg-[#1f1f2e] bg-[#15151e]'
       }`}
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gap: '2px'
+        gridTemplateColumns: customGridTemplate || defaultGridTemplate,
+        gap: '2px',
+        fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
+        fontSize: '0.75rem'
       }}
     >
-      {/* Position, Team Logo, Driver - Similar to F1 official design */}
-      <div className="col-span-1 flex items-center gap-0">
-        <div
-          className="flex items-center"
-          style={{
-            height: '32px',
-            width: '165px', // Ancho fijo para consistencia
-            minWidth: '165px',
-            maxWidth: '165px',
-            overflow: 'visible', // Cambiado para evitar cortes
-            padding: 0,
-          }}
-        >
-          {/* Position number - fondo del equipo */}
-          <div
-            style={{
-              background: getTeamBg(driver.team || "Unknown"),
-              color: getTeamText(driver.team || "Unknown"),
-              fontWeight: 700,
-              fontSize: '1.1rem',
-              fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '32px',
-              minWidth: '40px',
-              borderRadius: '0.5rem 0 0 0.5rem',
-              margin: 0,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {driver.pos}
-          </div>
-          
-          {/* Team Logo - fondo blanco */}
-          <div
-            style={{
-              background: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '32px',
-              minWidth: '35px',
-              padding: '0 4px',
-              margin: 0,
-            }}
-          >
-            <img
-              src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
-              alt={driver.team || "Unknown"}
-              style={{
-                height: '28px',
-                width: 'auto',
-                objectFit: 'contain',
-              }}
-            />
-          </div>
-          
-          {/* Driver name - fondo del equipo */}
-          <div
-            style={{
-              background: getTeamBg(driver.team || "Unknown"),
-              color: getTeamText(driver.team || "Unknown"),
-              fontWeight: 700,
-              fontSize: '1.0rem',
-              fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
-              letterSpacing: '0.03em',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              height: '32px',
-              padding: '0 8px 0 5px',
-              borderRadius: '0 0.5rem 0.5rem 0',
-              margin: 0,
-              whiteSpace: 'nowrap',
-              width: '90px',
-              minWidth: '90px',
-              maxWidth: '90px',
-            }}
-          >
-            <span style={{ flex: 1 }}>{driver.name}</span>
-            <span>{driver.racingNumber}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* DRS/PIT - Using same styling as mobile version */}
-      <div className="col-span-1 flex items-center px-1" style={{ marginLeft: '2px' }}>
-        {(() => {
-          // Determine DRS status based on real API data - same logic as mobile
-          let drsStatus = 'off';
-          let buttonClass = '';
-          let textClass = '';
-          
-          if (driver.inPit) {
-            drsStatus = 'pit';
-            buttonClass = 'bg-transparent border-2 border-blue-600';
-            textClass = 'text-blue-400';
-          } else if (driver.drs) {
-            drsStatus = 'active';
-            buttonClass = 'bg-transparent border-2 border-green-600';
-            textClass = 'text-green-400';
-          } else if (drsEnabled && (driver.drsEligible || driver.drsZone)) {
-            drsStatus = 'possible';
-            buttonClass = 'bg-transparent border-2 border-gray-400';
-            textClass = 'text-gray-300';
-          } else {
-            drsStatus = 'off';
-            buttonClass = 'bg-transparent border-2 border-gray-600';
-            textClass = 'text-gray-500';
-          }
-          
-          return (
-            <div 
-              className={`px-2 py-0.5 rounded border-2 transition-all duration-200 ${buttonClass}`}
-              style={{ 
-                borderRadius: '0.25rem',
-                fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
-                fontWeight: 700,
-                fontSize: '0.85rem'
-              }}
-            >
-              <span className={`font-bold ${textClass}`}>
-                {driver.inPit ? "PIT" : "DRS"}
-              </span>
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* Tire - Más compacto */}
-      <div className="col-span-1 flex items-center gap-0.5 px-1" style={{ marginLeft: '-2px' }}>
-        <img
-          src={
-            driver.tire === 'S' ? '/images/soft.svg'
-            : driver.tire === 'M' ? '/images/medium.svg'
-            : driver.tire === 'H' ? '/images/hard.svg'
-            : driver.tire === 'I' ? '/images/intermediate.svg'
-            : '/images/soft.svg'
-          }
-          alt={driver.tire}
-          className="w-8 h-8"
-        />
-        <div className="flex flex-col leading-tight">
-          <span className={`font-bold text-base ${
-            theme === 'light' ? 'text-black' : 'text-white'
-          }`}>L {driver.stint}</span>
-          <span className={`text-xs ${
-            theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-          }`} style={{ fontFamily: 'Inter, sans-serif' }}>PIT {driver.pitStops ?? 0}</span>
-        </div>
-      </div>
-
-      {/* Tyres History */}
-      <div className="col-span-1 flex items-center">
-        {renderTyresHistory()}
-      </div>
-
-      {/* Info - Posiciones ganadas y estado del piloto */}
-      <div className="col-span-1 flex flex-col items-start justify-center">
-        <span className="text-xs text-gray-500 leading-none">
-          {driver.positionsGained === undefined || driver.positionsGained === 0
-            ? '-'
-            : driver.positionsGained > 0
-              ? `+${driver.positionsGained}`
-              : driver.positionsGained}
-        </span>
-        <span className={
-          driver.retired
-            ? 'text-red-400 font-light text-base'
-            : driver.inPit
-              ? 'text-blue-400 font-light text-base'
-              : 'hidden'
-        }>
-          {driver.retired ? 'OUT' : driver.inPit ? 'PIT' : ''}
-        </span>
-      </div>
-
-      {/* Gap - Fuente mejorada */}
-      <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-base">
-        <div
-          className={`font-bold ${driver.gap === 'LEADER' ? 'text-gray-500' : theme === 'light' ? 'text-black' : 'text-white'}`}
-          style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem' }}
-        >
-          {driver.gap === 'LEADER' ? '--- ---' : driver.gap}
-        </div>
-        <div className={`text-sm font-normal ${
-          theme === 'light' ? 'text-gray-700' : 'text-gray-500'
-        }`} style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>{driver.gapTime}</div>
-      </div>
-
-      {/* Lap Time - Nueva fuente Inter */}
-      <div className="col-span-1 flex flex-col justify-center text-xs font-bold text-lg pt-1">
-        <div
-          className={`font-bold ${
-            driver.isPersonalBest
-              ? 'text-green-400'
-              : theme === 'light' ? 'text-black' : 'text-white'
-          }`}
-          style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem' }}
-        >
-          {formatLapTime(driver.lapTime)}
-        </div>
-        <div
-          className={`text-sm ${
-            driver.isFastestLap
-              ? 'text-purple-400'
-              : driver.isPersonalBest
-                ? 'text-green-400'
-                : theme === 'light' ? 'text-gray-700' : 'text-gray-500'
-          } font-normal`}
-          style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400 }}
-        >
-          {formatLapTime(driver.prevLap)}
-        </div>
-      </div>
-
-      {/* Sectors - Más compactos */}
-      <div className="col-span-5 grid grid-cols-3 gap-2">
-        {/* Sector 1 */}
-        <div className="flex flex-col text-base font-inter">
-          {getSectorBars(driver.sector1Segments, driver.sector1Color.includes('green'), driver.sector1Color.includes('purple'))}
-          <div className="flex items-baseline gap-2">
-            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector1Color)}`}>{formatSectorTime(driver.sector1)}</span>
-            <span className={`text-sm font-normal ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-500'
-            }`}>{formatSectorTime(driver.sector1Prev)}</span>
-          </div>
-        </div>
-
-        {/* Sector 2 */}
-        <div className="flex flex-col text-base font-inter">
-          {getSectorBars(driver.sector2Segments, driver.sector2Color.includes('green'), driver.sector2Color.includes('purple'))}
-          <div className="flex items-baseline gap-2">
-            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector2Color)}`}>{formatSectorTime(driver.sector2)}</span>
-            <span className={`text-sm font-normal ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-500'
-            }`}>{formatSectorTime(driver.sector2Prev)}</span>
-          </div>
-        </div>
-
-        {/* Sector 3 */}
-        <div className="flex flex-col text-base font-inter">
-          {getSectorBars(driver.sector3Segments, driver.sector3Color.includes('green'), driver.sector3Color.includes('purple'))}
-          <div className="flex items-baseline gap-2">
-            <span className={`font-semibold text-xl ${getSectorTextColor(driver.sector3Color)}`}>{formatSectorTime(driver.sector3)}</span>
-            <span className={`text-sm font-normal ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-500'
-            }`}>{formatSectorTime(driver.sector3Prev)}</span>
-          </div>
-        </div>
-      </div>
+      {orderedColumns.map(columnId => renderCell(columnId))}
     </div>
   )
 })

@@ -3,9 +3,10 @@ export const runtime = 'edge';
 
 import { NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log("🔄 Attempting to negotiate with F1 SignalR...")
+    const userAgent = request.headers.get("user-agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    console.log("🔄 Attempting to negotiate with F1 SignalR using UA:", userAgent)
     
     // Step 1: Negotiate connection with F1 SignalR endpoint
     const negotiateUrl =
@@ -14,7 +15,7 @@ export async function GET() {
     const response = await fetch(negotiateUrl, {
       method: "GET",
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "User-Agent": userAgent,
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",

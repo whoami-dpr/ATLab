@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 
 export interface F1Driver {
   pos: number
@@ -41,6 +42,10 @@ export interface F1Driver {
   sector1Segments?: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }>
   sector2Segments?: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }>
   sector3Segments?: Array<{ Status: number; PersonalFastest?: boolean; OverallFastest?: boolean }>
+  interval?: string
+  topSpeed?: string
+  bestLapTime?: string
+  pitCount?: number
 }
 
 export interface F1SessionInfo {
@@ -61,6 +66,54 @@ export interface F1SessionInfo {
   drsEnabled: boolean
 }
 
+// Map of known driver numbers to abbreviations (exactly as shown in the image)
+const driverNumberToName: Record<string, string> = {
+  "1": "VER",
+  "4": "NOR",
+  "5": "BOR",
+  "6": "HAD",
+  "10": "GAS",
+  "12": "ANT",
+  "14": "ALO",
+  "16": "LEC",
+  "18": "STR",
+  "22": "TSU",
+  "23": "ALB",
+  "27": "HUL",
+  "30": "LAW",
+  "31": "OCO",
+  "43": "COL",
+  "44": "HAM",
+  "55": "SAI",
+  "63": "RUS",
+  "81": "PIA",
+  "87": "BEA"
+}
+
+// Map of driver numbers to their teams (2025 season)
+const driverNumberToTeam: Record<string, string> = {
+  "1": "Red Bull",      // VER
+  "4": "McLaren",       // NOR
+  "5": "Kick Sauber",   // BOR
+  "6": "RB",            // HAD
+  "10": "Alpine",       // GAS
+  "12": "Mercedes",     // ANT
+  "14": "Aston Martin", // ALO
+  "16": "Ferrari",      // LEC
+  "18": "Aston Martin", // STR
+  "22": "Red Bull",     // TSU
+  "23": "Williams",     // ALB
+  "27": "Haas",         // HUL
+  "30": "RB",           // LAW
+  "31": "Kick Sauber",  // OCO
+  "43": "Alpine",       // COL
+  "44": "Ferrari",      // HAM
+  "55": "Williams",     // SAI
+  "63": "Mercedes",     // RUS
+  "81": "McLaren",      // PIA
+  "87": "Haas"          // BEA
+}
+
 export const useF1SignalR = () => {
   const [drivers, setDrivers] = useState<F1Driver[]>([])
   const [sessionInfo, setSessionInfo] = useState<F1SessionInfo>({
@@ -78,10 +131,8 @@ export const useF1SignalR = () => {
   const [connectionWorking, setConnectionWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [preventReconnect, setPreventReconnect] = useState(false)
-  const [fastestLapDriver, setFastestLapDriver] = useState<string | null>(null)
-  const [fastestLapTime, setFastestLapTime] = useState<number>(Infinity) // Store the fastest lap time in milliseconds
-  const [fastestLapTeam, setFastestLapTeam] = useState<string | null>(null)
-  const [fastestLapDriverName, setFastestLapDriverName] = useState<string | null>(null)
+  // Fastest lap state derived from drivers list now
+
   const [carDataCache, setCarDataCache] = useState<Record<string, any>>({})
   
   const wsRef = useRef<WebSocket | null>(null)
@@ -654,19 +705,7 @@ export const useF1SignalR = () => {
               // Store tire data for each driver
               const newCarDataCache: Record<string, any> = {}
               Object.entries(messageData.Entries).forEach(([driverNumber, carData]: [string, any]) => {
-                console.log(`🏎️ Driver ${driverNumber} CarData:`, {
-                  driverNumber,
-                  carData,
-                  tireFields: {
-                    Tyres: carData.Tyres,
-                    TyreCompound: carData.TyreCompound,
-                    Compound: carData.Compound,
-                    TyreType: carData.TyreType,
-                    TireType: carData.TireType,
-                    Tyre: carData.Tyre,
-                    Tire: carData.Tire
-                  }
-                })
+                console.log(`🏎️ Driver ${driverNumber} CarData:`, carData)
                 newCarDataCache[driverNumber] = carData
               })
               setCarDataCache(newCarDataCache)
@@ -889,7 +928,7 @@ export const useF1SignalR = () => {
       if (!driverData) return
 
       const position = Number.parseInt(driverData.Position) || 0
-      if (position === 0) return
+      // if (position === 0) return // Allow drivers with position 0 (common in practice)
 
       // Log the complete structure of the data we're receiving
       console.log(`🏎️ Driver ${driverNumber} COMPLETE data structure:`, JSON.stringify(driverData, null, 2))
@@ -1052,7 +1091,7 @@ export const useF1SignalR = () => {
           currentTire = carData.Tyres.Compound.charAt(0).toUpperCase()
         }
       }
-      
+
       const tireStint = driverData.Tyres?.Stint || driverData.TyreStint || driverData.Stint || driverData.NumberOfLaps || 1
       const pitStops = driverData.NumberOfPitStops || driverData.PitStops || driverData.PitStopCount || 0
       const currentLap = driverData.NumberOfLaps || 0
@@ -1078,6 +1117,42 @@ export const useF1SignalR = () => {
           'TireType': driverData.TireType,
           'Tyre': driverData.Tyre,
           'Tire': driverData.Tire
+        },
+        carDataTireFields: carData ? {
+          'Tyres': carData.Tyres,
+          'TyreCompound': carData.TyreCompound,
+          'Compound': carData.Compound,
+          'TyreType': carData.TyreType,
+          'TireType': carData.TireType,
+          'Tyre': carData.Tyre,
+          'Tire': carData.Tire
+        } : 'no carData',
+        allTireFieldsExtended: {
+          Tyres: driverData.Tyres,
+          TyreCompound: driverData.TyreCompound,
+          Compound: driverData.Compound,
+          TyreStint: driverData.TyreStint,
+          Stint: driverData.Stint,
+          PitStops: driverData.PitStops,
+          PitStopCount: driverData.PitStopCount,
+          NumberOfLaps: driverData.NumberOfLaps,
+          NumberOfPitStops: driverData.NumberOfPitStops
+        },
+        tireExtraction: {
+          'driverData.Tyres?.Compound': driverData.Tyres?.Compound,
+          'driverData.TyreCompound': driverData.TyreCompound,
+          'driverData.Compound': driverData.Compound,
+          'driverData.TyreType': driverData.TyreType,
+          'driverData.TireType': driverData.TireType,
+          'driverData.Tyre': driverData.Tyre,
+          'driverData.Tire': driverData.Tire,
+          'carData?.Tyres?.Compound': carData?.Tyres?.Compound,
+          'carData?.TyreCompound': carData?.TyreCompound,
+          'carData?.Compound': carData?.Compound,
+          'carData?.TyreType': carData?.TyreType,
+          'carData?.TireType': carData?.TireType,
+          'carData?.Tyre': carData?.Tyre,
+          'carData?.Tire': carData?.Tire
         }
       })
       
@@ -1115,60 +1190,6 @@ export const useF1SignalR = () => {
       }
       const driverCode = driverData.RacingNumber || driverData.DriverNumber || driverNumber
       
-      console.log(`🏎️ Driver ${driverNumber} tire info:`, {
-        compound: tireCompound,
-        currentTire,
-        stint: tireStint,
-        pitStops,
-        currentLap,
-        tyresObject: driverData.Tyres,
-        rawTireData: {
-          'Tyres': driverData.Tyres,
-          'TyreCompound': driverData.TyreCompound,
-          'Compound': driverData.Compound,
-          'TyreType': driverData.TyreType,
-          'TireType': driverData.TireType,
-          'Tyre': driverData.Tyre,
-          'Tire': driverData.Tire
-        },
-        carDataTireFields: carData ? {
-          'Tyres': carData.Tyres,
-          'TyreCompound': carData.TyreCompound,
-          'Compound': carData.Compound,
-          'TyreType': carData.TyreType,
-          'TireType': carData.TireType,
-          'Tyre': carData.Tyre,
-          'Tire': carData.Tire
-        } : 'no carData',
-        allTireFields: {
-          Tyres: driverData.Tyres,
-          TyreCompound: driverData.TyreCompound,
-          Compound: driverData.Compound,
-          TyreStint: driverData.TyreStint,
-          Stint: driverData.Stint,
-          PitStops: driverData.PitStops,
-          PitStopCount: driverData.PitStopCount,
-          NumberOfLaps: driverData.NumberOfLaps,
-          NumberOfPitStops: driverData.NumberOfPitStops
-        },
-        tireExtraction: {
-          'driverData.Tyres?.Compound': driverData.Tyres?.Compound,
-          'driverData.TyreCompound': driverData.TyreCompound,
-          'driverData.Compound': driverData.Compound,
-          'driverData.TyreType': driverData.TyreType,
-          'driverData.TireType': driverData.TireType,
-          'driverData.Tyre': driverData.Tyre,
-          'driverData.Tire': driverData.Tire,
-          'carData?.Tyres?.Compound': carData?.Tyres?.Compound,
-          'carData?.TyreCompound': carData?.TyreCompound,
-          'carData?.Compound': carData?.Compound,
-          'carData?.TyreType': carData?.TyreType,
-          'carData?.TireType': carData?.TireType,
-          'carData?.Tyre': carData?.Tyre,
-          'carData?.Tire': carData?.Tire
-        }
-      })
-
       console.log(`🏎️ Driver ${driverNumber} gap info:`, {
         position,
         isLeader,
@@ -1252,53 +1273,7 @@ export const useF1SignalR = () => {
         return prev
       })
 
-      // Map of known driver numbers to abbreviations (exactly as shown in the image)
-      const driverNumberToName: Record<string, string> = {
-        "1": "VER",
-        "4": "NOR",
-        "5": "BOR",
-        "6": "HAD",
-        "10": "GAS",
-        "12": "ANT",
-        "14": "ALO",
-        "16": "LEC",
-        "18": "STR",
-        "22": "TSU",
-        "23": "ALB",
-        "27": "HUL",
-        "30": "LAW",
-        "31": "OCO",
-        "43": "COL",
-        "44": "HAM",
-        "55": "SAI",
-        "63": "RUS",
-        "81": "PIA",
-        "87": "BEA"
-      }
-
-      // Map of driver numbers to their teams (2025 season)
-      const driverNumberToTeam: Record<string, string> = {
-        "1": "Red Bull",      // VER
-        "4": "McLaren",       // NOR
-        "5": "Kick Sauber",   // BOR
-        "6": "RB",            // HAD
-        "10": "Alpine",       // GAS
-        "12": "Mercedes",     // ANT
-        "14": "Aston Martin", // ALO
-        "16": "Ferrari",      // LEC
-        "18": "Aston Martin", // STR
-        "22": "Red Bull",     // TSU
-        "23": "Williams",     // ALB
-        "27": "Haas",         // HUL
-        "30": "RB",           // LAW
-        "31": "Kick Sauber",  // OCO
-        "43": "Alpine",       // COL
-        "44": "Ferrari",      // HAM
-        "55": "Williams",     // SAI
-        "63": "Mercedes",     // RUS
-        "81": "McLaren",      // PIA
-        "87": "Haas"          // BEA
-      }
+      // Maps are now defined at the top level
 
       // Extract driver name with better fallback - prioritize our mapping
       const extractedName = driverNumberToName[driverNumber] ||
@@ -1372,7 +1347,7 @@ export const useF1SignalR = () => {
       
       const driver: F1Driver = {
         pos: position,
-        code: driverData.RacingNumber || driverNumber,
+        code: driverNumberToName[driverNumber] || driverNumberToName[String(Number(driverNumber))] || driverData.TLA || driverData.RacingNumber || driverNumber,
         name: extractedName,
         racingNumber: driverData.RacingNumber || driverNumber,
         color: driverColors[position - 1] || "bg-gray-500",
@@ -1386,7 +1361,7 @@ export const useF1SignalR = () => {
         retired: driverData.Retired || driverData.KnockedOut || driverData.Stopped || false,
         isFastestLap: false, // Will be updated later
         isPersonalBest: false, // Will be updated later
-        gap: finalGapValue,
+        gap: finalGapTimeValue, // Distance to leader (GapToLeader)
         gapTime: finalGapTimeValue,
         lapTime: extractStringValue(driverData.LastLapTime?.Value || driverData.LapTime || driverData.CurrentLapTime, "0.000"),
         prevLap: extractStringValue(driverData.BestLapTime?.Value || driverData.PersonalBest, "0.000"),
@@ -1430,9 +1405,13 @@ export const useF1SignalR = () => {
           })(),
           sector3Segments: (() => {
             const segments = driverData.Sectors?.[2]?.Segments || []
-            console.log(`🔍 Driver ${driverNumber} Sector 3 Segments:`, segments)
+            // console.log(`🔍 Driver ${driverNumber} Sector 3 Segments:`, segments)
             return segments
-          })()
+          })(),
+          interval: extractStringValue(driverData.DiffToAhead || driverData.IntervalToPositionAhead || driverData.Interval, ""),
+          topSpeed: extractStringValue(driverData.Speeds?.ST?.Value || driverData.Speeds?.['I1']?.Value || driverData.Speeds?.['I2']?.Value || driverData.Speeds?.['FL']?.Value, ""),
+          bestLapTime: extractStringValue(driverData.BestLapTime?.Value || driverData.PersonalBest, ""),
+          pitCount: driverData.NumberOfPitStops || driverData.PitStops || driverData.PitStopCount || 0
       }
 
       // Debug logging for lap times
@@ -1444,130 +1423,115 @@ export const useF1SignalR = () => {
 
     console.log(`🏎️ Total drivers updated: ${updatedDrivers.length}`)
     
-    // Find the driver with the fastest lap time in current session
-    let currentFastestDriverCode: string | null = null
-    let currentFastestTime = Infinity
-    
-    updatedDrivers.forEach(driver => {
-      // Check both LastLapTime (current) and BestLapTime (best) to find the absolute fastest
-      let bestTimeMs = Infinity
-      let currentTimeMs = Infinity
+    setDrivers(prevDrivers => {
+      // 1. Merge new drivers into previous drivers
+      const driverMap = new Map(prevDrivers.map(d => [d.code, d]))
+      updatedDrivers.forEach(d => driverMap.set(d.code, d))
+      const mergedDrivers = Array.from(driverMap.values())
+
+      // 2. Find the fastest lap time in current session across ALL drivers
+      let currentFastestDriverCode: string | null = null
+      let currentFastestTime = Infinity
       
-      // Convert BestLapTime (prevLap)
-      if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "--:--.---") {
-        if (driver.prevLap.includes(':')) {
-          const [minutes, seconds] = driver.prevLap.split(':')
-          bestTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
-        } else {
-          bestTimeMs = parseFloat(driver.prevLap) * 1000
+      mergedDrivers.forEach(driver => {
+        // Check both LastLapTime (current) and BestLapTime (best) to find the absolute fastest
+        let bestTimeMs = Infinity
+        let currentTimeMs = Infinity
+        
+        // Convert BestLapTime (prevLap)
+        if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "0:00.000" && driver.prevLap !== "--:--.---") {
+          if (driver.prevLap.includes(':')) {
+            const [minutes, seconds] = driver.prevLap.split(':')
+            bestTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+          } else {
+            bestTimeMs = parseFloat(driver.prevLap) * 1000
+          }
         }
-      }
-      
-      // Convert LastLapTime (current)
-      if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "--:--.---") {
-        if (driver.lapTime.includes(':')) {
-          const [minutes, seconds] = driver.lapTime.split(':')
-          currentTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
-        } else {
-          currentTimeMs = parseFloat(driver.lapTime) * 1000
+        
+        // Convert LastLapTime (current)
+        if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "0:00.000" && driver.lapTime !== "--:--.---") {
+          if (driver.lapTime.includes(':')) {
+            const [minutes, seconds] = driver.lapTime.split(':')
+            currentTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+          } else {
+            currentTimeMs = parseFloat(driver.lapTime) * 1000
+          }
         }
-      }
+        
+        
+        // Find the fastest time for this driver (either current or best)
+        // Ignore 0 or very small values which indicate invalid data
+        let driverFastestTime = Infinity
+        if (!isNaN(bestTimeMs) && bestTimeMs > 1000) driverFastestTime = bestTimeMs
+        if (!isNaN(currentTimeMs) && currentTimeMs > 1000) {
+          driverFastestTime = Math.min(driverFastestTime, currentTimeMs)
+        }
+        
+        if (driverFastestTime !== Infinity && driverFastestTime < currentFastestTime) {
+          currentFastestTime = driverFastestTime
+          currentFastestDriverCode = driver.code
+        }
+      })
       
-      // Find the fastest time for this driver (either current or best)
-      const driverFastestTime = Math.min(bestTimeMs, currentTimeMs)
+      // 3. Update isFastestLap and isPersonalBest flags for ALL drivers
+      const finalDrivers = mergedDrivers.map(driver => {
+        // Check if this driver's best time (prevLap) is the fastest of the session
+        let driverBestTimeMs = Infinity
+        if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "0:00.000" && driver.prevLap !== "--:--.---") {
+          if (driver.prevLap.includes(':')) {
+            const [minutes, seconds] = driver.prevLap.split(':')
+            driverBestTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+          } else {
+            driverBestTimeMs = parseFloat(driver.prevLap) * 1000
+          }
+        }
+        
+        // Check if current lap (lapTime) is the personal best for this driver
+        let currentLapTimeMs = Infinity
+        if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "0:00.000" && driver.lapTime !== "--:--.---") {
+          if (driver.lapTime.includes(':')) {
+            const [minutes, seconds] = driver.lapTime.split(':')
+            currentLapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
+          } else {
+            currentLapTimeMs = parseFloat(driver.lapTime) * 1000
+          }
+        }
+        
+        const isFastestLap = !isNaN(driverBestTimeMs) && driverBestTimeMs === currentFastestTime
+        
+        // Check if current lap is personal best (with tolerance for floating point precision)
+        const timeDifference = Math.abs(currentLapTimeMs - driverBestTimeMs)
+        const isPersonalBest = !isNaN(currentLapTimeMs) && !isNaN(driverBestTimeMs) && timeDifference < 10 // 10ms tolerance
+        
+        return {
+          ...driver,
+          isFastestLap,
+          isPersonalBest,
+          // Recalculate gap if it's 0.000 and we have valid times (common in practice sessions)
+          gap: (driver.gap === "0.000" || driver.gap === "") && !isFastestLap && driverBestTimeMs !== Infinity && currentFastestTime !== Infinity
+            ? `+${((driverBestTimeMs - currentFastestTime) / 1000).toFixed(3)}`
+            : driver.gap,
+          gapTime: (driver.gapTime === "0.000" || driver.gapTime === "") && !isFastestLap && driverBestTimeMs !== Infinity && currentFastestTime !== Infinity
+            ? `+${((driverBestTimeMs - currentFastestTime) / 1000).toFixed(3)}`
+            : driver.gapTime
+        }
+      })
       
-      console.log(`🏎️ Driver ${driver.code} times: current="${driver.lapTime}" (${currentTimeMs}ms), best="${driver.prevLap}" (${bestTimeMs}ms), fastest=${driverFastestTime}ms`)
-      
-      if (!isNaN(driverFastestTime) && driverFastestTime < currentFastestTime) {
-        currentFastestTime = driverFastestTime
-        currentFastestDriverCode = driver.code
-        console.log(`🏎️ New current fastest: ${driver.code} with ${driverFastestTime}ms`)
-      }
+      return finalDrivers
     })
-    
-    // Always update the fastest lap for current session (even if no historical data)
-    if (currentFastestDriverCode && currentFastestTime < Infinity) {
-      // Find the team and name for the fastest lap driver
-      const fastestDriver = updatedDrivers.find(driver => driver.code === currentFastestDriverCode)
-      const fastestTeam = fastestDriver?.team || null
-      const fastestDriverName = fastestDriver?.name || null
-      
-      setFastestLapTime(currentFastestTime)
-      setFastestLapDriver(currentFastestDriverCode)
-      setFastestLapTeam(fastestTeam)
-      setFastestLapDriverName(fastestDriverName)
-      console.log(`🏎️ FASTEST LAP OF SESSION: ${currentFastestDriverCode} (${fastestDriverName}) - ${fastestTeam} with ${currentFastestTime}ms`)
-    } else {
-      console.log(`🏎️ NO FASTEST LAP FOUND - currentFastestDriverCode: ${currentFastestDriverCode}, currentFastestTime: ${currentFastestTime}`)
-    }
-    
-    // Mark drivers with fastest lap and personal best logic
-    const driversWithFastestLap = updatedDrivers.map(driver => {
-      // Check if this driver's best time (prevLap) is the fastest of the session
-      let driverBestTimeMs = Infinity
-      if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "--:--.---") {
-        if (driver.prevLap.includes(':')) {
-          const [minutes, seconds] = driver.prevLap.split(':')
-          driverBestTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
-        } else {
-          driverBestTimeMs = parseFloat(driver.prevLap) * 1000
-        }
-      }
-      
-      // Check if current lap (lapTime) is the personal best for this driver
-      let currentLapTimeMs = Infinity
-      if (driver.lapTime && driver.lapTime !== "0.000" && driver.lapTime !== "--:--.---") {
-        if (driver.lapTime.includes(':')) {
-          const [minutes, seconds] = driver.lapTime.split(':')
-          currentLapTimeMs = (parseFloat(minutes) * 60 + parseFloat(seconds)) * 1000
-        } else {
-          currentLapTimeMs = parseFloat(driver.lapTime) * 1000
-        }
-      }
-      
-      const isFastestLap = !isNaN(driverBestTimeMs) && driverBestTimeMs === currentFastestTime
-      
-      // Check if current lap is personal best (with tolerance for floating point precision)
-      const timeDifference = Math.abs(currentLapTimeMs - driverBestTimeMs)
-      const isPersonalBest = !isNaN(currentLapTimeMs) && !isNaN(driverBestTimeMs) && timeDifference < 10 // 10ms tolerance
-      
-      console.log(`🏎️ Driver ${driver.code} personal best check: current="${driver.lapTime}" (${currentLapTimeMs}ms), best="${driver.prevLap}" (${driverBestTimeMs}ms), diff=${timeDifference}ms, isPersonalBest=${isPersonalBest}`)
-      
-      return {
-        ...driver,
-        isFastestLap,
-        isPersonalBest
-      }
-    })
-    
-    console.log(`🏎️ Drivers with fastest lap marked:`, driversWithFastestLap.map(d => ({ code: d.code, isFastestLap: d.isFastestLap, prevLap: d.prevLap })))
-    
-    setDrivers(driversWithFastestLap)
     
     // Only set active session if we actually have drivers
     if (updatedDrivers.length > 0) {
       setHasActiveSession(true)
-      console.log("✅ Active session confirmed - drivers data processed")
-    } else {
-      console.log("⚠️ No drivers in updateDriverData - not setting active session")
     }
   }
 
   const updateSessionInfo = (sessionData: any) => {
     console.log("🔄 Updating session info with:", sessionData)
     
-    // Reset fastest lap when starting a new session
+    // Fastest lap is now derived from drivers list, no need to reset state manually
     const sessionName = sessionData.Name || sessionData.name || "Unknown Session"
     const sessionType = sessionData.Type || sessionData.type || "Unknown"
-    
-    // Reset fastest lap for qualifying sessions or when session changes
-    if (sessionType.toLowerCase().includes('qualifying') || sessionType.toLowerCase().includes('race')) {
-      setFastestLapTime(Infinity)
-      setFastestLapDriver(null)
-      setFastestLapTeam(null)
-      setFastestLapDriverName(null)
-      console.log("🔄 Reset fastest lap for new session:", sessionName)
-    }
     
     const sessionStatus = sessionData.Status || sessionData.status || "Unknown"
     const sessionPhase = sessionData.Phase || sessionData.phase || "Unknown"
@@ -1662,6 +1626,27 @@ export const useF1SignalR = () => {
     setIsConnected(true)
   }
 
+  const startConnection = () => {
+    setPreventReconnect(false)
+    connectToF1SignalR()
+  }
+
+  const stopConnection = () => {
+    console.log("🛑 Stopping WebSocket connection...")
+    setPreventReconnect(true) // Prevent automatic reconnection
+    if (wsRef.current) {
+      wsRef.current.close(1000, "User initiated close") // 1000 is normal closure
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+    setIsConnected(false)
+    setConnectionWorking(false)
+    setHasActiveSession(false)
+    setError(null)
+  }
+
   // Auto-connect on mount
   useEffect(() => {
     connectToF1SignalR()
@@ -1673,17 +1658,47 @@ export const useF1SignalR = () => {
     }
   }, [])
 
+  // Derive fastest lap info from drivers list
+  const fastestLap = useMemo(() => {
+    const driverWithFastestLap = drivers.find(d => d.isFastestLap)
+    if (!driverWithFastestLap) {
+      return {
+        time: "0:00.000",
+        driver: null,
+        driverCode: null,
+        team: null,
+        racingNumber: null
+      }
+    }
+    
+    // Find the actual fastest time value (best lap)
+    let bestTime = driverWithFastestLap.prevLap
+    
+    return {
+      time: bestTime,
+      driver: driverWithFastestLap.name,
+      driverCode: driverWithFastestLap.code,
+      team: driverWithFastestLap.team || null,
+      racingNumber: driverWithFastestLap.racingNumber || null
+    }
+  }, [drivers])
+
   return {
-    drivers,
-    sessionInfo,
     isConnected,
+    connectionWorking,
     error,
-    hasActiveSession,
-    fastestLapDriver,
-    fastestLapTime: fastestLapTime === Infinity ? null : fastestLapTime.toString(),
-    fastestLapTeam,
-    fastestLapDriverName,
+    sessionInfo,
+    drivers,
+    fastestLap,
     reconnect,
-    forceActiveSession
+    forceActiveSession,
+    hasActiveSession,
+    toggleConnection: () => {
+      if (isConnected) {
+        stopConnection()
+      } else {
+        startConnection()
+      }
+    }
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useSchedule } from '../../hooks/useSchedule';
-import { format, formatDistanceStrict } from 'date-fns';
+import { format } from 'date-fns';
 import { Countdown } from '../../components/Countdown';
 import { Navbar } from '../../components/Navbar';
 import { useThemeOptimized } from '../../hooks/useThemeOptimized';
@@ -255,85 +255,88 @@ export default function SchedulePage() {
                   </div>
                 )}
               </div>
+
               {/* Schedule completo debajo, ocupando todo el ancho */}
               <div className="mb-6">
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {schedule.map((round: any) => (
-                    <div key={round.name} className={`w-full rounded-xl p-4 shadow-xl border ${
+                    <div key={round.name} className={`w-full rounded-xl p-4 shadow-xl border flex flex-col h-full ${
                       theme === 'light' 
                         ? 'bg-white border-gray-200 shadow-gray-200/50' 
                         : 'bg-[#181824] border-[#232336]'
                     }`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const flagUrl = getFlagUrl(round.country);
-                            return flagUrl ? (
-                              <img src={flagUrl} alt={round.country} className={`w-8 h-6 rounded shadow border ${
-                                theme === 'light' ? 'border-gray-300' : 'border-gray-700'
-                              }`} />
-                            ) : (
-                              <span className="text-2xl">🏁</span>
-                            );
-                          })()}
-                          <span className={`text-xl font-semibold ${
-                            theme === 'light' ? 'text-black' : 'text-white'
-                          }`}>{round.name}</span>
-                          {round.over && <span className="ml-2 text-red-500 text-sm font-medium">Over</span>}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const flagUrl = getFlagUrl(round.country);
+                              return flagUrl ? (
+                                <img src={flagUrl} alt={round.country} className={`w-6 h-4 rounded shadow border ${
+                                  theme === 'light' ? 'border-gray-300' : 'border-gray-700'
+                                }`} />
+                              ) : (
+                                <span className="text-xl">🏁</span>
+                              );
+                            })()}
+                            <span className={`text-lg font-bold leading-tight ${
+                              theme === 'light' ? 'text-black' : 'text-white'
+                            }`}>{round.country}</span>
+                          </div>
+                          <div className={`text-xs font-medium ${
+                            theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                          }`}>
+                            {format(new Date(round.start), 'MMM d')} – {format(new Date(round.end), 'MMM d')}
+                          </div>
                         </div>
-                        <div className={`text-sm font-medium ${
-                          theme === 'light' ? 'text-gray-800' : 'text-gray-300'
-                        }`}>
-                          {format(new Date(round.start), 'LLLL d')}<span className={theme === 'light' ? 'text-gray-700' : 'text-gray-400'}>–{format(new Date(round.end), 'd')}</span>
-                        </div>
+                        {round.over && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 border border-red-500/20">
+                            Done
+                          </span>
+                        )}
                       </div>
-                      <div className={`border-b my-2 ${
-                        theme === 'light' ? 'border-gray-200' : 'border-gray-700'
+                      
+                      <div className={`w-full h-px mb-3 ${
+                        theme === 'light' ? 'bg-gray-100' : 'bg-gray-800'
                       }`} />
-                      {/* Grid de días y sesiones */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+
+                      {/* Lista compacta de sesiones */}
+                      <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
                         {(() => {
-                          // Obtener todas las sesiones del fin de semana para la numeración correcta
                           const allWeekendSessions = getRaceDays(round.sessions)
                             .flatMap(day => day.sessions)
                             .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
                           
-                          return ['Friday', 'Saturday', 'Sunday'].map((day) => {
-                            const sessions = getRaceDays(round.sessions).find(d => d.day === day)?.sessions || [];
-                            return (
-                              <div key={day}>
-                                <div className={`font-semibold mb-2 ${
-                                  theme === 'light' ? 'text-black' : 'text-white'
-                                }`}>{day}</div>
-                                {sessions.length === 0 ? (
-                                  <div className={`text-sm italic ${
-                                    theme === 'light' ? 'text-gray-700' : 'text-gray-600'
-                                  }`}>—</div>
-                                ) : (
-                                  sessions.map((session: any, index: number) => {
-                                    // Encontrar el índice global de esta sesión en todas las sesiones del fin de semana
-                                    const globalIndex = allWeekendSessions.findIndex(s => 
-                                      s.kind === session.kind && 
-                                      s.start === session.start && 
-                                      s.end === session.end
-                                    );
-                                    return (
-                                      <div key={session.kind + session.start} className="mb-1">
-                                        <div className={`font-bold text-sm ${
-                                          theme === 'light' ? 'text-black' : 'text-white'
-                                        }`}>{getSessionName(session.kind, allWeekendSessions, globalIndex)}</div>
-                                        <div className={`text-xs ${
-                                          theme === 'light' ? 'text-gray-800' : 'text-gray-300'
-                                        }`}>
-                                          {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
-                                        </div>
-                                      </div>
-                                    );
-                                  })
-                                )}
+                          // Agrupar por día pero mostrar en lista vertical compacta
+                          return getRaceDays(round.sessions).map(({ day, sessions }) => (
+                            <div key={day} className="mb-2 last:mb-0">
+                              <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70 ${
+                                theme === 'light' ? 'text-gray-500' : 'text-gray-500'
+                              }`}>{day}</div>
+                              <div className="space-y-1">
+                                {sessions.map((session: any) => {
+                                  const globalIndex = allWeekendSessions.findIndex(s => 
+                                    s.kind === session.kind && 
+                                    s.start === session.start
+                                  );
+                                  const isRace = session.kind.toLowerCase().includes('race');
+                                  return (
+                                    <div key={session.kind + session.start} className={`flex justify-between items-center text-xs ${
+                                      isRace ? 'font-bold' : ''
+                                    } ${theme === 'light' ? 'text-gray-800' : 'text-gray-300'}`}>
+                                      <span className="truncate mr-2">
+                                        {getSessionName(session.kind, allWeekendSessions, globalIndex).replace('Practice', 'FP').replace('Qualifying', 'Quali')}
+                                      </span>
+                                      <span className={`font-mono whitespace-nowrap ${
+                                        theme === 'light' ? 'text-gray-500' : 'text-gray-500'
+                                      }`}>
+                                        {format(new Date(session.start), 'HH:mm')}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          });
+                            </div>
+                          ));
                         })()}
                       </div>
                     </div>
@@ -373,4 +376,4 @@ function getRaceDays(sessions: any[]) {
   });
   console.log('Days found:', Object.keys(daysMap));
   return Object.entries(daysMap).map(([day, sessions]) => ({ day, sessions }));
-} 
+}

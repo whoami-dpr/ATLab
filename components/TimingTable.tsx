@@ -1,20 +1,128 @@
 "use client"
 
-import React, { memo, useMemo } from "react"
+import React, { memo, useMemo, useState, useEffect } from "react"
 import { OptimizedDriverRow } from "./OptimizedDriverRow"
 import type { F1Driver } from "../hooks/useF1SignalR"
 import { useThemeOptimized } from "../hooks/useThemeOptimized"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { DEFAULT_COLUMNS, STORAGE_KEY, type ColumnConfig, type ColumnId } from "../types/ColumnConfig"
 
 interface TimingTableProps {
   drivers: F1Driver[]
   drsEnabled?: boolean
 }
 
+// Sortable header component
+function SortableHeader({ column }: { column: ColumnConfig }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: column.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+    touchAction: 'none',
+  }
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      className="flex items-center justify-center hover:bg-white/5 rounded px-1"
+    >
+      {column.label}
+    </div>
+  )
+}
+
 export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = true }: TimingTableProps) {
   const { theme } = useThemeOptimized()
+  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS)
+  const [showColumnSettings, setShowColumnSettings] = useState(false)
+  
+  // Load column order from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      try {
+        const savedColumns = JSON.parse(saved) as ColumnConfig[]
+        setColumns(savedColumns)
+      } catch (e) {
+        console.error('Failed to load column order:', e)
+      }
+    }
+  }, [])
+
+  // Save column order to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(columns))
+  }, [columns])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      setColumns((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id)
+        const newIndex = items.findIndex((item) => item.id === over.id)
+        return arrayMove(items, oldIndex, newIndex)
+      })
+    }
+  }
+
+  const toggleColumnVisibility = (columnId: ColumnId) => {
+    setColumns((current) =>
+      current.map((col) =>
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      )
+    )
+  }
+
   const sortedDrivers = useMemo(() => {
-    return [...drivers].sort((a, b) => a.pos - b.pos)
+    return [...drivers].sort((a, b) => {
+      if (a.pos === 0 && b.pos !== 0) return 1
+      if (a.pos !== 0 && b.pos === 0) return -1
+      if (a.pos !== b.pos) return a.pos - b.pos
+      return Number(a.code) - Number(b.code)
+    })
   }, [drivers])
+
+  const gridTemplateColumns = useMemo(() => 
+    columns.filter(c => c.visible).map(c => c.width).join(' '),
+    [columns]
+  )
 
   return (
     <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
@@ -31,33 +139,75 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
 
       {/* Desktop Layout */}
       <div className="hidden md:block">
-        {/* Table Header - Más compacto */}
-        <div 
-          className={`px-1 py-0.5 bg-transparent text-xs font-semibold border-b ${
-            theme === 'light' 
-              ? 'text-gray-700 border-gray-300/50' 
-              : 'text-gray-300 border-gray-700/50'
-          }`}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(12, 1fr)',
-            gap: '0px'
-          }}
-        >
-          <div className="col-span-1 flex items-center px-0" style={{ paddingLeft: '0px' }}>Position</div>
-          <div className="col-span-1 flex items-center px-2" style={{ marginLeft: '60px', paddingLeft: '16px' }}>DRS</div>
-          <div className="col-span-1 flex items-center px-1" style={{ marginLeft: '45px' }}>Tire</div>
-          <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '30px' }}>Tyres History</div>
-          <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '40px' }}>Info</div>
-          <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '30px' }}>Gap</div>
-          <div className="col-span-1 flex items-center px-0" style={{ marginLeft: '27px' }}>LapTime</div>
-          <div className="col-span-5 flex items-center px-0" style={{ marginLeft: '30px' }}>Sectors</div>
+        {/* Column Settings Button */}
+        <div className="relative mb-1">
+          <button
+            onClick={() => setShowColumnSettings(!showColumnSettings)}
+            className="flex items-center gap-1 px-2 py-1 bg-[#15151e] hover:bg-[#1f1f2e] rounded text-white text-xs"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            Columns
+          </button>
+
+          {/* Column Settings Dropdown */}
+          {showColumnSettings && (
+            <div className="absolute top-full left-0 mt-1 bg-[#15151e] border border-gray-700 rounded p-2 shadow-xl z-50 min-w-[200px]">
+              <div className="text-white text-xs font-bold mb-2">Show/Hide Columns</div>
+              {columns.map((column) => (
+                <label key={column.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-white/5 px-1 rounded">
+                  <input
+                    type="checkbox"
+                    checked={column.visible}
+                    onChange={() => toggleColumnVisibility(column.id)}
+                    className="w-3 h-3"
+                  />
+                  <span className="text-white text-xs">{column.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Table Header with Drag & Drop */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div 
+            className={`px-1 py-0.5 bg-[#15151e] text-[10px] font-bold border-b border-gray-800 text-white uppercase tracking-wider`}
+            style={{
+              display: 'grid',
+              gridTemplateColumns,
+              gap: '2px',
+              fontFamily: 'Formula1 Display Regular, Arial, sans-serif'
+            }}
+          >
+            <SortableContext 
+              items={columns.map(c => c.id)} 
+              strategy={horizontalListSortingStrategy}
+            >
+              {columns.filter(c => c.visible).map((column) => (
+                <SortableHeader key={column.id} column={column} />
+              ))}
+            </SortableContext>
+          </div>
+        </DndContext>
 
         {/* Driver Rows */}
         <div>
           {sortedDrivers.map((driver, index) => (
-            <OptimizedDriverRow key={`${driver.pos}-${driver.code}`} driver={driver} index={index} gapClass="gap-0.5 px-1" drsEnabled={drsEnabled} />
+            <OptimizedDriverRow 
+              key={`${driver.pos}-${driver.code}`} 
+              driver={driver} 
+              index={index} 
+              gapClass="gap-0.5 px-1" 
+              drsEnabled={drsEnabled}
+              columnOrder={columns.filter(c => c.visible).map(c => c.id)}
+              gridTemplateColumns={gridTemplateColumns}
+            />
           ))}
         </div>
       </div>

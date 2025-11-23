@@ -3,21 +3,27 @@
 import { memo } from "react"
 
 interface FastestLapBannerProps {
-  fastestLapDriver: string | null
-  fastestLapTime: string | null
-  fastestLapTeam?: string | null
-  fastestLapDriverName?: string | null
+  fastestLap?: {
+    time: string
+    driver: string | null
+    driverCode: string | null
+    team: string | null
+    racingNumber: string | null
+  }
   theme: 'light' | 'dark'
 }
 
-const FastestLapBanner = memo(({ fastestLapDriver, fastestLapTime, fastestLapTeam, fastestLapDriverName, theme }: FastestLapBannerProps) => {
+const FastestLapBanner = memo(({ fastestLap, theme }: FastestLapBannerProps) => {
   // Solo mostrar si hay datos de vuelta rápida
-  if (!fastestLapDriver || !fastestLapTime) {
+  if (!fastestLap || !fastestLap.driver || !fastestLap.time) {
     return null
   }
 
   // Convertir el tiempo de milisegundos a formato MM:SS.mmm
   const formatLapTime = (timeMs: string) => {
+    // Si ya tiene formato (contiene :), devolverlo tal cual
+    if (timeMs.includes(':')) return timeMs
+
     const time = parseFloat(timeMs)
     if (isNaN(time)) return timeMs
     
@@ -29,7 +35,7 @@ const FastestLapBanner = memo(({ fastestLapDriver, fastestLapTime, fastestLapTea
     return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
   }
 
-  const formattedTime = formatLapTime(fastestLapTime)
+  const formattedTime = formatLapTime(fastestLap.time)
 
   // Función para obtener el logo del equipo
   const getTeamLogo = (teamName: string | null) => {
@@ -60,11 +66,13 @@ const FastestLapBanner = memo(({ fastestLapDriver, fastestLapTime, fastestLapTea
       {/* Left Section - Purple with FastLap Image and FASTEST LAP Text */}
       <div className="bg-purple-600 flex items-center h-full w-40 md:w-48">
         {/* FastLap Image */}
-        <img
-          src="/images/fastLap.png"
-          alt="Fastest Lap"
-          className="w-6 h-6 md:w-8 md:h-8 object-contain mx-2"
-        />
+        <div className="w-10 h-full flex items-center justify-center bg-purple-600">
+             <img
+            src="/images/fastLap.png"
+            alt="Fastest Lap"
+            className="w-6 h-6 object-contain"
+            />
+        </div>
         
         {/* FASTEST LAP Text - Black background fills remaining space */}
         <div className="bg-black flex-1 h-full flex items-center justify-center px-2 md:px-3">
@@ -81,34 +89,31 @@ const FastestLapBanner = memo(({ fastestLapDriver, fastestLapTime, fastestLapTea
       </div>
 
       {/* Right Section - Purple with Driver Info and Time */}
-      <div className="bg-purple-600 flex items-center justify-between px-2 md:px-4 py-1 md:py-2 h-full flex-1 rounded-r-md">
-        {/* Driver Name */}
-        <div className="flex flex-col">
+      <div className="bg-purple-600 flex items-center justify-between px-4 py-1 h-full flex-1 rounded-r-md">
+        {/* Driver Name & Number Stacked */}
+        <div className="flex flex-col items-start justify-center mr-4">
           <span 
-            className="text-white text-xs font-normal uppercase"
-            style={{ 
-              fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
-              textShadow: '0 0 4px rgba(255, 255, 255, 0.3)'
-            }}
+            className="text-white text-[10px] font-bold leading-none mb-0.5"
+            style={{ fontFamily: 'Formula1 Display Regular, Arial, sans-serif' }}
           >
-            {fastestLapDriver}
+            {fastestLap.racingNumber || ''}
           </span>
           <span 
-            className="text-white text-xs md:text-sm font-bold"
+            className="text-white text-sm font-bold leading-none uppercase"
             style={{ 
               fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
               textShadow: '0 0 4px rgba(255, 255, 255, 0.3)'
             }}
           >
-            {fastestLapDriverName || fastestLapDriver}
+            {fastestLap.driverCode || ''}
           </span>
         </div>
 
         {/* Team Logo */}
         <div className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center mx-2 md:mx-4">
           <img
-            src={getTeamLogo(fastestLapTeam)}
-            alt={fastestLapTeam || 'Team'}
+            src={getTeamLogo(fastestLap.team)}
+            alt={fastestLap.team || 'Team'}
             className="w-6 h-6 md:w-10 md:h-10 object-contain"
             onError={(e) => {
               // Fallback si el logo no carga
