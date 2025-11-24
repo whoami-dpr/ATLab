@@ -1,5 +1,5 @@
 // Node.js Runtime Configuration for F1 API
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 import { NextResponse } from "next/server"
 
