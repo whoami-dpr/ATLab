@@ -8,7 +8,8 @@ import { useThemeOptimized } from "../hooks/useThemeOptimized";
 
 const navItems = [
   { href: "/", label: "Live Timing" },
-  // { href: "/standings", label: "Standings" }, // TEMPORARILY DISABLED
+  { href: "/standings", label: "Standings" },
+
   { href: "/schedule", label: "Schedule" },
   { href: "/calendar", label: "Calendar" },
 ];

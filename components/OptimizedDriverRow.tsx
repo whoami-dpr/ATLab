@@ -307,7 +307,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             }}
           >
             <span 
-              className="text-white font-bold text-lg"
+              className="text-white font-normal text-lg"
               style={{
                 fontFamily: 'Formula1 Display Regular, Arial, sans-serif'
               }}
@@ -547,7 +547,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
                   fontWeight: 'bold'
                 }}
               >
-                <span>{driver.code}</span>
+                <span className="font-normal">{driver.code}</span>
                 <span className="opacity-90">{driver.racingNumber}</span>
               </div>
             </div>

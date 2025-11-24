@@ -1,9 +1,8 @@
-/* TEMPORARILY DISABLED - STANDINGS HOOK
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 
-interface DriverStanding {
+export interface DriverStanding {
   position: number
   driver: string
   team: string
@@ -15,7 +14,7 @@ interface DriverStanding {
   teamColor: string
 }
 
-interface ConstructorStanding {
+export interface ConstructorStanding {
   position: number
   team: string
   points: number
@@ -24,63 +23,45 @@ interface ConstructorStanding {
   teamColor: string
 }
 
-interface StandingsData {
-  drivers: DriverStanding[]
-  constructors: ConstructorStanding[]
-}
-
 export function useF1Standings() {
-  const [standings, setStandings] = useState<StandingsData | null>(null)
+  const [driverStandings, setDriverStandings] = useState<DriverStanding[]>([])
+  const [constructorStandings, setConstructorStandings] = useState<ConstructorStanding[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchStandings = async () => {
+  const fetchStandings = useCallback(async (year: string | number = "2025") => {
     setLoading(true)
     setError(null)
     
     try {
-      const response = await fetch('/api/f1/standings?type=drivers')
-      if (!response.ok) {
-        throw new Error('Failed to fetch driver standings')
-      }
-      const driverData = await response.json()
+      // Fetch drivers
+      const driversResponse = await fetch(`/api/f1/standings?type=drivers&year=${year}`)
+      if (!driversResponse.ok) throw new Error('Failed to fetch driver standings')
+      const driversData = await driversResponse.json()
+      setDriverStandings(driversData.standings || [])
 
-      const constructorResponse = await fetch('/api/f1/standings?type=constructors')
-      if (!constructorResponse.ok) {
-        throw new Error('Failed to fetch constructor standings')
-      }
-      const constructorData = await constructorResponse.json()
+      // Fetch constructors
+      const constructorsResponse = await fetch(`/api/f1/standings?type=constructors&year=${year}`)
+      if (!constructorsResponse.ok) throw new Error('Failed to fetch constructor standings')
+      const constructorsData = await constructorsResponse.json()
+      setConstructorStandings(constructorsData.standings || [])
 
-      setStandings({
-        drivers: driverData.standings || [],
-        constructors: constructorData.standings || []
-      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchStandings()
-  }, [])
+  }, [fetchStandings])
 
   return {
-    standings,
+    driverStandings,
+    constructorStandings,
     loading,
     error,
-    refetch: fetchStandings
-  }
-}
-*/
-
-// TEMPORARY PLACEHOLDER - STANDINGS HOOK DISABLED
-export function useF1Standings() {
-  return {
-    standings: null,
-    loading: false,
-    error: "Standings hook temporarily disabled",
-    refetch: () => {}
+    fetchStandings
   }
 }

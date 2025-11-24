@@ -1,11 +1,7 @@
-/* TEMPORARILY DISABLED - STANDINGS API
 // Node.js Runtime Configuration for F1 API
 export const runtime = 'nodejs';
 
 import { NextResponse } from "next/server"
-
-// Import f1-api-node using require for Node.js compatibility
-const f1Api = require("f1-api-node")
 
 interface DriverStanding {
   position: number
@@ -23,6 +19,9 @@ interface ConstructorStanding {
   position: number
   team: string
   points: number
+  wins?: number
+  teamLogo: string
+  teamColor: string
 }
 
 // Mapeo de equipos para logos y colores
@@ -79,11 +78,14 @@ const TEAM_MAPPING: Record<string, { logo: string; color: string; driverNumbers:
   }
 }
 
-// Función para mapear datos de f1-api-node a nuestro formato
-function mapF1ApiDriverData(apiData: any[]): DriverStanding[] {
-  return apiData.map((standing: any, index: number) => {
-    const driverName = standing.driver || "Unknown Driver"
-    const teamName = standing.team || "Unknown Team"
+// Función para mapear datos de Jolpica/Ergast a nuestro formato
+function mapJolpicaDriverData(apiData: any[]): DriverStanding[] {
+  return apiData.map((standing: any) => {
+    const driver = standing.Driver
+    const constructor = standing.Constructors[0]
+    
+    const driverName = `${driver.givenName} ${driver.familyName}`
+    const teamName = constructor ? constructor.name : "Unknown Team"
     
     // Buscar el mapeo del equipo
     const teamMapping = Object.entries(TEAM_MAPPING).find(([key]) => {
@@ -97,12 +99,12 @@ function mapF1ApiDriverData(apiData: any[]): DriverStanding[] {
     }
     
     return {
-      position: standing.position || index + 1,
+      position: parseInt(standing.position),
       driver: driverName,
       team: teamName,
-      points: parseInt(standing.points) || 0,
-      wins: parseInt(standing.wins) || 0,
-      driverNumber: teamMapping.driverNumbers[driverName] || "00",
+      points: parseInt(standing.points),
+      wins: parseInt(standing.wins),
+      driverNumber: driver.permanentNumber || teamMapping.driverNumbers[driverName] || "00",
       driverPhoto: `/images/drivers/${driverName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
       teamLogo: `/team-logos/${teamMapping.logo}`,
       teamColor: teamMapping.color
@@ -110,12 +112,31 @@ function mapF1ApiDriverData(apiData: any[]): DriverStanding[] {
   })
 }
 
-function mapF1ApiConstructorData(apiData: any[]): ConstructorStanding[] {
-  return apiData.map((standing: any, index: number) => ({
-    position: standing.position || index + 1,
-    team: standing.team || "Unknown Team",
-    points: parseInt(standing.points) || 0
-  }))
+function mapJolpicaConstructorData(apiData: any[]): ConstructorStanding[] {
+  return apiData.map((standing: any) => {
+    const constructor = standing.Constructor
+    const teamName = constructor.name
+    
+    // Buscar el mapeo del equipo
+    const teamMapping = Object.entries(TEAM_MAPPING).find(([key]) => {
+      const teamLower = teamName.toLowerCase()
+      const keyLower = key.toLowerCase()
+      return teamLower.includes(keyLower) || keyLower.includes(teamLower)
+    })?.[1] || {
+      logo: "red-bull-racing.svg",
+      color: "#1e41ff",
+      driverNumbers: {}
+    }
+
+    return {
+      position: parseInt(standing.position),
+      team: teamName,
+      points: parseInt(standing.points),
+      wins: parseInt(standing.wins),
+      teamLogo: `/team-logos/${teamMapping.logo}`,
+      teamColor: teamMapping.color
+    }
+  })
 }
 
 export async function GET(request: Request) {
@@ -125,33 +146,29 @@ export async function GET(request: Request) {
 
   try {
     if (type === "drivers") {
-      // Usar f1-api-node para obtener las clasificaciones reales
-      const driverStandings = await f1Api.getDriverStandings(year)
-      const mappedDrivers = mapF1ApiDriverData(driverStandings)
+      const response = await fetch(`https://api.jolpi.ca/ergast/f1/${year}/driverStandings.json`)
+      if (!response.ok) {
+        throw new Error(`Ergast API error: ${response.statusText}`)
+      }
+      const data = await response.json()
+      const standingsList = data.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || []
+      const mappedDrivers = mapJolpicaDriverData(standingsList)
       
       return NextResponse.json({
         standings: mappedDrivers,
-        lastUpdated: {
-          date: new Date().toISOString().split('T')[0],
-          race: "Current Season",
-          round: 1,
-          season: year,
-        },
         success: true,
       })
     } else if (type === "constructors") {
-      // Usar f1-api-node para obtener las clasificaciones de constructores
-      const constructorStandings = await f1Api.getConstructorStandings(year)
-      const mappedConstructors = mapF1ApiConstructorData(constructorStandings)
+      const response = await fetch(`https://api.jolpi.ca/ergast/f1/${year}/constructorStandings.json`)
+      if (!response.ok) {
+        throw new Error(`Ergast API error: ${response.statusText}`)
+      }
+      const data = await response.json()
+      const standingsList = data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || []
+      const mappedConstructors = mapJolpicaConstructorData(standingsList)
       
       return NextResponse.json({
         standings: mappedConstructors,
-        lastUpdated: {
-          date: new Date().toISOString().split('T')[0],
-          race: "Current Season",
-          round: 1,
-          season: year,
-        },
         success: true,
       })
     } else {
@@ -163,17 +180,4 @@ export async function GET(request: Request) {
       error: `Failed to fetch ${type} standings: ${error instanceof Error ? error.message : 'Unknown error'}` 
     }, { status: 500 })
   }
-}
-*/
-
-// TEMPORARY PLACEHOLDER - STANDINGS API DISABLED
-export const runtime = 'edge';
-
-export async function GET() {
-  return new Response(JSON.stringify({ 
-    error: "Standings API temporarily disabled" 
-  }), {
-    status: 503,
-    headers: { 'Content-Type': 'application/json' }
-  });
 }
