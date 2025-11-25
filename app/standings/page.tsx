@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Navbar } from "../../components/Navbar";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup } from "../../components/ui/select";
 import { useF1Standings } from "../../hooks/useF1Standings";
 import { StandingsList } from "../../components/StandingsList";
 
@@ -20,27 +19,32 @@ export default function StandingsPage() {
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 tracking-tight">Championship Standings</h1>
-            <p className="text-gray-400 text-lg">Season {selectedYear}</p>
+        <div className="flex flex-col items-center mb-12 gap-6">
+          {/* Title */}
+          <div className="text-center">
+            <h1 className="text-5xl font-bold mb-3 tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+              Championship Standings
+            </h1>
+            <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 mx-auto rounded-full"></div>
           </div>
           
-          <div className="w-full md:w-48">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-full bg-gray-800 border-gray-700 text-white h-12">
-                <SelectValue placeholder="Select Year" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                <SelectGroup>
-                  <SelectItem value="2025">2025</SelectItem>
-                  <SelectItem value="2024">2024</SelectItem>
-                  <SelectItem value="2023">2023</SelectItem>
-                  <SelectItem value="2022">2022</SelectItem>
-                  <SelectItem value="2021">2021</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+          {/* Year Selector - Pill Style */}
+          <div className="flex items-center gap-2 bg-gray-800/40 p-1.5 rounded-full border border-gray-700/50">
+            {['2025', '2024', '2023', '2022', '2021'].map((year) => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={`
+                  px-5 py-2 rounded-full font-semibold text-sm transition-all duration-200
+                  ${selectedYear === year 
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                  }
+                `}
+              >
+                {year}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -60,7 +64,7 @@ export default function StandingsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {/* Drivers Column */}
             <StandingsList 
               title="Drivers Championship" 
