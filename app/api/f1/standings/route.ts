@@ -1,5 +1,5 @@
-// Node.js Runtime Configuration for F1 API
-export const runtime = 'nodejs';
+// Edge Runtime Configuration for F1 API (required for Cloudflare Pages)
+export const runtime = 'edge';
 
 import { NextResponse } from "next/server"
 
