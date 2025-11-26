@@ -34,9 +34,9 @@ const DRIVER_COLORS: Record<string, string> = {
   ALO: "#229971", // Aston Martin
   STR: "#229971",
   GAS: "#2293d1", // Alpine
-  OCO: "#2293d1",
+  OCO: "#b6babd",
   ALB: "#003d82", // Williams
-  COL: "#003d82",
+  COL: "#2293d1",
   HUL: "#b6babd", // Haas
   MAG: "#b6babd",
   TSU: "#6692ff", // RB
@@ -50,7 +50,7 @@ const DRIVER_COLORS: Record<string, string> = {
   HAD: "#6692ff", // RB (Hadjar)
 };
 
-const DEFAULT_VISIBLE_DRIVERS = ["VER", "NOR", "LEC", "HAM", "PIA", "RUS"];
+const DEFAULT_VISIBLE_DRIVERS = ["VER", "NOR", "LEC", "PIA", "RUS"];
 
 export function ChampionshipProgressChart({ year }: ChampionshipProgressChartProps) {
   const [data, setData] = useState<ChartDataPoint[]>([]);
@@ -166,7 +166,7 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
               <CartesianGrid stroke="#374151" opacity={0.4} vertical={true} horizontal={true} />
               <XAxis 
                 dataKey="round" 
-                stroke="#9CA3AF" 
+                stroke="#ffffffff" 
                 tick={{ fill: '#9CA3AF' }}
                 label={{ value: 'Championship Round', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
               />
