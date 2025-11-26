@@ -158,37 +158,7 @@ button:focus-visible {
   animation: shimmer 1.5s infinite linear;
 }
 
-/* Apple classic arrow cursor - Using uploaded PNG files */
-* {
-  cursor: url('/cursors/default.png'), auto;
-}
 
-/* Hover states for interactive elements */
-button:hover, 
-a:hover, 
-[role="button"]:hover,
-.clickable:hover {
-  cursor: url('/cursors/handpointing.png'), pointer;
-}
-
-/* Text selection cursor */
-input[type="text"], 
-input[type="email"], 
-input[type="password"], 
-textarea {
-  cursor: url('/cursors/textcursor.png'), text;
-}
-
-/* Loading/processing cursor */
-.loading {
-  cursor: url('/cursors/busy.png'), wait;
-}
-
-/* Disabled cursor */
-button:disabled, 
-.disabled {
-  cursor: url('/cursors/notallowed.png'), not-allowed;
-}
 
 @layer utilities {
   .font-poppins {

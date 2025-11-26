@@ -6,7 +6,8 @@ import { NextResponse } from "next/server"
 interface ChartDataPoint {
   round: number;
   raceName: string;
-  [key: string]: number | string; // Driver codes and their points
+  isFinished?: boolean;
+  [key: string]: number | string | boolean | undefined; // Driver codes and their points
 }
 
 export async function GET(request: Request) {
@@ -14,65 +15,70 @@ export async function GET(request: Request) {
   const year = parseInt(searchParams.get("year") || "2025")
 
   try {
+    // Simple in-memory cache
+    const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+    const cacheKey = `championship-progress-${year}`;
+    
+    // @ts-ignore
+    const globalCache = globalThis as any;
+    if (!globalCache._f1Cache) {
+      globalCache._f1Cache = new Map();
+    }
+    const cache = globalCache._f1Cache;
+
+    const cached = cache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+      return NextResponse.json(cached.data);
+    }
+
     // Helper to delay execution
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     // Helper function to fetch all results with pagination and rate limiting
     const fetchAllResults = async (url: string) => {
-      const limit = 100; // API hard limit seems to be 100
+      const limit = 100;
       let offset = 0;
       let allRaces: any[] = [];
       let total = 0;
 
-      // Initial fetch to get total and first batch
-      const initialResponse = await fetch(`${url}?limit=${limit}&offset=${offset}`);
-      if (!initialResponse.ok) {
-        if (initialResponse.status === 429) {
-           throw new Error("API Rate Limit Exceeded");
+      const fetchWithRetry = async (fetchUrl: string, retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const res = await fetch(fetchUrl);
+            if (res.ok) return res;
+            if (res.status === 429) {
+              const waitTime = 1000 * Math.pow(2, i); // Exponential backoff: 1s, 2s, 4s
+              console.warn(`Rate limit hit, retrying in ${waitTime}ms...`);
+              await delay(waitTime);
+              continue;
+            }
+            throw new Error(`API error: ${res.statusText}`);
+          } catch (e) {
+            if (i === retries - 1) throw e;
+            await delay(1000);
+          }
         }
-        throw new Error(`API error: ${initialResponse.statusText}`);
-      }
+        throw new Error("Max retries exceeded");
+      };
+
+      // Initial fetch
+      const initialResponse = await fetchWithRetry(`${url}?limit=${limit}&offset=${offset}`);
       const initialData = await initialResponse.json();
       
       const raceTable = initialData.MRData.RaceTable;
       allRaces = [...raceTable.Races];
       total = parseInt(initialData.MRData.total);
 
-      // Fetch remaining pages sequentially to avoid rate limits
+      // Fetch remaining pages
       for (offset = limit; offset < total; offset += limit) {
-        await delay(200); // Wait 200ms between requests
-        const response = await fetch(`${url}?limit=${limit}&offset=${offset}`);
-        if (!response.ok) {
-           if (response.status === 429) {
-             // Simple retry once after longer delay
-             await delay(1000);
-             const retryResponse = await fetch(`${url}?limit=${limit}&offset=${offset}`);
-             if (!retryResponse.ok) continue; // Skip if still failing
-             const retryData = await retryResponse.json();
-             allRaces = [...allRaces, ...retryData.MRData.RaceTable.Races];
-             continue;
-           }
-           continue; // Skip failed pages
-        }
+        await delay(500); // Increased delay between pages
+        const response = await fetchWithRetry(`${url}?limit=${limit}&offset=${offset}`);
         const data = await response.json();
         allRaces = [...allRaces, ...data.MRData.RaceTable.Races];
       }
 
       return allRaces;
     };
-
-    // Fetch race results first
-    const racesRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/results.json`);
-    
-    // Then fetch sprint results (if any)
-    let sprintsRaw: any[] = [];
-    try {
-      await delay(200);
-      sprintsRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/sprint.json`);
-    } catch (e) {
-      console.warn("Failed to fetch sprints or no sprints available", e);
-      sprintsRaw = [];
-    }
 
     // Helper to merge split races (API might return same race across multiple pages)
     const mergeRaces = (racesList: any[]) => {
@@ -93,6 +99,23 @@ export async function GET(request: Request) {
       return Object.values(merged);
     };
 
+    // Fetch full schedule first
+    const scheduleRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}.json`);
+    const schedule = mergeRaces(scheduleRaw);
+
+    // Fetch race results
+    const racesRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/results.json`);
+    
+    // Then fetch sprint results (if any)
+    let sprintsRaw: any[] = [];
+    try {
+      await delay(200);
+      sprintsRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/sprint.json`);
+    } catch (e) {
+      console.warn("Failed to fetch sprints or no sprints available", e);
+      sprintsRaw = [];
+    }
+
     const races = mergeRaces(racesRaw);
     const sprints = mergeRaces(sprintsRaw);
 
@@ -103,7 +126,9 @@ export async function GET(request: Request) {
     // Get all unique driver codes to initialize
     const allDrivers = new Set<string>();
     const driverNames: Record<string, string> = {};
+    const driverTeams: Record<string, string> = {};
 
+    // Initialize drivers from results (only drivers who have raced exist in results)
     races.forEach((race: any) => {
       if (race.Results) {
         race.Results.forEach((result: any) => {
@@ -111,6 +136,10 @@ export async function GET(request: Request) {
             allDrivers.add(result.Driver.code);
             if (!driverNames[result.Driver.code]) {
               driverNames[result.Driver.code] = `${result.Driver.givenName} ${result.Driver.familyName}`;
+            }
+            // Store/Update team (will end up with the team from the last race processed)
+            if (result.Constructor && result.Constructor.constructorId) {
+              driverTeams[result.Driver.code] = result.Constructor.constructorId;
             }
           }
         });
@@ -122,21 +151,29 @@ export async function GET(request: Request) {
       driverPoints[code] = 0;
     });
 
-    // Calculate max round robustly
-    const maxRound = races.length > 0 
-      ? Math.max(...races.map((r: any) => parseInt(r.round))) 
+    // Use schedule to determine max round
+    const maxRound = schedule.length > 0 
+      ? Math.max(...schedule.map((r: any) => parseInt(r.round))) 
       : 0;
     
     // Create a map of races by round for easy access
+    const scheduleByRound: Record<number, any> = {};
+    schedule.forEach((race: any) => scheduleByRound[parseInt(race.round)] = race);
+
     const racesByRound: Record<number, any> = {};
     races.forEach((race: any) => racesByRound[parseInt(race.round)] = race);
 
     const sprintsByRound: Record<number, any> = {};
     sprints.forEach((sprint: any) => sprintsByRound[parseInt(sprint.round)] = sprint);
 
+    const raceResultsByRound: Record<number, Record<string, any>> = {};
+
     for (let round = 1; round <= maxRound; round++) {
+      const scheduledRace = scheduleByRound[round];
       const race = racesByRound[round];
       const sprint = sprintsByRound[round];
+
+      raceResultsByRound[round] = {};
 
       // Add sprint points if any
       if (sprint && sprint.SprintResults) {
@@ -148,40 +185,59 @@ export async function GET(request: Request) {
         });
       }
 
-      // Add race points
+      // Add race points and capture results
       if (race && race.Results) {
         race.Results.forEach((result: any) => {
           const code = result.Driver.code;
           if (code) {
             driverPoints[code] = (driverPoints[code] || 0) + parseFloat(result.points);
+            
+            // Capture raw result for the table
+            raceResultsByRound[round][code] = {
+              position: result.position,
+              positionText: result.positionText,
+              status: result.status,
+              points: result.points
+            };
           }
         });
       }
 
       // Create data point for this round
-      // Use race name if available, otherwise "Round X"
-      const raceName = race ? race.raceName : `Round ${round}`;
+      // Use scheduled race name
+      const raceName = scheduledRace ? scheduledRace.raceName : `Round ${round}`;
       
       const dataPoint: ChartDataPoint = {
         round: round,
         raceName: raceName,
+        isFinished: !!race,
         ...driverPoints
       };
 
       chartData.push(dataPoint);
     }
 
-    return NextResponse.json({
+    const responseData = {
       data: chartData,
+      raceResults: raceResultsByRound,
       drivers: Array.from(allDrivers),
       driverNames: driverNames,
+      driverTeams: driverTeams,
       success: true,
       debug: {
         racesFetched: races.length,
         maxRound: maxRound,
         totalRaces: races.length
       }
-    })
+    };
+
+    // Cache the result
+    cache.set(cacheKey, {
+      data: responseData,
+      timestamp: Date.now()
+    });
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error("F1 API error:", error)

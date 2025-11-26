@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Navbar } from "../../components/Navbar";
-import { useF1Standings } from "../../hooks/useF1Standings";
-import { StandingsList } from "../../components/StandingsList";
-import { ChampionshipProgressChart } from "../../components/ChampionshipProgressChart";
+import { Navbar } from "@/components/Navbar";
+import { useF1Standings } from "@/hooks/useF1Standings";
+import { StandingsList } from "@/components/StandingsList";
+import { ChampionshipProgressChart } from "@/components/ChampionshipProgressChart";
+import { RaceResultsTable } from "@/components/RaceResultsTable";
 
 export default function StandingsPage() {
   const { driverStandings, constructorStandings, loading, error, fetchStandings } = useF1Standings();
@@ -19,37 +20,65 @@ export default function StandingsPage() {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header Section */}
-        <div className="flex flex-col items-center mb-12 gap-6">
-          {/* Title */}
-          <div className="text-center">
-            <h1 className="text-5xl font-bold mb-3 tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-              Championship Standings
-            </h1>
-            <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-red-500 mx-auto rounded-full"></div>
+        {/* Header with Year Selection */}
+        <div className="mb-10">
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-white">
+                Championship Standings
+              </h1>
+              <div className="h-1 w-20 bg-red-600 rounded-full mt-2"></div>
+            </div>
+            
+            {/* Year Input */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="year-input" className="text-sm text-gray-400 font-medium">Year:</label>
+              <input
+                id="year-input"
+                type="number"
+                min="1950"
+                max="2025"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="w-24 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white font-bold text-center focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/50 transition-all"
+              />
+            </div>
           </div>
           
-          {/* Year Selector - Pill Style */}
-          <div className="flex items-center gap-2 bg-gray-800/40 p-1.5 rounded-full border border-gray-700/50">
-            {['2025', '2024', '2023', '2022', '2021'].map((year) => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={`
-                  px-5 py-2 rounded-full font-semibold text-sm transition-all duration-200
-                  ${selectedYear === year 
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-                  }
-                `}
-              >
-                {year}
-              </button>
-            ))}
+          {/* Quick Year Selection Buttons */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">Quick select:</span>
+            <div className="relative">
+              <div className="flex items-center gap-1 bg-gray-800/50 p-1 rounded-full border border-gray-700/50">
+                {['2025', '2024', '2023', '2022', '2021'].map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => setSelectedYear(year)}
+                    className={`
+                      px-5 py-2 rounded-full font-semibold text-sm transition-all
+                      ${selectedYear === year 
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/50' 
+                        : 'text-gray-400 hover:text-white'
+                      }
+                    `}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+              {/* Glow Effect */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/20 via-red-500/20 to-red-600/20 rounded-full blur opacity-50 -z-10"></div>
+            </div>
           </div>
         </div>
 
-        {/* Content Section */}
+        {/* Championship Progress Chart and Race Results */}
+        <div className="flex flex-col gap-8 max-w-6xl mx-auto mb-12">
+          <ChampionshipProgressChart year={selectedYear} />
+          <RaceResultsTable year={selectedYear} />
+        </div>
+
+        {/* Standings Content Section */}
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
@@ -66,9 +95,6 @@ export default function StandingsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-8 max-w-6xl mx-auto">
-            {/* Championship Progress Chart */}
-            <ChampionshipProgressChart year={selectedYear} />
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               {/* Drivers Column */}
               <StandingsList 

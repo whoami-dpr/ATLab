@@ -11,46 +11,84 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { Eye, EyeOff } from "lucide-react";
 
 interface ChartDataPoint {
   round: number;
   raceName: string;
-  [key: string]: number | string;
+  isFinished?: boolean;
+  [key: string]: number | string | boolean | undefined;
 }
 
 interface ChampionshipProgressChartProps {
   year: string;
 }
 
+const TEAM_COLORS: Record<string, string> = {
+  "red_bull": "#1e41ff",
+  "ferrari": "#dc0000",
+  "mercedes": "#00d2be",
+  "mclaren": "#ff8700",
+  "aston_martin": "#229971",
+  "alpine": "#2293d1",
+  "williams": "#003d82",
+  "haas": "#b6babd",
+  "rb": "#6692ff",
+  "alpha_tauri": "#6692ff",
+  "sauber": "#52e252",
+  "kick_sauber": "#52e252",
+  "stake_f1_team_kick_sauber": "#52e252",
+  "audi": "#52e252",
+  "alfa": "#900000",
+};
+
 const DRIVER_COLORS: Record<string, string> = {
-  VER: "#1e41ff", // Red Bull
+  VER: "#1e41ff",
   PER: "#1e41ff",
-  NOR: "#ff8700", // McLaren
+  NOR: "#ff8700",
   PIA: "#ff8700",
-  LEC: "#dc0000", // Ferrari
-  HAM: "#dc0000", // Ferrari (2025) / Mercedes (2024) - handling generic red for now or specific
-  RUS: "#00d2be", // Mercedes
-  SAI: "#003d82", // Williams (2025) / Ferrari (2024) - let's stick to team colors if possible, or generic
-  ALO: "#229971", // Aston Martin
+  LEC: "#dc0000",
+  HAM: "#dc0000",
+  RUS: "#00d2be",
+  SAI: "#003d82",
+  ALO: "#229971",
   STR: "#229971",
-  GAS: "#2293d1", // Alpine
+  GAS: "#2293d1",
   OCO: "#b6babd",
-  ALB: "#003d82", // Williams
+  ALB: "#003d82",
   COL: "#2293d1",
-  HUL: "#b6babd", // Haas
+  HUL: "#52e252",
   MAG: "#b6babd",
-  TSU: "#6692ff", // RB
+  TSU: "#6692ff",
   LAW: "#6692ff",
-  BOT: "#52e252", // Sauber
+  BOT: "#52e252",
   ZHO: "#52e252",
-  ANT: "#00d2be", // Mercedes (Antonelli)
-  BEA: "#b6babd", // Haas (Bearman)
-  DOO: "#2293d1", // Alpine (Doohan)
-  BOR: "#52e252", // Sauber (Bortoleto)
-  HAD: "#6692ff", // RB (Hadjar)
+  ANT: "#00d2be",
+  BEA: "#b6babd",
+  DOO: "#2293d1",
+  BOR: "#52e252",
+  HAD: "#6692ff",
 };
 
 const DEFAULT_VISIBLE_DRIVERS = ["VER", "NOR", "LEC", "PIA", "RUS"];
+
+// Second drivers per team (will have dashed lines)
+const SECOND_DRIVERS = new Set([
+  "PER", // Red Bull
+  "PIA", // McLaren
+  "HAM", // Ferrari (2025)
+  "SAI", // Ferrari (2024) / Williams (2025)
+  "ANT", // Mercedes (2025)
+  "STR", // Aston Martin
+  "DOO", // Alpine (2025)
+  "COL", // Williams (2024)
+  "BEA", // Haas (2025)
+  "MAG", // Haas (2024)
+  "LAW", // RB
+  "TSU", // RB (2024)
+  "BOR", // Sauber (2025)
+  "ZHO", // Sauber (2024)
+]);
 
 export function ChampionshipProgressChart({ year }: ChampionshipProgressChartProps) {
   const [data, setData] = useState<ChartDataPoint[]>([]);
@@ -59,6 +97,7 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
   const [error, setError] = useState<string | null>(null);
   const [visibleDrivers, setVisibleDrivers] = useState<Set<string>>(new Set(DEFAULT_VISIBLE_DRIVERS));
   const [driverNames, setDriverNames] = useState<Record<string, string>>({});
+  const [driverTeams, setDriverTeams] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,19 +110,17 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
         }
         const result = await response.json();
         if (result.success) {
-          setData(result.data);
+          // Filter out future races for the chart
+          const finishedRaces = result.data.filter((race: ChartDataPoint) => race.isFinished);
+          setData(finishedRaces);
           setDriverNames(result.driverNames || {});
+          setDriverTeams(result.driverTeams || {});
           
-          // Sort drivers by total points in the last round to determine default visibility order or just list them
           const allDrivers = result.drivers as string[];
           
-          // Sort drivers based on points in the last round
           if (result.data.length > 0) {
             const lastRound = result.data[result.data.length - 1];
             allDrivers.sort((a, b) => (lastRound[b] as number) - (lastRound[a] as number));
-            
-            // Update default visible drivers to top 5 if it's a new year load
-            // or just keep the default list but ensure they exist
              setVisibleDrivers(new Set(allDrivers.slice(0, 5)));
           }
           
@@ -111,9 +148,16 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
     setVisibleDrivers(newVisible);
   };
 
+  const getDriverColor = (driver: string) => {
+    const teamId = driverTeams[driver];
+    if (teamId && TEAM_COLORS[teamId]) {
+      return TEAM_COLORS[teamId];
+    }
+    return DRIVER_COLORS[driver] || "#ffffff";
+  };
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      // Sort payload by value (points) descending
       const sortedPayload = [...payload].sort((a, b) => b.value - a.value);
 
       return (
@@ -138,15 +182,87 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
 
   if (loading) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/30 rounded-xl border border-gray-800">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+      <div className="w-full bg-gray-900/30 rounded-xl border border-gray-800 p-6 mb-8 overflow-hidden">
+        <div className="flex flex-col lg:flex-row">
+          <div className="flex-1 flex flex-col">
+            <div className="mb-6">
+              <div className="relative h-7 w-56 bg-gray-800/80 rounded-lg mb-2 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent"></div>
+              </div>
+              <div className="h-0.5 w-full bg-gray-800/60"></div>
+            </div>
+            
+            <div className="h-[500px] min-h-[300px] pr-6 relative bg-gray-800/30 rounded-lg border border-gray-800/50 overflow-hidden">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_3s_infinite] bg-gradient-to-r from-transparent via-gray-700/20 to-transparent"></div>
+              
+              <div className="absolute inset-0 opacity-30">
+                <div className="h-full flex flex-col justify-around p-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-px bg-gray-700/40"></div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex justify-around p-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="w-px h-full bg-gray-700/30"></div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-2">
+                {[65, 85, 70, 90, 75, 95, 80, 88].map((height, i) => (
+                  <div 
+                    key={i}
+                    className="flex-1 bg-gray-700/40 rounded-t"
+                    style={{ height: `${height}%` }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:w-72 flex flex-col lg:border-l lg:border-gray-800 lg:pl-6 mt-6 lg:mt-0">
+            <div className="mb-3">
+              <div className="relative h-5 w-20 bg-gray-800/80 rounded-md mb-2 overflow-hidden">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent"></div>
+              </div>
+              <div className="h-0.5 w-full bg-transparent"></div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-1">
+              {[...Array(10)].map((_, i) => (
+                <div 
+                  key={i}
+                  className="relative h-8 bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden"
+                >
+                  <div 
+                    className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-gray-700/30 to-transparent" 
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  ></div>
+                  <div className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-1 rounded-full bg-gray-700/60"></div>
+                  <div className="absolute left-7 top-1/2 -translate-y-1/2 w-8 h-2 rounded bg-gray-700/50"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <style jsx>{`
+          @keyframes shimmer {
+            0% {
+              transform: translateX(-100%);
+            }
+            100% {
+              transform: translateX(100%);
+            }
+          }
+        `}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/30 rounded-xl border border-gray-800">
+      <div className="w-full h-[500px] flex items-center justify-center bg-gray-900/30 rounded-xl border border-gray-800">
         <p className="text-red-400">Error: {error}</p>
       </div>
     );
@@ -154,76 +270,117 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
 
   return (
     <div className="w-full bg-gray-900/30 rounded-xl border border-gray-800 p-6 mb-8">
-      <h2 className="text-xl font-bold text-white mb-6 pl-2 border-l-4 border-red-600">
-        Championship Progress
-      </h2>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Chart Area */}
-        <div className="flex-1 h-[400px] min-h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid stroke="#374151" opacity={0.4} vertical={true} horizontal={true} />
-              <XAxis 
-                dataKey="round" 
-                stroke="#ffffffff" 
-                tick={{ fill: '#9CA3AF' }}
-                label={{ value: 'Championship Round', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
-              />
-              <YAxis 
-                stroke="#9CA3AF" 
-                tick={{ fill: '#9CA3AF' }}
-                label={{ value: 'Points', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-              />
+      <div className="flex flex-col lg:flex-row">
+        <div className="flex-1 flex flex-col">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-white mb-2">
+              Championship Progress
+            </h2>
+            <div className="h-0.5 w-full bg-red-600"></div>
+          </div>
+          
+          <div className="h-[400px] min-h-[300px] pr-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid stroke="#4B5563" opacity={0.6} vertical={true} horizontal={true} />
+                <XAxis 
+                  dataKey="round" 
+                  stroke="#ffffffff" 
+                  tick={{ fill: '#9CA3AF' }}
+                  label={{ value: 'Championship Round', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
+                />
+                <YAxis 
+                  stroke="#9CA3AF" 
+                  tick={{ fill: '#9CA3AF' }}
+                  label={{ value: 'Points', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                />
               <Tooltip content={<CustomTooltip />} />
-              {drivers.map((driver) => (
-                visibleDrivers.has(driver) && (
-                  <Line
-                    key={driver}
-                    type="monotone"
-                    dataKey={driver}
-                    stroke={DRIVER_COLORS[driver] || "#ffffff"}
-                    strokeWidth={2}
-                    dot={{ r: 3, strokeWidth: 1 }}
-                    activeDot={{ r: 6 }}
-                    connectNulls
-                  />
-                )
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+                {drivers.map((driver) => (
+                  visibleDrivers.has(driver) && (
+                    <Line
+                      key={driver}
+                      type="linear"
+                      dataKey={driver}
+                      stroke={getDriverColor(driver)}
+                      strokeWidth={2}
+                      strokeDasharray={SECOND_DRIVERS.has(driver) ? "5 5" : undefined}
+                      dot={{ r: 3, strokeWidth: 1 }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                      isAnimationActive={false}
+                    />
+                  )
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Legend Area */}
-        <div className="lg:w-64 flex flex-col">
-          <h3 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Drivers</h3>
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-2 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+        <div className="lg:w-72 flex flex-col lg:border-l lg:border-gray-800 lg:pl-6">
+          <div className="mb-3">
+            <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-wider pt-1">Drivers</h3>
+            <div className="h-0.5 w-full bg-transparent"></div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-1 overflow-y-auto max-h-[700px] pr-2 custom-scrollbar">
             {drivers.map((driver) => (
               <button
                 key={driver}
                 onClick={() => toggleDriver(driver)}
                 className={`
-                  flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-all
+                  flex items-center justify-between px-2 py-1 rounded border transition-all
                   ${visibleDrivers.has(driver) 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-transparent border-gray-800 text-gray-500 hover:bg-gray-800/50'
+                    ? 'bg-gray-800/50 border-gray-700 text-white' 
+                    : 'bg-transparent border-gray-800 text-gray-500 hover:bg-gray-800/30'
                   }
                 `}
               >
                 <div className="flex items-center gap-2">
-                  <span 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: DRIVER_COLORS[driver] || "#ffffff" }}
-                  ></span>
-                  <span className="font-medium">{driver}</span>
+                  {SECOND_DRIVERS.has(driver) ? (
+                    // Dashed line for second drivers
+                    <svg width="12" height="4" className={visibleDrivers.has(driver) ? '' : 'opacity-50'}>
+                      <line 
+                        x1="0" 
+                        y1="2" 
+                        x2="12" 
+                        y2="2" 
+                        stroke={getDriverColor(driver)} 
+                        strokeWidth="2"
+                        strokeDasharray="3 2"
+                      />
+                    </svg>
+                  ) : (
+                    // Solid line for first drivers
+                    <span 
+                      className={`w-3 h-1 rounded-full ${visibleDrivers.has(driver) ? '' : 'opacity-50'}`}
+                      style={{ backgroundColor: getDriverColor(driver) }}
+                    ></span>
+                  )}
+                  <span className="font-bold text-xs tracking-wide">{driver}</span>
                 </div>
                 {visibleDrivers.has(driver) ? (
-                  <span className="text-xs opacity-70">Hide</span>
+                  <Eye className="w-3 h-3 text-green-500" />
                 ) : (
-                  <span className="text-xs opacity-50">Show</span>
+                  <EyeOff className="w-3 h-3 text-gray-600" />
                 )}
               </button>
             ))}
+          </div>
+          
+          {/* Legend explanation */}
+          <div className="mt-4 pt-3 border-t border-gray-800/50">
+            <div className="flex flex-col gap-1.5 text-xs text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-0.5 bg-gray-400 rounded-full"></span>
+                <span>First driver</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="16" height="2">
+                  <line x1="0" y1="1" x2="16" y2="1" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="3 2" />
+                </svg>
+                <span>Second driver</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
