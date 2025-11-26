@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Navbar } from "../../components/Navbar";
 import { useF1Standings } from "../../hooks/useF1Standings";
 import { StandingsList } from "../../components/StandingsList";
+import { ChampionshipProgressChart } from "../../components/ChampionshipProgressChart";
 
 export default function StandingsPage() {
   const { driverStandings, constructorStandings, loading, error, fetchStandings } = useF1Standings();
@@ -64,20 +65,25 @@ export default function StandingsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-6xl mx-auto">
-            {/* Drivers Column */}
-            <StandingsList 
-              title="Drivers Championship" 
-              data={driverStandings} 
-              type="driver" 
-            />
-            
-            {/* Constructors Column */}
-            <StandingsList 
-              title="Constructors Championship" 
-              data={constructorStandings} 
-              type="constructor" 
-            />
+          <div className="flex flex-col gap-8 max-w-6xl mx-auto">
+            {/* Championship Progress Chart */}
+            <ChampionshipProgressChart year={selectedYear} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              {/* Drivers Column */}
+              <StandingsList 
+                title="Drivers Championship" 
+                data={driverStandings} 
+                type="driver" 
+              />
+              
+              {/* Constructors Column */}
+              <StandingsList 
+                title="Constructors Championship" 
+                data={constructorStandings} 
+                type="constructor" 
+              />
+            </div>
           </div>
         )}
       </div>
