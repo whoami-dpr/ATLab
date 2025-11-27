@@ -5,11 +5,9 @@ import { TimingTable } from "../components/TimingTable";
 import { EmptyState } from "../components/EmptyState";
 import { Navbar } from "../components/Navbar";
 import { F1ConnectionTester } from "../components/F1ConnectionTester";
-import { useThemeOptimized } from "../hooks/useThemeOptimized";
 
 export default function TelemetryLab() {
   const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession, fastestLap } = useF1SignalR();
-  const { theme } = useThemeOptimized();
 
   // Mostrar datos si hay drivers O si hay una sesión activa (incluso sin drivers aún)
   const shouldShowData = drivers.length > 0 || (isConnected && hasActiveSession);
@@ -20,13 +18,9 @@ export default function TelemetryLab() {
   }
 
   return (
-    <div className={`min-h-screen w-full relative flex flex-col ${
-      theme === 'light' ? 'bg-gray-50' : 'bg-black'
-    }`}>
+    <div className="min-h-screen w-full relative flex flex-col bg-gray-50 dark:bg-black transition-colors duration-200">
       <Navbar />
-      <div className={`flex-1 ${
-        theme === 'light' ? 'bg-transparent' : 'bg-transparent'
-      }`}>
+      <div className="flex-1 bg-transparent">
         <SessionHeader 
           sessionInfo={sessionInfo} 
           isConnected={isConnected} 

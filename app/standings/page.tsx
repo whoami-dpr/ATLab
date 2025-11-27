@@ -16,7 +16,7 @@ export default function StandingsPage() {
   }, [selectedYear, fetchStandings]);
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] text-white font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0B0E14] text-gray-900 dark:text-white font-sans transition-colors duration-200">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -24,7 +24,7 @@ export default function StandingsPage() {
         <div className="mb-10">
           <div className="flex items-end justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-white">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white transition-colors duration-200">
                 Championship Standings
               </h1>
               <div className="h-1 w-20 bg-red-600 rounded-full mt-2"></div>
@@ -32,7 +32,7 @@ export default function StandingsPage() {
             
             {/* Year Input */}
             <div className="flex items-center gap-2">
-              <label htmlFor="year-input" className="text-sm text-gray-400 font-medium">Year:</label>
+              <label htmlFor="year-input" className="text-sm text-gray-600 dark:text-gray-300 font-semibold transition-colors duration-200">Year:</label>
               <input
                 id="year-input"
                 type="number"
@@ -40,16 +40,16 @@ export default function StandingsPage() {
                 max="2025"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-24 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white font-bold text-center focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-600/50 transition-all"
+                className="w-20 px-3 py-1.5 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white font-bold text-sm text-center focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all hover:border-gray-400 dark:hover:border-gray-600 shadow-md"
               />
             </div>
           </div>
           
           {/* Quick Year Selection Buttons */}
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">Quick select:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-500 transition-colors duration-200">Quick select:</span>
             <div className="relative">
-              <div className="flex items-center gap-1 bg-gray-800/50 p-1 rounded-full border border-gray-700/50">
+              <div className="flex items-center gap-1 bg-gray-200/80 dark:bg-gray-800/50 p-1 rounded-full border border-gray-300 dark:border-gray-700/50 transition-colors duration-200">
                 {['2025', '2024', '2023', '2022', '2021'].map((year) => (
                   <button
                     key={year}
@@ -58,7 +58,7 @@ export default function StandingsPage() {
                       px-5 py-2 rounded-full font-semibold text-sm transition-all
                       ${selectedYear === year 
                         ? 'bg-red-600 text-white shadow-lg shadow-red-600/50' 
-                        : 'text-gray-400 hover:text-white'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                       }
                     `}
                   >
@@ -84,11 +84,11 @@ export default function StandingsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
           </div>
         ) : error ? (
-          <div className="text-center py-12 bg-red-900/20 rounded-xl border border-red-900/50">
-            <p className="text-red-400 text-lg">Error loading standings: {error}</p>
+          <div className="text-center py-12 bg-red-100 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-900/50 transition-colors duration-200">
+            <p className="text-red-700 dark:text-red-400 text-lg transition-colors duration-200">Error loading standings: {error}</p>
             <button 
               onClick={() => fetchStandings(selectedYear)}
-              className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors font-bold"
+              className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-bold"
             >
               Retry
             </button>

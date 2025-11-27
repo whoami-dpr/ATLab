@@ -12,7 +12,7 @@ interface StandingsListProps {
 export function StandingsList({ title, data, type }: StandingsListProps) {
   return (
     <div className="flex flex-col w-full">
-      <h2 className="text-2xl font-bold text-white mb-6 pl-2 border-l-4 border-red-600">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 pl-2 border-l-4 border-red-600">
         {title}
       </h2>
       

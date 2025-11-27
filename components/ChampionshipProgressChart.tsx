@@ -182,7 +182,7 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
 
   if (loading) {
     return (
-      <div className="w-full bg-gray-900/30 rounded-xl border border-gray-800 p-6 mb-8 overflow-hidden">
+      <div className="w-full bg-white dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-8 overflow-hidden transition-colors duration-200">
         <div className="flex flex-col lg:flex-row">
           <div className="flex-1 flex flex-col">
             <div className="mb-6">
@@ -262,37 +262,37 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
 
   if (error) {
     return (
-      <div className="w-full h-[500px] flex items-center justify-center bg-gray-900/30 rounded-xl border border-gray-800">
-        <p className="text-red-400">Error: {error}</p>
+      <div className="w-full h-[500px] flex items-center justify-center bg-red-100 dark:bg-gray-900/30 rounded-xl border border-red-300 dark:border-gray-800 transition-colors duration-200">
+        <p className="text-red-700 dark:text-red-400 transition-colors duration-200">Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-gray-900/30 rounded-xl border border-gray-800 p-6 mb-8">
+    <div className="w-full bg-white dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-8 transition-colors duration-200">
       <div className="flex flex-col lg:flex-row">
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-white mb-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
               Championship Progress
             </h2>
             <div className="h-0.5 w-full bg-red-600"></div>
           </div>
           
-          <div className="h-[400px] min-h-[300px] pr-6">
+          <div className="h-[400px] min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid stroke="#4B5563" opacity={0.6} vertical={true} horizontal={true} />
+              <LineChart data={data} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+                <CartesianGrid stroke="#9CA3AF" className="dark:stroke-gray-600" opacity={0.3} vertical={true} horizontal={true} />
                 <XAxis 
                   dataKey="round" 
-                  stroke="#ffffffff" 
-                  tick={{ fill: '#9CA3AF' }}
-                  label={{ value: 'Championship Round', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
+                  stroke="#6B7280" 
+                  tick={{ fill: '#6B7280' }}
+                  label={{ value: 'Championship Round', position: 'insideBottom', offset: -5, fill: '#6B7280' }}
                 />
                 <YAxis 
-                  stroke="#9CA3AF" 
-                  tick={{ fill: '#9CA3AF' }}
-                  label={{ value: 'Points', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+                  stroke="#6B7280" 
+                  tick={{ fill: '#6B7280' }}
+                  label={{ value: 'Points', angle: -90, position: 'insideLeft', fill: '#6B7280' }}
                 />
               <Tooltip content={<CustomTooltip />} />
                 {drivers.map((driver) => (
@@ -316,9 +316,9 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
           </div>
         </div>
 
-        <div className="lg:w-72 flex flex-col lg:border-l lg:border-gray-800 lg:pl-6">
+        <div className="lg:w-72 flex flex-col lg:border-l lg:border-gray-200 dark:lg:border-gray-800 lg:pl-6 transition-colors duration-200">
           <div className="mb-3">
-            <h3 className="text-sm font-bold text-white mb-2 uppercase tracking-wider pt-1">Drivers</h3>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider pt-1 transition-colors duration-200">Drivers</h3>
             <div className="h-0.5 w-full bg-transparent"></div>
           </div>
           
@@ -330,8 +330,8 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
                 className={`
                   flex items-center justify-between px-2 py-1 rounded border transition-all
                   ${visibleDrivers.has(driver) 
-                    ? 'bg-gray-800/50 border-gray-700 text-white' 
-                    : 'bg-transparent border-gray-800 text-gray-500 hover:bg-gray-800/30'
+                    ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white' 
+                    : 'bg-transparent border-gray-300 dark:border-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/30'
                   }
                 `}
               >
@@ -361,15 +361,15 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
                 {visibleDrivers.has(driver) ? (
                   <Eye className="w-3 h-3 text-green-500" />
                 ) : (
-                  <EyeOff className="w-3 h-3 text-gray-600" />
+                  <EyeOff className="w-3 h-3 text-gray-400 dark:text-gray-600" />
                 )}
               </button>
             ))}
           </div>
           
           {/* Legend explanation */}
-          <div className="mt-4 pt-3 border-t border-gray-800/50">
-            <div className="flex flex-col gap-1.5 text-xs text-gray-400">
+          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-200">
+            <div className="flex flex-col gap-1.5 text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200">
               <div className="flex items-center gap-2">
                 <span className="w-4 h-0.5 bg-gray-400 rounded-full"></span>
                 <span>First driver</span>

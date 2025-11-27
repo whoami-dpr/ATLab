@@ -13,11 +13,11 @@ interface StandingsCardProps {
 
 export function StandingsCard({ rank, name, team, points, logo, type }: StandingsCardProps) {
   return (
-    <div className="relative flex items-center justify-between px-3 py-2 rounded-lg border border-transparent bg-gray-800/30 transition-all hover:bg-gray-800/50 mb-1.5">
+    <div className="relative flex items-center justify-between px-3 py-2 rounded-lg border bg-gray-100 dark:bg-gray-800/30 border-gray-200 dark:border-transparent transition-all hover:bg-gray-200 dark:hover:bg-gray-800/50 mb-1.5">
       {/* Left Section: Rank & Info */}
       <div className="flex items-center gap-3">
         {/* Rank Number - Simple and minimal */}
-        <div className="w-6 flex items-center justify-center font-semibold text-sm text-gray-400 flex-shrink-0">
+        <div className="w-6 flex items-center justify-center font-semibold text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
           {rank}
         </div>
 
@@ -35,11 +35,11 @@ export function StandingsCard({ rank, name, team, points, logo, type }: Standing
 
         {/* Name & Team */}
         <div className="flex flex-col">
-          <span className="text-white font-semibold text-sm leading-tight">
+          <span className="text-gray-900 dark:text-white font-semibold text-sm leading-tight">
             {name}
           </span>
           {team && (
-            <span className="text-gray-500 text-xs">
+            <span className="text-gray-600 dark:text-gray-500 text-xs">
               {team}
             </span>
           )}
@@ -48,10 +48,10 @@ export function StandingsCard({ rank, name, team, points, logo, type }: Standing
 
       {/* Right Section: Points */}
       <div className="text-right">
-        <div className="text-white font-semibold text-base">
+        <div className="text-gray-900 dark:text-white font-semibold text-base">
           {points}
         </div>
-        <div className="text-gray-500 text-[10px] uppercase font-medium">
+        <div className="text-gray-600 dark:text-gray-500 text-[10px] uppercase font-medium">
           pts
         </div>
       </div>
