@@ -34,7 +34,15 @@ export async function GET(request: Request) {
     const data = await response.json()
     console.log("✅ Negotiate response received:", data)
 
-    return NextResponse.json(data)
+    const res = NextResponse.json(data)
+    
+    // Forward Set-Cookie header if present
+    const setCookie = response.headers.get('set-cookie')
+    if (setCookie) {
+      res.headers.set('set-cookie', setCookie)
+    }
+
+    return res
   } catch (error) {
     console.error("❌ Negotiate error:", error)
     return NextResponse.json({ 

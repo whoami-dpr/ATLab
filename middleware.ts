@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
     // Set the Origin and Host headers to match the target
     // This is crucial for the F1 server to accept the connection
     requestHeaders.set('Origin', 'https://livetiming.formula1.com')
-    requestHeaders.set('Host', 'livetiming.formula1.com')
+    // requestHeaders.set('Host', 'livetiming.formula1.com') // Let the platform handle the Host header
     
     // Construct the target URL
     // Replace /f1-ws with /signalr
