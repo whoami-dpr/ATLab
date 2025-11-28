@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-        <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
+        <html lang="en" className={`${poppins.variable} ${inter.variable}`} suppressHydrationWarning>
           <head>
             <link rel="stylesheet" href="/fonts/formula1-display.css" />
             <script dangerouslySetInnerHTML={{

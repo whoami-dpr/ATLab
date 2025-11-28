@@ -29,27 +29,33 @@ useEffect(() => {
   }
 }, [nextSession, lastSession]);
 
-useEffect(() => {
-  const session = nextSession?.start ? nextSession : lastSession;
-  if (!session?.start) return;
-  const updateCountdown = () => {
-    const start = new Date(session.start);
-    const now = new Date();
-    const diff = start.getTime() - now.getTime();
-    if (diff <= 0) {
-      setCountdown(null);
-      return;
-    }
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    setCountdown({ days, hours, minutes, seconds });
-  };
-  updateCountdown();
-  const interval = setInterval(updateCountdown, 1000);
-  return () => clearInterval(interval);
-}, [nextSession?.start, lastSession]);
+  const [formattedDate, setFormattedDate] = useState<string>("");
+
+  useEffect(() => {
+    const session = nextSession?.start ? nextSession : lastSession;
+    if (!session?.start) return;
+    
+    // Set formatted date on client side
+    setFormattedDate(new Date(session.start).toLocaleString());
+
+    const updateCountdown = () => {
+      const start = new Date(session.start);
+      const now = new Date();
+      const diff = start.getTime() - now.getTime();
+      if (diff <= 0) {
+        setCountdown(null);
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setCountdown({ days, hours, minutes, seconds });
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [nextSession?.start, lastSession]);
 
   return (
     <div className="absolute left-0 right-0 top-[120px] md:top-[120px] flex items-center justify-center w-full h-[calc(100vh-120px)] bg-transparent px-4">
@@ -79,7 +85,7 @@ useEffect(() => {
             </span>
             <span className={`text-xs ${
               theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>{new Date((nextSession?.start || lastSession?.start)!).toLocaleString()}</span>
+            }`}>{formattedDate}</span>
           </div>
         )}
       </div>

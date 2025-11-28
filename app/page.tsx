@@ -7,7 +7,7 @@ import { Navbar } from "../components/Navbar";
 import { F1ConnectionTester } from "../components/F1ConnectionTester";
 
 export default function TelemetryLab() {
-  const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession, fastestLap } = useF1SignalR();
+  const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession, fastestLap, inferredPhase } = useF1SignalR();
 
   // Mostrar datos si hay drivers O si hay una sesión activa (incluso sin drivers aún)
   const shouldShowData = drivers.length > 0 || (isConnected && hasActiveSession);
@@ -27,6 +27,7 @@ export default function TelemetryLab() {
           error={error} 
           hasActiveSession={hasActiveSession}
           fastestLap={fastestLap}
+          inferredPhase={inferredPhase}
         />
         <div className="px-0 md:px-2 pb-4 md:pb-6 max-w-full mx-auto">
           {!shouldShowData ? (

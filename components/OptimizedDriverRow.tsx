@@ -21,14 +21,16 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   const { theme } = useThemeOptimized()
   const [isExpanded, setIsExpanded] = useState(false)
   
+  if (!driver) return null;
+
   // Log the driver data to see what team is being received
-  console.log(`🎨 OptimizedDriverRow received driver:`, {
-    'name': driver.name,
-    'team': driver.team,
-    'pos': driver.pos,
-    'inPit': driver.inPit,
-    'retired': driver.retired
-  })
+  // console.log(`🎨 OptimizedDriverRow received driver:`, {
+  //   'name': driver.name,
+  //   'team': driver.team,
+  //   'pos': driver.pos,
+  //   'inPit': driver.inPit,
+  //   'retired': driver.retired
+  // })
 
   // Function to format lap times properly
   const formatLapTime = (time: string): string => {
@@ -69,6 +71,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   }
 
   const getTireColor = (tire: string) => {
+    if (!tire) return "bg-gradient-to-br from-gray-500 to-gray-600 text-white shadow-md shadow-gray-500/20"
     switch (tire.toUpperCase()) {
       case "S":
       case "SOFT":
@@ -95,71 +98,86 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       const allBars: React.ReactElement[] = []
       
       // Render sector 1 bars
-      sector1.forEach((segment, i) => {
-        let barColor = "bg-gray-700"
-        if (segment.Status >= 2048) {
-          if (segment.Status === 2051) {
-            barColor = "bg-purple-500"
-          } else if (segment.Status === 2049) {
-            barColor = "bg-green-500"
-          } else if (segment.Status === 2052 || segment.Status === 2048) {
-            barColor = "bg-yellow-500"
+      if (Array.isArray(sector1)) {
+        sector1.forEach((segment, i) => {
+          if (!segment) return
+          let barColor = "bg-gray-700"
+          if (segment.Status >= 2048) {
+            if (segment.Status === 2051) {
+              barColor = "bg-purple-500"
+            } else if (segment.Status === 2049) {
+              barColor = "bg-green-500"
+            } else if (segment.Status === 2064) {
+              barColor = "bg-[#ff80b3]"
+            } else if (segment.Status === 2052 || segment.Status === 2048) {
+              barColor = "bg-yellow-500"
+            }
           }
-        }
-        allBars.push(
-          <div key={`s1-${i}`} className={`w-1 h-3 rounded-sm ${barColor}`} />
-        )
-      })
+          allBars.push(
+            <div key={`s1-${i}`} className={`w-[4px] h-6 rounded-[2px] ${barColor}`} />
+          )
+        })
+      }
       
       // Add spacing between sector 1 and 2
-      if (sector1.length > 0 && sector2.length > 0) {
+      if (sector1?.length > 0 && sector2?.length > 0) {
         allBars.push(<div key="gap1" className="w-1" />)
       }
       
       // Render sector 2 bars
-      sector2.forEach((segment, i) => {
-        let barColor = "bg-gray-700"
-        if (segment.Status >= 2048) {
-          if (segment.Status === 2051) {
-            barColor = "bg-purple-500"
-          } else if (segment.Status === 2049) {
-            barColor = "bg-green-500"
-          } else if (segment.Status === 2052 || segment.Status === 2048) {
-            barColor = "bg-yellow-500"
+      if (Array.isArray(sector2)) {
+        sector2.forEach((segment, i) => {
+          if (!segment) return
+          let barColor = "bg-gray-700"
+          if (segment.Status >= 2048) {
+            if (segment.Status === 2051) {
+              barColor = "bg-purple-500"
+            } else if (segment.Status === 2049) {
+              barColor = "bg-green-500"
+            } else if (segment.Status === 2064) {
+              barColor = "bg-[#ff80b3]"
+            } else if (segment.Status === 2052 || segment.Status === 2048) {
+              barColor = "bg-yellow-500"
+            }
           }
-        }
-        allBars.push(
-          <div key={`s2-${i}`} className={`w-1 h-3 rounded-sm ${barColor}`} />
-        )
-      })
+          allBars.push(
+            <div key={`s2-${i}`} className={`w-[4px] h-6 rounded-[2px] ${barColor}`} />
+          )
+        })
+      }
       
       // Add spacing between sector 2 and 3
-      if (sector2.length > 0 && sector3.length > 0) {
+      if (sector2?.length > 0 && sector3?.length > 0) {
         allBars.push(<div key="gap2" className="w-1" />)
       }
       
       // Render sector 3 bars
-      sector3.forEach((segment, i) => {
-        let barColor = "bg-gray-700"
-        if (segment.Status >= 2048) {
-          if (segment.Status === 2051) {
-            barColor = "bg-purple-500"
-          } else if (segment.Status === 2049) {
-            barColor = "bg-green-500"
-          } else if (segment.Status === 2052 || segment.Status === 2048) {
-            barColor = "bg-yellow-500"
+      if (Array.isArray(sector3)) {
+        sector3.forEach((segment, i) => {
+          if (!segment) return
+          let barColor = "bg-gray-700"
+          if (segment.Status >= 2048) {
+            if (segment.Status === 2051) {
+              barColor = "bg-purple-500"
+            } else if (segment.Status === 2049) {
+              barColor = "bg-green-500"
+            } else if (segment.Status === 2064) {
+              barColor = "bg-[#ff80b3]"
+            } else if (segment.Status === 2052 || segment.Status === 2048) {
+              barColor = "bg-yellow-500"
+            }
           }
-        }
-        allBars.push(
-          <div key={`s3-${i}`} className={`w-1 h-3 rounded-sm ${barColor}`} />
-        )
-      })
+          allBars.push(
+            <div key={`s3-${i}`} className={`w-[4px] h-6 rounded-[2px] ${barColor}`} />
+          )
+        })
+      }
       
       return allBars
     }
 
     return (
-      <div className="flex flex-row gap-[1px] items-center">
+      <div className="flex flex-row gap-[2px] items-center">
         {renderBars()}
       </div>
     )
@@ -185,7 +203,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
 
   const getTeamBg = (team: string) => {
     const color = TEAM_COLORS[team]?.bg || '#666666';
-    console.log(`🎨 Team color for "${team}":`, color);
+    // console.log(`🎨 Team color for "${team}":`, color);
     return color;
   };
   const getTeamText = (team: string) => TEAM_COLORS[team]?.text || 'white';
@@ -210,6 +228,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   };
 
   const getSectorTextColor = (color: string) => {
+    if (!color) return theme === 'light' ? 'text-black' : 'text-white'
     // Use the same color logic as the minisectors
     if (color.includes('purple')) {
       return "text-purple-400" // Violet: best sector overall
@@ -223,6 +242,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   }
 
   const getLapTimeColor = (lapTimeColor: string, isFastestLap: boolean) => {
+    if (!lapTimeColor) return theme === 'light' ? 'text-black' : 'text-white'
     // Use the same color logic as the minisectors for lap times
     if (isFastestLap) {
       return "text-purple-400" // Violet: fastest lap overall
@@ -248,6 +268,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     return (
       <div className="flex flex-wrap gap-1 max-w-full overflow-hidden">
         {driver.tyresHistory.slice(0, 3).map((tire, index) => {
+          if (!tire) return null
           const tireType = tire.toUpperCase()
           return (
             <img
@@ -309,7 +330,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             <span 
               className="text-white font-normal text-lg"
               style={{
-                fontFamily: 'Formula1 Display Regular, Arial, sans-serif'
+                fontFamily: 'Formula1 Display Bold, Arial, sans-serif'
               }}
             >
               {driver.name}
@@ -365,11 +386,11 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
                 <div className="flex items-center justify-center bg-transparent rounded-full" style={{ width: '40px', height: '40px' }}>
                   {(() => {
                     // Debug logging
-                    console.log(`🏎️ Driver ${driver.name} tire data:`, {
-                      tire: driver.tire,
-                      tireType: typeof driver.tire,
-                      imageSrc: `/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`
-                    });
+                    // console.log(`🏎️ Driver ${driver.name} tire data:`, {
+                    //   tire: driver.tire,
+                    //   tireType: typeof driver.tire,
+                    //   imageSrc: `/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`
+                    // });
                     
                     return (
                       <img
@@ -377,10 +398,10 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
                         alt={driver.tire || "Unknown"}
                         className="w-6 h-6 object-contain"
                         onError={(e) => {
-                          console.log(`🏎️ Error loading tire image for driver ${driver.name}:`, {
-                            tire: driver.tire,
-                            imageSrc: `/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`
-                          });
+                          // console.log(`🏎️ Error loading tire image for driver ${driver.name}:`, {
+                          //   tire: driver.tire,
+                          //   imageSrc: `/images/${driver.tire?.toLowerCase() || 'unknown'}.svg`
+                          // });
                           // Fallback to unknown image
                           e.currentTarget.src = '/images/unknown.svg';
                         }}
@@ -510,7 +531,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       case 'driver':
         return (
           <div key="driver" className="flex items-center h-6 pl-1">
-            <div className="flex items-center h-5 w-full rounded overflow-hidden">
+            <div className="flex items-center h-[22px] w-full rounded overflow-hidden">
               <div
                 style={{
                   background: getTeamBg(driver.team || "Unknown"),
@@ -547,8 +568,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
                   fontWeight: 'bold'
                 }}
               >
-                <span className="font-normal">{driver.code}</span>
-                <span className="opacity-90">{driver.racingNumber}</span>
+                <span className="font-normal" style={{ fontFamily: 'Formula1 Display Bold, Arial, sans-serif' }}>{driver.code}</span>
+                <span className="opacity-90" style={{ fontFamily: 'Formula1 Display Regular, Arial, sans-serif' }}>{driver.racingNumber}</span>
               </div>
             </div>
           </div>
@@ -556,7 +577,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       
       case 'leader':
         return (
-          <div key="leader" className="flex items-center justify-center text-white text-xs font-bold">
+          <div key="leader" className="flex items-center justify-center text-white text-sm font-bold">
             {driver.pos === 1 ? 'Leader' : driver.gap || '+0.000'}
           </div>
         )
@@ -564,7 +585,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       case 'tyre':
         return (
           <div key="tyre" className="flex items-center justify-center gap-1">
-            <span className="text-white text-[10px]">{driver.stint}</span>
+            <span className="text-white text-sm">{driver.stint}</span>
             <div className="w-4 h-4 flex items-center justify-center rounded-full border border-gray-600 bg-[#1a1a1a]">
               <span className={`text-[9px] font-bold ${
                 driver.tire === 'S' ? 'text-red-500' :
@@ -581,7 +602,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       
       case 'bestLap':
         return (
-          <div key="bestLap" className={`flex items-center justify-center text-xs font-bold ${
+          <div key="bestLap" className={`flex items-center justify-center text-sm font-bold ${
             driver.isFastestLap ? 'text-purple-400' : 
             driver.isPersonalBest ? 'text-green-400' : 'text-white'
           }`}>
@@ -591,8 +612,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       
       case 'interval':
         return (
-          <div key="interval" className={`flex items-center justify-center text-xs font-bold ${
-            driver.pos === 1 ? 'text-gray-500' : 'text-green-400'
+          <div key="interval" className={`flex items-center justify-center text-sm font-bold ${
+            driver.pos === 1 ? 'text-gray-500' : 'text-white'
           }`}>
             {driver.pos === 1 ? 'Interval' : driver.interval || '+0.000'}
           </div>
@@ -600,9 +621,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       
       case 'lastLap':
         return (
-          <div key="lastLap" className={`flex items-center justify-center text-xs font-bold ${
-            driver.isFastestLap ? 'text-purple-400' : 
-            driver.isPersonalBest ? 'text-green-400' : 'text-white'
+          <div key="lastLap" className={`flex items-center justify-center text-sm font-bold ${
+            getLapTimeColor(driver.lapTimeColor || "", false)
           }`}>
             {formatLapTime(driver.lapTime)}
           </div>
@@ -621,7 +641,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       
       case 'lastSectors':
         return (
-          <div key="lastSectors" className="flex items-center justify-center gap-1.5 text-[10px] font-bold">
+          <div key="lastSectors" className="flex items-center justify-center gap-1.5 text-sm font-bold">
             <span className={`${getSectorTextColor(driver.sector1Color)}`}>{formatSectorTime(driver.sector1)}</span>
             <span className={`${getSectorTextColor(driver.sector2Color)}`}>{formatSectorTime(driver.sector2)}</span>
             <span className={`${getSectorTextColor(driver.sector3Color)}`}>{formatSectorTime(driver.sector3)}</span>
@@ -632,7 +652,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         return (
           <div key="pitIndicator" className="flex items-center justify-center">
             {driver.inPit && (
-              <div className="bg-[#b12074] text-white text-[9px] px-1 rounded-sm font-bold leading-none py-0.5">
+              <div className="bg-[#ff80b3] text-black text-xs px-2 py-0.5 rounded-lg font-bold leading-none border border-black/20">
                 PIT
               </div>
             )}
@@ -641,15 +661,15 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       
       case 'pitCount':
         return (
-          <div key="pitCount" className="flex items-center justify-center text-white text-[10px] font-bold gap-0.5">
+          <div key="pitCount" className="flex items-center justify-center text-white text-sm font-bold gap-0.5">
             <span>{driver.pitCount}</span>
-            <span className="text-gray-400 text-[8px]">PIT</span>
+            <span className="text-gray-400 text-[10px]">PIT</span>
           </div>
         )
       
       case 'topSpeed':
         return (
-          <div key="topSpeed" className={`flex items-center justify-center text-xs font-bold ${
+          <div key="topSpeed" className={`flex items-center justify-center text-sm font-bold ${
             driver.topSpeed && parseFloat(driver.topSpeed) > 340 ? 'text-purple-400' : 'text-white'
           }`}>
             {driver.topSpeed || '---'}
@@ -664,21 +684,23 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   // Desktop Layout
   const defaultColumnOrder: ColumnId[] = ['driver', 'leader', 'tyre', 'bestLap', 'interval', 'lastLap', 'miniSectors', 'lastSectors', 'pitIndicator', 'pitCount', 'topSpeed']
   const orderedColumns = columnOrder || defaultColumnOrder
-  const defaultGridTemplate = 'minmax(100px, 0.8fr) minmax(60px, 0.8fr) minmax(40px, 0.5fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(90px, 1.2fr) minmax(140px, 1.8fr) minmax(35px, 0.4fr) minmax(35px, 0.4fr) minmax(45px, 0.5fr)'
+  const defaultGridTemplate = 'minmax(120px, 0.6fr) minmax(60px, 0.8fr) minmax(40px, 0.5fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(90px, 1.2fr) minmax(140px, 1.8fr) minmax(35px, 0.4fr) minmax(35px, 0.4fr) minmax(45px, 0.5fr)'
 
   return (
     <div
       className={`px-1 py-[1px] transition-all duration-200 font-bold flex items-center border-b border-gray-800/50 ${
-        driver.isFastestLap 
-          ? 'bg-[#1a1a2e]' 
-          : 'hover:bg-[#1f1f2e] bg-[#15151e]'
+        driver.isInEliminationZone
+          ? 'bg-[#5c1616] hover:bg-[#6e1a1a]' 
+          : driver.isFastestLap 
+            ? 'bg-purple-900/20' 
+            : 'hover:bg-gray-900 bg-black'
       }`}
       style={{
         display: 'grid',
         gridTemplateColumns: customGridTemplate || defaultGridTemplate,
         gap: '2px',
-        fontFamily: 'Formula1 Display Regular, Arial, sans-serif',
-        fontSize: '0.75rem'
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px'
       }}
     >
       {orderedColumns.map(columnId => renderCell(columnId))}

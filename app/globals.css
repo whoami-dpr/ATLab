@@ -8,7 +8,7 @@
   --font-poppins: "Poppins", sans-serif;
   --font-inter: "Inter", sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  
+
   /* CSS Variables for theming */
   --bg-primary: #000000;
   --text-primary: #ffffff;
@@ -27,20 +27,21 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply font-poppins transition-colors;
   }
-  
+
   /* Tema oscuro por defecto */
   html {
     @apply bg-black text-white;
   }
-  
+
   /* Tema claro */
   html.light {
     @apply bg-gray-50 text-gray-900;
   }
-  
+
   /* Tema oscuro explícito */
   html.dark {
     @apply bg-black text-white;
@@ -52,14 +53,17 @@
   width: 10px;
   background: #18181b;
 }
+
 .dark ::-webkit-scrollbar-thumb {
   background: #6b7280;
   border-radius: 8px;
   border: 2px solid #18181b;
 }
+
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
 .dark ::-webkit-scrollbar-corner {
   background: #18181b;
 }
@@ -68,14 +72,17 @@
   width: 10px;
   background: #f8fafc;
 }
+
 .light ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 8px;
   border: 2px solid #f8fafc;
 }
+
 .light ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
 .light ::-webkit-scrollbar-corner {
   background: #f8fafc;
 }
@@ -136,13 +143,21 @@ button:focus-visible {
   background-clip: text;
 }
 
-.font-mono, .font-mono * {
+.font-mono,
+.font-mono * {
   font-family: var(--font-mono) !important;
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .animate-blink {
@@ -150,9 +165,15 @@ button:focus-visible {
 }
 
 @keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
 }
+
 .animate-shimmer {
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite linear;
@@ -164,6 +185,7 @@ button:focus-visible {
   .font-poppins {
     font-family: var(--font-poppins), sans-serif;
   }
+
   .font-inter {
     font-family: var(--font-inter), sans-serif;
     font-feature-settings: "tnum", "zero";

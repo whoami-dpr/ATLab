@@ -57,7 +57,7 @@ export function useSchedule() {
   const now = new Date();
   const nextSession = schedule
     .flatMap(round => 
-      round.sessions.map(session => ({
+      (round.sessions || []).map(session => ({
         ...session,
         round
       }))
@@ -67,14 +67,14 @@ export function useSchedule() {
 
   const nextRace = schedule
     .filter(round => 
-      round.sessions.some(session => 
+      (round.sessions || []).some(session => 
         session.kind &&
         session.kind.toLowerCase() === 'race' &&
         new Date(session.start) > now
       )
     )
     .map(round => {
-      const raceSession = round.sessions.find(session => 
+      const raceSession = (round.sessions || []).find(session => 
         session.kind &&
         session.kind.toLowerCase() === 'race' &&
         new Date(session.start) > now

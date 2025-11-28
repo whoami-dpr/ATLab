@@ -46,6 +46,8 @@ export interface F1Driver {
   topSpeed?: string
   bestLapTime?: string
   pitCount?: number
+  isInEliminationZone?: boolean
+  currentSector?: number
 }
 
 export interface F1SessionInfo {
@@ -136,13 +138,14 @@ export const useF1SignalR = () => {
   const [carDataCache, setCarDataCache] = useState<Record<string, any>>({})
   
   const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimeoutRef = useRef<number | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const sessionTypeRef = useRef<string>("Unknown") // Track session type for interval calculation logic
+  const sessionNameRef = useRef<string>("Unknown") // Track session name for elimination zone logic
   const messageTimeoutRef = useRef<number | null>(null)
 
   const driverColors = [
     "bg-orange-500",
     "bg-orange-400",
-    "bg-green-500",
     "bg-red-500",
     "bg-blue-500",
     "bg-cyan-500",
@@ -225,7 +228,12 @@ export const useF1SignalR = () => {
       
       // Step 2: Connect WebSocket
       const connectionData = encodeURIComponent('[{"name":"Streaming"}]')
-      const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(negotiateData.ConnectionToken)}&connectionData=${connectionData}`
+      const timestamp = new Date().getTime()
+      
+      // Use local proxy to avoid CORS/403 issues
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = window.location.host
+      const wsUrl = `${protocol}//${host}/f1-ws/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(negotiateData.ConnectionToken)}&connectionData=${connectionData}&_=${timestamp}`
       
       console.log("🔗 WebSocket URL:", wsUrl.substring(0, 100) + "...")
       console.log("🔗 Connection token:", negotiateData.ConnectionToken?.substring(0, 20) + "...")
@@ -1371,18 +1379,53 @@ export const useF1SignalR = () => {
         sector2Prev: extractSectorTime(driverData.Sectors?.[1]?.PreviousValue || driverData.Sector2Time || driverData.SectorTimes?.[1], ""),
         sector3: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
         sector3Prev: extractSectorTime(driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
-          sector1Color: driverData.Sectors?.[0]?.OverallFastest ? "purple" : 
-                       driverData.Sectors?.[0]?.PersonalFastest ? "green" : 
-                       driverData.Sectors?.[0]?.Value && driverData.Sectors?.[0]?.PreviousValue && 
-                       parseFloat(driverData.Sectors[0].Value) < parseFloat(driverData.Sectors[0].PreviousValue) ? "yellow" : "white",
-          sector2Color: driverData.Sectors?.[1]?.OverallFastest ? "purple" : 
-                       driverData.Sectors?.[1]?.PersonalFastest ? "green" : 
-                       driverData.Sectors?.[1]?.Value && driverData.Sectors?.[1]?.PreviousValue && 
-                       parseFloat(driverData.Sectors[1].Value) < parseFloat(driverData.Sectors[1].PreviousValue) ? "yellow" : "white",
-          sector3Color: driverData.Sectors?.[2]?.OverallFastest ? "purple" : 
-                       driverData.Sectors?.[2]?.PersonalFastest ? "green" : 
-                       driverData.Sectors?.[2]?.Value && driverData.Sectors?.[2]?.PreviousValue && 
-                       parseFloat(driverData.Sectors[2].Value) < parseFloat(driverData.Sectors[2].PreviousValue) ? "yellow" : "white",
+          sector1Color: (() => {
+             const currentSector = driverData.Sector || 1 // Default to 1 if missing
+             // If we are in sector 1, the displayed S1 time is from the PREVIOUS lap, so it should be grey
+             if (currentSector === 1) return "text-gray-500"
+             
+             // Otherwise (Sector 2 or 3), S1 is from CURRENT lap, so color it
+             if (driverData.Sectors?.[0]?.OverallFastest) return "purple"
+             if (driverData.Sectors?.[0]?.PersonalFastest) return "green"
+             // If valid time but not PB/OB, return yellow (slower/no improvement)
+             if (driverData.Sectors?.[0]?.Value) return "yellow"
+             return "white"
+          })(),
+          sector2Color: (() => {
+             const currentSector = driverData.Sector || 1
+             // If we are in sector 1 or 2, the displayed S2 time is from PREVIOUS lap (or not yet set for current), so grey
+             if (currentSector === 1 || currentSector === 2) return "text-gray-500"
+             
+             // Otherwise (Sector 3), S2 is from CURRENT lap
+             if (driverData.Sectors?.[1]?.OverallFastest) return "purple"
+             if (driverData.Sectors?.[1]?.PersonalFastest) return "green"
+             if (driverData.Sectors?.[1]?.Value) return "yellow"
+             return "white"
+          })(),
+          sector3Color: (() => {
+             // Sector 3 is ALWAYS from the previous lap (unless we just crossed the line, but then we are in S1)
+             // So S3 should generally be colored if it was just completed?
+             // Wait, if we are in S1, S3 is the LAST COMPLETED sector.
+             // But the user says "start a new lap they should be grey".
+             // If I am in S1, I am starting a new lap.
+             // So S3 (from previous lap) should be GREY?
+             // But usually "Last Sectors" shows the PREVIOUS lap's sectors.
+             // If I make them all grey in S1, then I see nothing colored?
+             // The user image shows some grey, some colored.
+             // Maybe "Last Sectors" means "Current Lap Sectors" + "Previous Lap Sectors if Current not done"?
+             // If I am in S1, I have no Current S1. So I show Previous S1 (Grey).
+             // If I am in S2, I have Current S1 (Colored). Previous S2 (Grey).
+             // If I am in S3, I have Current S1 (Colored), Current S2 (Colored). Previous S3 (Grey).
+             
+             // So S3 is ALWAYS Grey because it's always from the previous lap until I finish the CURRENT lap?
+             // But when I finish the current lap, I immediately go to S1 of NEXT lap.
+             // So S3 never gets colored?
+             // Unless... when I cross the line, I briefly show the full colored lap?
+             // Or maybe S3 stays colored while I am in S1?
+             // User: "ya empieza una nueva vuelta esten en gris" (when new lap starts, be grey).
+             // This implies S3 becomes grey immediately.
+             return "text-gray-500"
+          })(),
           lapTimeColor: driverData.LastLapTime?.OverallFastest ? "purple" : 
                        driverData.LastLapTime?.PersonalFastest ? "green" : 
                        driverData.LastLapTime?.Value && driverData.BestLapTime?.Value && 
@@ -1408,7 +1451,7 @@ export const useF1SignalR = () => {
             // console.log(`🔍 Driver ${driverNumber} Sector 3 Segments:`, segments)
             return segments
           })(),
-          interval: extractStringValue(driverData.DiffToAhead || driverData.IntervalToPositionAhead || driverData.Interval, ""),
+          interval: finalGapValue,
           topSpeed: extractStringValue(driverData.Speeds?.ST?.Value || driverData.Speeds?.['I1']?.Value || driverData.Speeds?.['I2']?.Value || driverData.Speeds?.['FL']?.Value, ""),
           bestLapTime: extractStringValue(driverData.BestLapTime?.Value || driverData.PersonalBest, ""),
           pitCount: driverData.NumberOfPitStops || driverData.PitStops || driverData.PitStopCount || 0
@@ -1426,7 +1469,129 @@ export const useF1SignalR = () => {
     setDrivers(prevDrivers => {
       // 1. Merge new drivers into previous drivers
       const driverMap = new Map(prevDrivers.map(d => [d.code, d]))
-      updatedDrivers.forEach(d => driverMap.set(d.code, d))
+      
+      updatedDrivers.forEach(newDriver => {
+        const existingDriver = driverMap.get(newDriver.code)
+        
+        if (existingDriver) {
+          // Smart merge: preserve existing data if new data is missing/empty
+          const mergedDriver = { ...existingDriver, ...newDriver }
+          
+          // Preserve Best Lap Time (prevLap) if lost
+          if ((!newDriver.prevLap || newDriver.prevLap === "" || newDriver.prevLap === "0.000") && 
+              existingDriver.prevLap && existingDriver.prevLap !== "" && existingDriver.prevLap !== "0.000") {
+            mergedDriver.prevLap = existingDriver.prevLap
+          }
+          
+          // Preserve BestLapTime field as well
+          if ((!newDriver.bestLapTime || newDriver.bestLapTime === "") && existingDriver.bestLapTime) {
+            mergedDriver.bestLapTime = existingDriver.bestLapTime
+          }
+          
+          // Preserve Team info
+          if ((!newDriver.team || newDriver.team === "Unknown") && existingDriver.team && existingDriver.team !== "Unknown") {
+            mergedDriver.team = existingDriver.team
+          }
+          
+          // Preserve Racing Number
+          if ((!newDriver.racingNumber || newDriver.racingNumber === "") && existingDriver.racingNumber) {
+            mergedDriver.racingNumber = existingDriver.racingNumber
+          }
+          
+          // Preserve Last Lap Time
+          if ((!newDriver.lapTime || newDriver.lapTime === "" || newDriver.lapTime === "0.000") && 
+              existingDriver.lapTime && existingDriver.lapTime !== "" && existingDriver.lapTime !== "0.000") {
+            mergedDriver.lapTime = existingDriver.lapTime
+          }
+          
+          // Preserve Sector 1
+          if ((!newDriver.sector1 || newDriver.sector1 === "" || newDriver.sector1 === "0.000") && 
+              existingDriver.sector1 && existingDriver.sector1 !== "" && existingDriver.sector1 !== "0.000") {
+            mergedDriver.sector1 = existingDriver.sector1
+          }
+          
+          // Preserve Sector 2
+          if ((!newDriver.sector2 || newDriver.sector2 === "" || newDriver.sector2 === "0.000") && 
+              existingDriver.sector2 && existingDriver.sector2 !== "" && existingDriver.sector2 !== "0.000") {
+            mergedDriver.sector2 = existingDriver.sector2
+          }
+          
+          // Preserve Sector 3
+          if ((!newDriver.sector3 || newDriver.sector3 === "" || newDriver.sector3 === "0.000") && 
+              existingDriver.sector3 && existingDriver.sector3 !== "" && existingDriver.sector3 !== "0.000") {
+            mergedDriver.sector3 = existingDriver.sector3
+          }
+          
+          // Preserve Tire History if not present in update
+          if ((!newDriver.tyresHistory || newDriver.tyresHistory.length === 0) && existingDriver.tyresHistory && existingDriver.tyresHistory.length > 0) {
+             // Only if we don't have new tire info. 
+             // Note: usually updates might have just current tire. 
+             // If newDriver has tire data, we might want to append? 
+             // For now, let's assume if the array is empty in update, we keep old history.
+             mergedDriver.tyresHistory = existingDriver.tyresHistory
+          }
+
+          // Preserve Minisectors (Segments) with Smart Merge
+          // We only overwrite colored segments with grey ones if it's a NEW LAP
+          const isNewLap = mergedDriver.lapTime !== existingDriver.lapTime && mergedDriver.lapTime !== "--:--.---"
+          
+          const mergeSegments = (oldSegs: any[], newSegs: any) => {
+            const safeOldSegs = Array.isArray(oldSegs) ? oldSegs : []
+            
+            // Handle newSegs being an array or an object
+            let safeNewSegs: any[] = []
+            if (Array.isArray(newSegs)) {
+              safeNewSegs = newSegs
+            } else if (newSegs && typeof newSegs === 'object') {
+              // If object, convert to array but preserve indices if keys are numeric strings
+              // Object.values might lose index order if keys are "0", "1", "5" -> [val0, val1, val5]
+              // We need to map them to the correct index
+              const keys = Object.keys(newSegs).map(Number).filter(n => !isNaN(n))
+              if (keys.length > 0) {
+                const maxKey = Math.max(...keys)
+                safeNewSegs = new Array(maxKey + 1).fill(undefined)
+                keys.forEach(key => {
+                  safeNewSegs[key] = newSegs[key]
+                })
+              } else {
+                 safeNewSegs = Object.values(newSegs)
+              }
+            }
+
+            // If new segments are completely empty, return old
+            if (safeNewSegs.length === 0) return safeOldSegs
+
+            // Segment-level merge:
+            // Create a new array that is at least as long as the max length
+            const maxLength = Math.max(safeOldSegs.length, safeNewSegs.length)
+            const merged = new Array(maxLength).fill(undefined)
+
+            for (let i = 0; i < maxLength; i++) {
+              const newSeg = safeNewSegs[i]
+              const oldSeg = safeOldSegs[i]
+
+              // If new segment exists and has valid status, use it
+              if (newSeg && typeof newSeg.Status === 'number') {
+                merged[i] = newSeg
+              } else {
+                // Otherwise keep old segment
+                merged[i] = oldSeg
+              }
+            }
+            
+            return merged
+          }
+
+          mergedDriver.sector1Segments = mergeSegments(existingDriver.sector1Segments || [], newDriver.sector1Segments || [])
+          mergedDriver.sector2Segments = mergeSegments(existingDriver.sector2Segments || [], newDriver.sector2Segments || [])
+          mergedDriver.sector3Segments = mergeSegments(existingDriver.sector3Segments || [], newDriver.sector3Segments || [])
+
+          driverMap.set(newDriver.code, mergedDriver)
+        } else {
+          driverMap.set(newDriver.code, newDriver)
+        }
+      })
+      
       const mergedDrivers = Array.from(driverMap.values())
 
       // 2. Find the fastest lap time in current session across ALL drivers
@@ -1474,7 +1639,7 @@ export const useF1SignalR = () => {
       })
       
       // 3. Update isFastestLap and isPersonalBest flags for ALL drivers
-      const finalDrivers = mergedDrivers.map(driver => {
+      let finalDrivers = mergedDrivers.map(driver => {
         // Check if this driver's best time (prevLap) is the fastest of the session
         let driverBestTimeMs = Infinity
         if (driver.prevLap && driver.prevLap !== "0.000" && driver.prevLap !== "0:00.000" && driver.prevLap !== "--:--.---") {
@@ -1513,25 +1678,154 @@ export const useF1SignalR = () => {
             : driver.gap,
           gapTime: (driver.gapTime === "0.000" || driver.gapTime === "") && !isFastestLap && driverBestTimeMs !== Infinity && currentFastestTime !== Infinity
             ? `+${((driverBestTimeMs - currentFastestTime) / 1000).toFixed(3)}`
-            : driver.gapTime
+            : driver.gapTime,
+          // Store the numeric best time for sorting later if needed
+          _bestTimeMs: driverBestTimeMs
         }
       })
+
+      // 4. Fallback for missing positions (0) or Practice Sessions
+      // Check if we have ANY drivers with position 0, which indicates we need to calculate positions
+      // OR if we are in a practice session (where positions are based on best lap time)
+      const hasZeroPosDrivers = finalDrivers.some(d => d.pos === 0)
+      
+      // Check if intervals are missing/invalid (all zero) which happens in Practice sessions even if positions are sent
+      const hasInvalidIntervals = finalDrivers.length > 1 && finalDrivers.slice(1).every(d => 
+        !d.interval || d.interval === "0.000" || d.interval === "+0.000" || d.interval === "" || d.interval === "Interval"
+      )
+
+      // Check if we are in a Practice or Qualifying session
+      const isPractice = sessionTypeRef.current.toLowerCase().includes('practice')
+      const isQualifying = sessionTypeRef.current.toLowerCase().includes('qualifying') || 
+                          sessionNameRef.current.toLowerCase().includes('qualifying') ||
+                          (sessionNameRef.current.toLowerCase().includes('session') && !isPractice) // Heuristic
+
+      // 1. RECALCULATE POSITIONS (Only for Practice or if positions are missing)
+      // In Qualifying, we trust the API positions (which handle elimination order correctly)
+      // unless we have drivers with 0 position.
+      if (hasZeroPosDrivers || isPractice) {
+        // console.log(`⚠️ Recalculating positions (Practice or Missing Pos)`)
+        
+        // Sort ALL drivers by best time
+        finalDrivers.sort((a, b) => {
+          // 1. Sort by Retired Status (Active first)
+          // In Qualy, retired means eliminated, so they should be at the bottom
+          if (a.retired !== b.retired) {
+            return a.retired ? 1 : -1
+          }
+
+          const timeA = (a as any)._bestTimeMs || Infinity
+          const timeB = (b as any)._bestTimeMs || Infinity
+          
+          if (timeA === timeB) {
+             return a.code.localeCompare(b.code)
+          }
+          return timeA - timeB
+        })
+        
+        // Re-assign positions 1..N
+        finalDrivers = finalDrivers.map((d, index) => ({
+          ...d,
+          pos: index + 1
+        }))
+      } else {
+        // If we are NOT recalculating positions (e.g. Qualifying/Race with valid positions),
+        // we MUST still sort the array by the official Position.
+        finalDrivers.sort((a, b) => a.pos - b.pos)
+      }
+
+      // Calculate Elimination Zone (Always check this)
+      const sessionName = sessionNameRef.current.toLowerCase()
+      // Re-evaluate isQualifying with latest sessionNameRef
+      let isQualifyingSession = isQualifying
+      
+      if (isQualifyingSession) {
+          let eliminationPosition = 0
+          
+          if (sessionName.includes('q1') || sessionName.includes('qualifying 1')) {
+            eliminationPosition = 15
+          } else if (sessionName.includes('q2') || sessionName.includes('qualifying 2')) {
+            eliminationPosition = 10
+          } else if (sessionName.includes('q3') || sessionName.includes('qualifying 3')) {
+             eliminationPosition = 0 
+          } else {
+            // Fallback Heuristic
+            const knockedOutCount = finalDrivers.filter(d => d.retired).length
+            const activeDrivers = finalDrivers.length
+
+            if (knockedOutCount >= 10) {
+               eliminationPosition = 0 
+            } else if (knockedOutCount >= 5) {
+               eliminationPosition = 10 
+            } else if (activeDrivers > 15) {
+               eliminationPosition = 15 
+            }
+          }
+          
+          if (eliminationPosition > 0) {
+            finalDrivers = finalDrivers.map(d => ({
+              ...d,
+              isInEliminationZone: d.pos > eliminationPosition
+            }))
+          }
+      }
+
+      // 2. CALCULATE GAPS/INTERVALS (For Practice, Qualy, or if missing)
+      // We do this for Qualifying too because the API often sends "Interval" text instead of values
+      if (hasZeroPosDrivers || hasInvalidIntervals || isPractice || isQualifyingSession) {
+        const formatGap = (diffMs: number): string => {
+          if (diffMs === 0) return "+0.000"
+          return `+${(diffMs / 1000).toFixed(3)}`
+        }
+
+        const getDriverTime = (d: any) => d._bestTimeMs || Infinity
+        // For Gap to Leader, we need the time of the driver at Position 1 (index 0)
+        const leaderTimeMs = getDriverTime(finalDrivers[0])
+
+        finalDrivers.forEach((driver: any, index) => {
+          if (index === 0) {
+            driver.gap = "LEADER"
+            driver.interval = "Interval"
+          } else {
+            const currentDriverTime = getDriverTime(driver)
+            
+            if (leaderTimeMs > 0 && leaderTimeMs !== Infinity && currentDriverTime > 0 && currentDriverTime !== Infinity) {
+              // Calculate Gap to Leader
+              const gapToLeader = currentDriverTime - leaderTimeMs
+              driver.gap = formatGap(gapToLeader)
+
+              // Calculate Interval to Ahead
+              const aheadDriverTime = getDriverTime(finalDrivers[index - 1])
+              if (aheadDriverTime > 0 && aheadDriverTime !== Infinity) {
+                const intervalToAhead = currentDriverTime - aheadDriverTime
+                driver.interval = formatGap(intervalToAhead)
+              } else {
+                driver.interval = "+0.000"
+              }
+            }
+          }
+        })
+      }
       
       return finalDrivers
     })
-    
-    // Only set active session if we actually have drivers
-    if (updatedDrivers.length > 0) {
-      setHasActiveSession(true)
-    }
   }
 
   const updateSessionInfo = (sessionData: any) => {
-    console.log("🔄 Updating session info with:", sessionData)
+    // console.log("🔄 Updating session info with:", sessionData)
     
     // Fastest lap is now derived from drivers list, no need to reset state manually
     const sessionName = sessionData.Name || sessionData.name || "Unknown Session"
     const sessionType = sessionData.Type || sessionData.type || "Unknown"
+
+    if (sessionNameRef.current !== "Unknown" && sessionName !== sessionNameRef.current) {
+      console.log("🔄 Session changed from", sessionNameRef.current, "to", sessionName, "- Resetting data")
+      setDrivers([])
+      setCarDataCache({})
+    }
+
+    sessionTypeRef.current = sessionType // Update ref for access in setDrivers callback
+    sessionNameRef.current = sessionName // Update ref for elimination zone logic
     
     const sessionStatus = sessionData.Status || sessionData.status || "Unknown"
     const sessionPhase = sessionData.Phase || sessionData.phase || "Unknown"
@@ -1683,6 +1977,37 @@ export const useF1SignalR = () => {
     }
   }, [drivers])
 
+  // Calculate inferred phase for UI display
+  const getInferredPhase = () => {
+    const sessionName = (sessionInfo.raceName || sessionNameRef.current).toLowerCase()
+    const sessionType = (sessionInfo.raceName || sessionTypeRef.current).toLowerCase()
+    let isQualifying = sessionType.includes('qualifying') || sessionName.includes('qualifying')
+    
+    // Heuristic for generic names
+    if (!isQualifying && (sessionName.includes('session') || sessionName.includes('f1 live timing'))) {
+       if (!sessionType.includes('practice')) {
+         isQualifying = true
+       }
+    }
+
+    if (isQualifying) {
+        if (sessionName.includes('q1') || sessionName.includes('qualifying 1')) return "Q1"
+        if (sessionName.includes('q2') || sessionName.includes('qualifying 2')) return "Q2"
+        if (sessionName.includes('q3') || sessionName.includes('qualifying 3')) return "Q3"
+        
+        // Fallback Heuristic
+         const knockedOutCount = drivers.filter(d => d.retired).length
+         const activeDrivers = drivers.length
+         
+         if (knockedOutCount >= 10) return "Q3"
+         if (knockedOutCount >= 5) return "Q2"
+         if (activeDrivers > 15) return "Q1"
+    }
+    return null
+  }
+
+  const inferredPhase = getInferredPhase()
+
   return {
     isConnected,
     connectionWorking,
@@ -1690,6 +2015,7 @@ export const useF1SignalR = () => {
     sessionInfo,
     drivers,
     fastestLap,
+    inferredPhase,
     reconnect,
     forceActiveSession,
     hasActiveSession,

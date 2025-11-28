@@ -15,6 +15,10 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        source: '/f1-ws/:path*',
+        destination: 'https://livetiming.formula1.com/signalr/:path*',
+      },
+      {
         source: '/api/:path*',
         destination: '/api/:path*',
       },

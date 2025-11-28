@@ -20,7 +20,7 @@ export interface ColumnConfig {
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'driver', label: 'DRIVER', width: 'minmax(120px, 1fr)', visible: true },
+  { id: 'driver', label: 'DRIVER', width: 'minmax(120px, 0.6fr)', visible: true },
   { id: 'leader', label: 'LEADER', width: 'minmax(80px, 0.8fr)', visible: true },
   { id: 'tyre', label: 'TYRE', width: 'minmax(60px, 0.6fr)', visible: true },
   { id: 'bestLap', label: 'BEST LAP', width: 'minmax(90px, 0.9fr)', visible: true },

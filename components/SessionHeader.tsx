@@ -19,9 +19,10 @@ interface SessionHeaderProps {
     team: string | null
     racingNumber: string | null
   }
+  inferredPhase?: string | null
 }
 
-const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLap }: SessionHeaderProps) => {
+const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLap, inferredPhase }: SessionHeaderProps) => {
   const { schedule } = useSchedule()
   const { theme } = useThemeOptimized()
   
@@ -284,7 +285,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
               <div className={`text-xs font-medium leading-none ${
                 theme === 'light' ? 'text-black' : 'text-white'
               }`}>
-                {gpInfo.gpName} - {gpInfo.sessionType}
+                {gpInfo.gpName} - {inferredPhase ? `${gpInfo.sessionType} ${inferredPhase}` : gpInfo.sessionType}
               </div>
             </div>
           </div>

@@ -143,7 +143,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
         <div className="relative mb-1">
           <button
             onClick={() => setShowColumnSettings(!showColumnSettings)}
-            className="flex items-center gap-1 px-2 py-1 bg-[#15151e] hover:bg-[#1f1f2e] rounded text-white text-xs"
+            className="flex items-center gap-1 px-2 py-1 bg-gray-900 hover:bg-gray-800 rounded text-white text-xs"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -153,7 +153,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
 
           {/* Column Settings Dropdown */}
           {showColumnSettings && (
-            <div className="absolute top-full left-0 mt-1 bg-[#15151e] border border-gray-700 rounded p-2 shadow-xl z-50 min-w-[200px]">
+            <div className="absolute top-full left-0 mt-1 bg-gray-900 border border-gray-700 rounded p-2 shadow-xl z-50 min-w-[200px]">
               <div className="text-white text-xs font-bold mb-2">Show/Hide Columns</div>
               {columns.map((column) => (
                 <label key={column.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-white/5 px-1 rounded">
@@ -177,12 +177,12 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
           onDragEnd={handleDragEnd}
         >
           <div 
-            className={`px-1 py-0.5 bg-[#15151e] text-[10px] font-bold border-b border-gray-800 text-white uppercase tracking-wider`}
+            className={`px-1 py-0.5 bg-black text-[10px] font-bold border-b border-gray-800 text-white uppercase tracking-wider`}
             style={{
               display: 'grid',
               gridTemplateColumns,
               gap: '2px',
-              fontFamily: 'Formula1 Display Regular, Arial, sans-serif'
+              fontFamily: 'Formula1 Display, Arial, sans-serif'
             }}
           >
             <SortableContext 
