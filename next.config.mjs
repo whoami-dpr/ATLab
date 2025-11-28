@@ -14,10 +14,7 @@ const nextConfig = {
   // Asegurar que las rutas de API funcionen correctamente
   async rewrites() {
     return [
-      {
-        source: '/f1-ws/:path*',
-        destination: 'https://livetiming.formula1.com/signalr/:path*',
-      },
+
       {
         source: '/api/:path*',
         destination: '/api/:path*',
