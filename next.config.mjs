@@ -19,10 +19,7 @@ const nextConfig = {
         source: '/api/:path*',
         destination: '/api/:path*',
       },
-      {
-        source: '/f1-ws/:path*',
-        destination: 'https://livetiming.formula1.com/signalr/:path*',
-      },
+
     ]
   },
 }
