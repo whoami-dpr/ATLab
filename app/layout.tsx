@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Poppins, Inter } from "next/font/google"
 import Script from "next/script"
 import { ThemeProvider } from "@/contexts/ThemeContext"
+import Footer from "@/components/Footer"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -81,8 +82,11 @@ export default function RootLayout({
               background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.08), transparent 70%), #ffffff"
             }} />
             <ThemeProvider>
-              <div className="relative z-10">
-                {children}
+              <div className="relative z-10 flex flex-col min-h-screen">
+                <div className="flex-grow">
+                  {children}
+                </div>
+                <Footer />
               </div>
             </ThemeProvider>
           </body>
