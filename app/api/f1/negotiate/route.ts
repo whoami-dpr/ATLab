@@ -15,6 +15,7 @@ export async function GET(request: Request) {
 
     const response = await fetch(negotiateUrl, {
       method: "GET",
+      headers: {
         "User-Agent": userAgent,
         "Accept": "application/json",
         "Origin": "https://www.formula1.com",
