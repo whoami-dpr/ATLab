@@ -53,7 +53,7 @@ function SortableHeader({ column }: { column: ColumnConfig }) {
       style={style} 
       {...attributes} 
       {...listeners}
-      className="flex items-center justify-center hover:bg-white/5 rounded px-1"
+      className="flex items-center justify-center hover:bg-white/5 rounded-none px-1 border-r border-gray-600 last:border-r-0"
     >
       {column.label}
     </div>
@@ -71,9 +71,20 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
     if (saved) {
       try {
         const savedColumns = JSON.parse(saved) as ColumnConfig[]
-        setColumns(savedColumns)
+        
+        // Merge with defaults to ensure new columns appear
+        const mergedColumns = [...savedColumns]
+        
+        DEFAULT_COLUMNS.forEach(defaultCol => {
+          if (!mergedColumns.find(c => c.id === defaultCol.id)) {
+            mergedColumns.push(defaultCol)
+          }
+        })
+        
+        setColumns(mergedColumns)
       } catch (e) {
         console.error('Failed to load column order:', e)
+        setColumns(DEFAULT_COLUMNS)
       }
     }
   }, [])
@@ -177,11 +188,11 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
           onDragEnd={handleDragEnd}
         >
           <div 
-            className={`px-1 py-0.5 bg-black text-[10px] font-bold border-b border-gray-800 text-white uppercase tracking-wider`}
+            className={`px-0 py-0 bg-black text-[10px] font-bold border-b border-gray-800 text-white uppercase tracking-wider`}
             style={{
               display: 'grid',
               gridTemplateColumns,
-              gap: '2px',
+              gap: '0px',
               fontFamily: 'Formula1 Display, Arial, sans-serif'
             }}
           >
@@ -203,7 +214,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
               key={`${driver.pos}-${driver.code}`} 
               driver={driver} 
               index={index} 
-              gapClass="gap-0.5 px-1" 
+              gapClass="gap-0 px-0" 
               drsEnabled={drsEnabled}
               columnOrder={columns.filter(c => c.visible).map(c => c.id)}
               gridTemplateColumns={gridTemplateColumns}

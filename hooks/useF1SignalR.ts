@@ -48,6 +48,9 @@ export interface F1Driver {
   pitCount?: number
   isInEliminationZone?: boolean
   currentSector?: number
+  bestSector1?: string
+  bestSector2?: string
+  bestSector3?: string
 }
 
 export interface F1SessionInfo {
@@ -819,80 +822,17 @@ export const useF1SignalR = () => {
             // Check if Position.z contains tire information
             const positionKeys = Object.keys(messageData)
             console.log("🏎️ Position.z keys:", positionKeys)
-            
-            // Process Position.z for tire information
-            if (messageData.Entries) {
-              console.log("🏎️ Position.z.Entries found:", Object.keys(messageData.Entries))
-              // Log tire data for each driver
-              Object.entries(messageData.Entries).forEach(([driverNumber, positionData]: [string, any]) => {
-                console.log(`🏎️ Driver ${driverNumber} Position.z:`, {
-                  driverNumber,
-                  positionData,
-                  tireFields: {
-                    Tyres: positionData.Tyres,
-                    TyreCompound: positionData.TyreCompound,
-                    Compound: positionData.Compound,
-                    TyreType: positionData.TyreType,
-                    TireType: positionData.TireType,
-                    Tyre: positionData.Tyre,
-                    Tire: positionData.Tire
-                  }
-                })
-              })
+              updateDriverData(messageData)
             }
-          }
-          break
+            break
+        case "TimingStats":
+        case "TimingAppData":
         case "TimingData":
-          if (messageData && messageData.Lines && Object.keys(messageData.Lines).length > 0) {
-            console.log("🏎️ Timing data received with drivers:", Object.keys(messageData.Lines).length)
-            console.log("🏎️ Timing data structure:", JSON.stringify(messageData, null, 2))
-            updateDriverData(messageData)
-            setHasActiveSession(true)
-            console.log("✅ Active session confirmed - drivers data received")
-          } else {
-            console.log("⚠️ TimingData received but no driver data")
+          console.log(`🏎️ ${messageType} message received - updating driver data`)
+          if (messageData && messageData.Lines) {
+             updateDriverData(messageData)
           }
           break
-        case "CarData":
-        case "CarData.z":
-          console.log("🏎️ CarData message received - checking for tire data:", messageData)
-          if (messageData && typeof messageData === 'object') {
-            console.log("🏎️ CarData COMPLETE structure:", JSON.stringify(messageData, null, 2))
-            // Check if CarData contains tire information
-            const carDataKeys = Object.keys(messageData)
-            console.log("🏎️ CarData keys:", carDataKeys)
-            
-            // Check if we have Entries
-            if (messageData.Entries) {
-              console.log("🏎️ CarData.Entries found with drivers:", Object.keys(messageData.Entries))
-            } else {
-              console.log("⚠️ CarData.Entries NOT FOUND - checking other possible structures")
-              // Check for other possible structures
-              if (messageData.Lines) {
-                console.log("🏎️ CarData.Lines found:", Object.keys(messageData.Lines))
-              }
-              if (messageData.Drivers) {
-                console.log("🏎️ CarData.Drivers found:", Object.keys(messageData.Drivers))
-              }
-            }
-          }
-          break
-        case "TrackStatus":
-            console.log("🚦 TrackStatus message received:", messageData)
-            updateTrackStatus(messageData)
-            break
-        case "RaceControlMessages":
-            if (messageData && messageData.Messages) {
-                const newMessages = messageData.Messages.map((msg: any) => ({
-                    utc: msg.Utc,
-                    message: msg.Message,
-                    category: msg.Category,
-                    flag: msg.Flag,
-                    lap: msg.Lap
-                }))
-                setRaceControlMessages(prev => [...newMessages, ...prev].slice(0, 50))
-            }
-            break
     }
     } else {
       console.log("⚠️ Message not processed - target:", data.target, "arguments:", data.arguments)
@@ -1095,12 +1035,31 @@ export const useF1SignalR = () => {
       const carData = carDataCache[driverNumber]
       
       // Comprehensive tire compound extraction
-      const tireCompound = driverData.Tyres?.Compound || 
+      let tireCompound = driverData.Tyres?.Compound || 
                           driverData.TyreCompound || 
                           driverData.Compound ||
                           carData?.Tyres?.Compound || 
                           carData?.TyreCompound || 
                           carData?.Compound
+
+      // Check for Stints (common in TimingAppData) - handle both array and object formats
+      if (!tireCompound && driverData.Stints) {
+        let stintsArray: any[] = []
+        if (Array.isArray(driverData.Stints)) {
+           stintsArray = driverData.Stints
+        } else if (typeof driverData.Stints === 'object') {
+           stintsArray = Object.values(driverData.Stints)
+        }
+
+        if (stintsArray.length > 0) {
+           const lastStint = stintsArray[stintsArray.length - 1]
+           tireCompound = lastStint.Compound || 
+                          lastStint.TyreCompound || 
+                          lastStint.Tyres?.Compound || 
+                          lastStint.Tyre ||
+                          lastStint.CompoundId
+        }
+      }
       
       let currentTire = "?" // Default fallback - show unknown instead of assuming
       
@@ -1350,55 +1309,43 @@ export const useF1SignalR = () => {
                            driverData.TeamName || 
                            driverData.Constructor || 
                            "Unknown"
-      
-      console.log(`🏎️ Driver ${driverNumber} data extraction:`, {
-        'DriverNumber': driverNumber,
-        'Mapped Name': driverNumberToName[driverNumber],
-        'Final Name': extractedName,
-        'Mapped Team': driverNumberToTeam[driverNumber],
-        'Team Raw Data': {
-          'Team': driverData.Team,
-          'TeamName': driverData.TeamName,
-          'Constructor': driverData.Constructor
-        },
-        'Final Team': extractedTeam,
-        'Sectors Raw Data': {
-          'Sector1': driverData.Sectors?.[0]?.Value,
-          'Sector1Prev': driverData.Sectors?.[0]?.PreviousValue,
-          'Sector2': driverData.Sectors?.[1]?.Value,
-          'Sector2Prev': driverData.Sectors?.[1]?.PreviousValue,
-          'Sector3': driverData.Sectors?.[2]?.Value,
-          'Sector3Prev': driverData.Sectors?.[2]?.PreviousValue
-        }
-      })
 
-      // Log the final driver object to see what's being passed to the component
-      console.log(`🎨 Driver ${driverNumber} final object:`, {
-        'name': extractedName,
-        'team': extractedTeam,
-        'pos': position,
-        'inPit': driverData.InPit,
-        'retired': driverData.Retired,
-        'knockedOut': driverData.KnockedOut,
-        'stopped': driverData.Stopped,
-        'status': driverData.Status,
-        'sector1Color': driverData.Sectors?.[0]?.OverallFastest ? "purple" : 
-                       driverData.Sectors?.[0]?.PersonalFastest ? "green" : 
-                       driverData.Sectors?.[0]?.Value && driverData.Sectors?.[0]?.PreviousValue && 
-                       parseFloat(driverData.Sectors[0].Value) < parseFloat(driverData.Sectors[0].PreviousValue) ? "yellow" : "white",
-        'sector2Color': driverData.Sectors?.[1]?.OverallFastest ? "purple" : 
-                       driverData.Sectors?.[1]?.PersonalFastest ? "green" : 
-                       driverData.Sectors?.[1]?.Value && driverData.Sectors?.[1]?.PreviousValue && 
-                       parseFloat(driverData.Sectors[1].Value) < parseFloat(driverData.Sectors[1].PreviousValue) ? "yellow" : "white",
-        'sector3Color': driverData.Sectors?.[2]?.OverallFastest ? "purple" : 
-                       driverData.Sectors?.[2]?.PersonalFastest ? "green" : 
-                       driverData.Sectors?.[2]?.Value && driverData.Sectors?.[2]?.PreviousValue && 
-                       parseFloat(driverData.Sectors[2].Value) < parseFloat(driverData.Sectors[2].PreviousValue) ? "yellow" : "white",
-        'lapTimeColor': driverData.LastLapTime?.OverallFastest ? "purple" : 
-                       driverData.LastLapTime?.PersonalFastest ? "green" : 
-                       driverData.LastLapTime?.Value && driverData.BestLapTime?.Value && 
-                       parseFloat(driverData.LastLapTime.Value.replace(':', '.')) < parseFloat(driverData.BestLapTime.Value.replace(':', '.')) ? "yellow" : "white"
-      })
+      // Calculate Best Sectors (persisting previous values if not present in current update)
+      const prevDriver = driversRef.current.find(d => d.racingNumber === driverNumber)
+      
+      // Helper to get value safely
+      const getSectorVal = (val: any) => {
+        if (!val) return undefined
+        if (typeof val === 'string') return val
+        if (typeof val === 'object' && val.Value) return val.Value
+        return undefined
+      }
+
+      // 1. Try to get from explicit BestSectors array (from TimingStats or rare TimingData)
+      let bestSector1 = getSectorVal(driverData.BestSectors?.[0]) || prevDriver?.bestSector1
+      let bestSector2 = getSectorVal(driverData.BestSectors?.[1]) || prevDriver?.bestSector2
+      let bestSector3 = getSectorVal(driverData.BestSectors?.[2]) || prevDriver?.bestSector3
+      
+      // 2. Fallback: Check if current Sectors are Personal Best or Overall Best
+      // This allows us to capture best sectors even if TimingStats is missed, as long as we see the update
+      if (driverData.Sectors?.[0]) {
+         const s1 = driverData.Sectors[0]
+         if ((s1.PersonalFastest || s1.OverallFastest) && s1.Value) {
+            bestSector1 = s1.Value
+         }
+      }
+      if (driverData.Sectors?.[1]) {
+         const s2 = driverData.Sectors[1]
+         if ((s2.PersonalFastest || s2.OverallFastest) && s2.Value) {
+            bestSector2 = s2.Value
+         }
+      }
+      if (driverData.Sectors?.[2]) {
+         const s3 = driverData.Sectors[2]
+         if ((s3.PersonalFastest || s3.OverallFastest) && s3.Value) {
+            bestSector3 = s3.Value
+         }
+      }
 
       // Determine DRS eligibility based on position and gap
       const isDrsEligible = position > 1 && parseFloat(finalGapValue.replace(/[^\d.-]/g, '')) < 1.0
@@ -1410,7 +1357,7 @@ export const useF1SignalR = () => {
         name: extractedName,
         racingNumber: driverData.RacingNumber || driverNumber,
         color: driverColors[position - 1] || "bg-gray-500",
-        tire: currentTire,
+        tire: (currentTire === "?" || currentTire === "") ? (prevDriver?.tire || "?") : currentTire,
         stint: String(tireStint),
         change: "0",
         drs: driverData.DRS || false,
@@ -1430,6 +1377,9 @@ export const useF1SignalR = () => {
         sector2Prev: extractSectorTime(driverData.Sectors?.[1]?.PreviousValue || driverData.Sector2Time || driverData.SectorTimes?.[1], ""),
         sector3: extractSectorTime(driverData.Sectors?.[2]?.Value || driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
         sector3Prev: extractSectorTime(driverData.Sectors?.[2]?.PreviousValue || driverData.Sector3Time || driverData.SectorTimes?.[2], ""),
+        bestSector1: bestSector1 || "",
+        bestSector2: bestSector2 || "",
+        bestSector3: bestSector3 || "",
           sector1Color: (() => {
              const currentSector = driverData.Sector || 1 // Default to 1 if missing
              // If we are in sector 1, the displayed S1 time is from the PREVIOUS lap, so it should be grey
@@ -1571,6 +1521,21 @@ export const useF1SignalR = () => {
           if ((!newDriver.sector3 || newDriver.sector3 === "" || newDriver.sector3 === "0.000") && 
               existingDriver.sector3 && existingDriver.sector3 !== "" && existingDriver.sector3 !== "0.000") {
             mergedDriver.sector3 = existingDriver.sector3
+          }
+
+          // Preserve Best Sector 1
+          if ((!newDriver.bestSector1 || newDriver.bestSector1 === "") && existingDriver.bestSector1) {
+            mergedDriver.bestSector1 = existingDriver.bestSector1
+          }
+          
+          // Preserve Best Sector 2
+          if ((!newDriver.bestSector2 || newDriver.bestSector2 === "") && existingDriver.bestSector2) {
+            mergedDriver.bestSector2 = existingDriver.bestSector2
+          }
+          
+          // Preserve Best Sector 3
+          if ((!newDriver.bestSector3 || newDriver.bestSector3 === "") && existingDriver.bestSector3) {
+            mergedDriver.bestSector3 = existingDriver.bestSector3
           }
           
           // Preserve Tire History if not present in update
