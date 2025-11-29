@@ -233,18 +233,9 @@ export const useF1SignalR = () => {
       console.log("🔄 Attempting to connect to F1 SignalR...")
       setError(null)
       
-      // Test basic connectivity first
-      console.log("🌐 Testing basic connectivity...")
-      try {
-        const testResponse = await fetch("https://livetiming.formula1.com/", { 
-          method: 'HEAD',
-          mode: 'no-cors' // This will work even with CORS issues
-        })
-        console.log("✅ Basic connectivity test passed")
-      } catch (connectivityError) {
-        console.warn("⚠️ Basic connectivity test failed:", connectivityError)
-        console.log("🔄 Continuing with connection attempt...")
-      }
+      // Test basic connectivity removed to avoid CORS errors in production
+      // console.log("🌐 Testing basic connectivity...")
+
       
       // Step 1: Negotiate
       console.log("📡 Attempting to negotiate with F1 API...")
