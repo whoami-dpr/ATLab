@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -50,8 +50,7 @@ export async function GET(request: NextRequest) {
     console.log(`✅ Audio proxy: Success. Type: ${contentType}, Length: ${contentLength}, Range: ${contentRange || 'None'}`)
 
     const arrayBuffer = await response.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
+    
     const responseHeaders: HeadersInit = {
       'Content-Type': 'audio/mpeg',
       'Cache-Control': 'public, max-age=3600',
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest) {
     if (contentLength) responseHeaders['Content-Length'] = contentLength
     if (contentRange) responseHeaders['Content-Range'] = contentRange
 
-    return new NextResponse(buffer, {
+    return new NextResponse(arrayBuffer, {
       status: response.status,
       headers: responseHeaders
     })
