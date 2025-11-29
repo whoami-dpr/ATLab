@@ -20,14 +20,7 @@ const nextConfig = {
       },
     ]
 
-    // Only add the F1 WebSocket proxy in development mode
-    // In production, this is handled by Cloudflare Pages Functions
-    if (process.env.NODE_ENV === 'development') {
-      rewrites.push({
-        source: '/f1-ws/:path*',
-        destination: 'https://livetiming.formula1.com/signalr/:path*',
-      })
-    }
+
 
     return rewrites
   },

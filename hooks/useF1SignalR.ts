@@ -251,15 +251,12 @@ export const useF1SignalR = () => {
       const connectionData = encodeURIComponent('[{"name":"Streaming"}]')
       const timestamp = new Date().getTime()
       
-      // Use local proxy to avoid CORS/403 issues
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const host = window.location.host
-      const wsUrl = `${protocol}//${host}/f1-ws/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(negotiateData.ConnectionToken)}&connectionData=${connectionData}&_=${timestamp}`
+      // Connect directly to F1 SignalR (as in the original working version)
+      const wsUrl = `wss://livetiming.formula1.com/signalr/connect?transport=webSockets&clientProtocol=1.5&connectionToken=${encodeURIComponent(negotiateData.ConnectionToken)}&connectionData=${connectionData}`
       
       console.log("🔗 WebSocket URL:", wsUrl.substring(0, 100) + "...")
       console.log("🔗 Connection token:", negotiateData.ConnectionToken?.substring(0, 20) + "...")
       console.log("🔗 Connection data:", connectionData)
-      console.log("🔗 Full URL length:", wsUrl.length)
 
       wsRef.current = new WebSocket(wsUrl)
 

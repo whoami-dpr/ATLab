@@ -8,5 +8,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/f1-ws/:path*',
+  matcher: [],
 }
