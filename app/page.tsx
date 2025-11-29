@@ -5,9 +5,10 @@ import { TimingTable } from "../components/TimingTable";
 import { EmptyState } from "../components/EmptyState";
 import { Navbar } from "../components/Navbar";
 import { F1ConnectionTester } from "../components/F1ConnectionTester";
+import { TeamRadioPanel } from "../components/TeamRadioPanel";
 
 export default function TelemetryLab() {
-  const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession, fastestLap, inferredPhase } = useF1SignalR();
+  const { drivers, sessionInfo, isConnected, error, reconnect, hasActiveSession, forceActiveSession, fastestLap, inferredPhase, teamRadioMessages, raceControlMessages } = useF1SignalR();
 
   // Mostrar datos si hay drivers O si hay una sesión activa (incluso sin drivers aún)
   const shouldShowData = drivers.length > 0 || (isConnected && hasActiveSession);
@@ -33,9 +34,14 @@ export default function TelemetryLab() {
           {!shouldShowData ? (
             <EmptyState reconnect={reconnect} />
           ) : (
-            <>
-              <TimingTable drivers={drivers} drsEnabled={sessionInfo.drsEnabled} />
-            </>
+            <div className="flex flex-col gap-4">
+              <div className="w-full overflow-hidden">
+                <TimingTable drivers={drivers} drsEnabled={sessionInfo.drsEnabled} />
+              </div>
+              <div className="w-fit">
+                <TeamRadioPanel messages={teamRadioMessages} raceControlMessages={raceControlMessages} />
+              </div>
+            </div>
           )}
         </div>
       </div>

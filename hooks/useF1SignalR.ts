@@ -116,8 +116,27 @@ const driverNumberToTeam: Record<string, string> = {
   "87": "Haas"          // BEA
 }
 
+export interface TeamRadioMessage {
+  utc: string
+  racingNumber: string
+  driverCode: string
+  teamColor: string
+  audioUrl: string
+  transcript?: string
+  raw?: any
+}
+
+export interface RaceControlMessage {
+  utc: string
+  message: string
+  category: string
+  flag?: string
+  lap?: number
+}
+
 export const useF1SignalR = () => {
   const [drivers, setDrivers] = useState<F1Driver[]>([])
+  const [raceControlMessages, setRaceControlMessages] = useState<RaceControlMessage[]>([])
   const [sessionInfo, setSessionInfo] = useState<F1SessionInfo>({
     raceName: "F1 Live Timing",
     flag: "🏁",
@@ -130,7 +149,16 @@ export const useF1SignalR = () => {
   const [driversTyreHistory, setDriversTyreHistory] = useState<Record<string, string[]>>({})
   const [isConnected, setIsConnected] = useState(false)
   const [hasActiveSession, setHasActiveSession] = useState(false)
+  const [sessionPath, setSessionPath] = useState<string>("")
   const [connectionWorking, setConnectionWorking] = useState(false)
+  
+  // Ref to access latest drivers state inside callbacks
+  const driversRef = useRef<F1Driver[]>([])
+  
+  // Update ref whenever drivers state changes
+  useEffect(() => {
+    driversRef.current = drivers
+  }, [drivers])
   const [error, setError] = useState<string | null>(null)
   const [preventReconnect, setPreventReconnect] = useState(false)
   // Fastest lap state derived from drivers list now
@@ -142,6 +170,8 @@ export const useF1SignalR = () => {
   const sessionTypeRef = useRef<string>("Unknown") // Track session type for interval calculation logic
   const sessionNameRef = useRef<string>("Unknown") // Track session name for elimination zone logic
   const messageTimeoutRef = useRef<number | null>(null)
+
+  const [teamRadioMessages, setTeamRadioMessages] = useState<TeamRadioMessage[]>([])
 
   const driverColors = [
     "bg-orange-500",
@@ -519,8 +549,14 @@ export const useF1SignalR = () => {
     }
   }
 
-  const handleInitialData = (initialData: any) => {
+  function handleInitialData(initialData: any) {
     console.log("🎯 Processing initial data:", initialData)
+    console.log("🎯 Initial data keys:", Object.keys(initialData))
+    if (initialData.TeamRadio) {
+       console.log("🎯 Initial TeamRadio found:", initialData.TeamRadio)
+    } else {
+       console.log("🎯 Initial TeamRadio NOT found in keys:", Object.keys(initialData))
+    }
     
     // Process initial session data
     if (initialData.SessionInfo) {
@@ -587,6 +623,84 @@ export const useF1SignalR = () => {
       }))
       setHasActiveSession(true)
     }
+
+    // Process initial RaceControlMessages
+    if (initialData.RaceControlMessages && initialData.RaceControlMessages.Messages) {
+        const messages = initialData.RaceControlMessages.Messages.map((msg: any) => ({
+            utc: msg.Utc,
+            message: msg.Message,
+            category: msg.Category,
+            flag: msg.Flag,
+            lap: msg.Lap
+        }))
+        setRaceControlMessages(messages)
+    }
+
+    // Process initial TeamRadio data
+    if (initialData.TeamRadio && initialData.TeamRadio.Captures && Array.isArray(initialData.TeamRadio.Captures)) {
+      console.log("🎯 Initial TeamRadio data:", initialData.TeamRadio)
+      
+      const newMessages: TeamRadioMessage[] = initialData.TeamRadio.Captures.map((capture: any) => {
+        const racingNumber = capture.RacingNumber
+        let driverCode = driverNumberToName[racingNumber] || racingNumber
+        
+        let teamColor = "#374151" // gray-700 hex
+        
+        // Try to find driver in current drivers list (using ref to avoid stale closure)
+        // Note: In handleInitialData, drivers might be empty if this runs first
+        const driver = driversRef.current.find(d => d.racingNumber === racingNumber)
+
+        if (driver) {
+            driverCode = driver.code || driverCode
+            
+            // Map team name to hex colors
+            if (driver.team) {
+                const team = driver.team.toLowerCase()
+                if (team.includes("red bull")) teamColor = "#3671C6"
+                else if (team.includes("mclaren")) teamColor = "#FF8000"
+                else if (team.includes("ferrari")) teamColor = "#E80020"
+                else if (team.includes("mercedes")) teamColor = "#27F4D2"
+                else if (team.includes("aston")) teamColor = "#229971"
+                else if (team.includes("alpine")) teamColor = "#FF87BC"
+                else if (team.includes("williams")) teamColor = "#64C4FF"
+                else if (team.includes("rb")) teamColor = "#6692FF"
+                else if (team.includes("sauber") || team.includes("kick")) teamColor = "#52E252"
+                else if (team.includes("haas")) teamColor = "#B6BABD"
+            }
+        } else {
+            // Fallback to static map
+            const team = driverNumberToTeam[racingNumber]
+            if (team) {
+               if (team === "Red Bull") teamColor = "#3671C6"
+               else if (team === "McLaren") teamColor = "#FF8000"
+               else if (team === "Ferrari") teamColor = "#E80020"
+               else if (team === "Mercedes") teamColor = "#27F4D2"
+               else if (team === "Aston Martin") teamColor = "#229971"
+               else if (team === "Alpine") teamColor = "#FF87BC"
+               else if (team === "Williams") teamColor = "#64C4FF"
+               else if (team === "RB") teamColor = "#6692FF"
+               else if (team === "Kick Sauber") teamColor = "#52E252"
+               else if (team === "Haas") teamColor = "#B6BABD"
+            }
+        }
+
+        return {
+          utc: capture.Utc,
+          racingNumber: racingNumber,
+          driverCode: driverCode,
+          teamColor: teamColor,
+          audioUrl: `/api/f1/audio?path=${encodeURIComponent(initialData.SessionInfo?.Path || sessionPath || '')}${encodeURIComponent(capture.Path)}`,
+          transcript: capture.Transcript || capture.Text || undefined,
+          raw: capture
+        }
+      })
+
+      // Sort by UTC descending (newest first)
+      newMessages.sort((a, b) => new Date(b.utc).getTime() - new Date(a.utc).getTime())
+
+      setTeamRadioMessages(newMessages.slice(0, 20))
+      setHasActiveSession(true)
+    }
     
     // Only mark as active session if we have specific F1 data with actual content
     const hasValidSessionInfo = initialData.SessionInfo && 
@@ -610,7 +724,7 @@ export const useF1SignalR = () => {
     }
   }
 
-  const handleF1Data = (data: any) => {
+  function handleF1Data(data: any) {
     if (!data) return
 
     console.log("🔍 handleF1Data called with:", data)
@@ -643,6 +757,67 @@ export const useF1SignalR = () => {
       }
 
       switch (messageType) {
+        case "TeamRadio":
+          console.log("📻 TeamRadio message received:", messageData)
+          if (messageData && messageData.Captures) {
+             const newMessages: TeamRadioMessage[] = messageData.Captures.map((capture: any) => {
+                const racingNumber = capture.RacingNumber
+                let driverCode = driverNumberToName[racingNumber] || racingNumber
+                let teamColor = "#374151" // gray-700 hex
+
+                // Try to find driver in current drivers list
+                const driver = driversRef.current.find(d => d.racingNumber === racingNumber)
+                if (driver) {
+                    driverCode = driver.code || driverCode
+                    if (driver.team) {
+                        const team = driver.team.toLowerCase()
+                        if (team.includes("red bull")) teamColor = "#3671C6"
+                        else if (team.includes("mclaren")) teamColor = "#FF8000"
+                        else if (team.includes("ferrari")) teamColor = "#E80020"
+                        else if (team.includes("mercedes")) teamColor = "#27F4D2"
+                        else if (team.includes("aston")) teamColor = "#229971"
+                        else if (team.includes("alpine")) teamColor = "#FF87BC"
+                        else if (team.includes("williams")) teamColor = "#64C4FF"
+                        else if (team.includes("rb")) teamColor = "#6692FF"
+                        else if (team.includes("sauber") || team.includes("kick")) teamColor = "#52E252"
+                        else if (team.includes("haas")) teamColor = "#B6BABD"
+                    }
+                } else {
+                    const team = driverNumberToTeam[racingNumber]
+                    if (team) {
+                       if (team === "Red Bull") teamColor = "#3671C6"
+                       else if (team === "McLaren") teamColor = "#FF8000"
+                       else if (team === "Ferrari") teamColor = "#E80020"
+                       else if (team === "Mercedes") teamColor = "#27F4D2"
+                       else if (team === "Aston Martin") teamColor = "#229971"
+                       else if (team === "Alpine") teamColor = "#FF87BC"
+                       else if (team === "Williams") teamColor = "#64C4FF"
+                       else if (team === "RB") teamColor = "#6692FF"
+                       else if (team === "Kick Sauber") teamColor = "#52E252"
+                       else if (team === "Haas") teamColor = "#B6BABD"
+                    }
+                }
+
+                return {
+                  utc: capture.Utc,
+                  racingNumber: racingNumber,
+                  driverCode: driverCode,
+                  teamColor: teamColor,
+                  audioUrl: `/api/f1/audio?path=${encodeURIComponent(sessionPath || '')}${encodeURIComponent(capture.Path)}`,
+                  transcript: capture.Transcript || capture.Text || undefined,
+                  raw: capture
+                }
+             })
+
+             setTeamRadioMessages(prev => {
+                const combined = [...newMessages, ...prev]
+                // Sort by UTC descending
+                combined.sort((a, b) => new Date(b.utc).getTime() - new Date(a.utc).getTime())
+                // Keep last 50
+                return combined.slice(0, 50)
+             })
+          }
+          break
         case "Position.z":
           console.log("🏎️ Position.z message received - checking for tire data:", messageData)
           if (messageData && typeof messageData === 'object') {
@@ -706,143 +881,21 @@ export const useF1SignalR = () => {
                 console.log("🏎️ CarData.Drivers found:", Object.keys(messageData.Drivers))
               }
             }
-            
-            // Process CarData for tire information
-            if (messageData.Entries) {
-              console.log("🏎️ CarData.Entries found:", Object.keys(messageData.Entries))
-              // Store tire data for each driver
-              const newCarDataCache: Record<string, any> = {}
-              Object.entries(messageData.Entries).forEach(([driverNumber, carData]: [string, any]) => {
-                console.log(`🏎️ Driver ${driverNumber} CarData:`, carData)
-                newCarDataCache[driverNumber] = carData
-              })
-              setCarDataCache(newCarDataCache)
-              console.log("✅ CarData cache updated with", Object.keys(newCarDataCache).length, "drivers")
-            } else {
-              console.log("⚠️ CarData.Entries NOT FOUND - checking other possible structures")
-              // Check for other possible structures
-              if (messageData.Lines) {
-                console.log("🏎️ CarData.Lines found:", Object.keys(messageData.Lines))
-                // Try to process Lines structure
-                const newCarDataCache: Record<string, any> = {}
-                Object.entries(messageData.Lines).forEach(([driverNumber, carData]: [string, any]) => {
-                  console.log(`🏎️ Driver ${driverNumber} CarData from Lines:`, carData)
-                  newCarDataCache[driverNumber] = carData
-                })
-                setCarDataCache(newCarDataCache)
-                console.log("✅ CarData cache updated from Lines with", Object.keys(newCarDataCache).length, "drivers")
-              }
-              if (messageData.Drivers) {
-                console.log("🏎️ CarData.Drivers found:", Object.keys(messageData.Drivers))
-                // Try to process Drivers structure
-                const newCarDataCache: Record<string, any> = {}
-                Object.entries(messageData.Drivers).forEach(([driverNumber, carData]: [string, any]) => {
-                  console.log(`🏎️ Driver ${driverNumber} CarData from Drivers:`, carData)
-                  newCarDataCache[driverNumber] = carData
-                })
-                setCarDataCache(newCarDataCache)
-                console.log("✅ CarData cache updated from Drivers with", Object.keys(newCarDataCache).length, "drivers")
-              }
+          }
+          break
+        case "RaceControlMessages":
+            if (messageData && messageData.Messages) {
+                const newMessages = messageData.Messages.map((msg: any) => ({
+                    utc: msg.Utc,
+                    message: msg.Message,
+                    category: msg.Category,
+                    flag: msg.Flag,
+                    lap: msg.Lap
+                }))
+                setRaceControlMessages(prev => [...newMessages, ...prev].slice(0, 50))
             }
-          }
-          break
-        case "TimingStats":
-          console.log("🏎️ TimingStats message received - checking for tire data:", messageData)
-          break
-        case "TimingAppData":
-          console.log("🏎️ TimingAppData message received - checking for tire data:", messageData)
-          break
-        case "DriverList":
-          if (messageData && messageData.Drivers && messageData.Drivers.length > 0) {
-            console.log("👥 Driver list received with", messageData.Drivers.length, "drivers")
-            console.log("👥 Driver list:", JSON.stringify(messageData, null, 2))
-            setHasActiveSession(true)
-            console.log("✅ Active session confirmed - driver list received")
-          } else {
-            console.log("⚠️ DriverList received but no drivers")
-          }
-          break
-        case "SessionInfo":
-          if (messageData) {
-            console.log("📋 Session info received:", JSON.stringify(messageData, null, 2))
-            console.log("📋 Session Name:", messageData.Name || "Unknown")
-            console.log("📋 Session Type:", messageData.Type || "Unknown")
-            console.log("📋 Session Status:", messageData.Status || "Unknown")
-            console.log("📋 Session Phase:", messageData.Phase || "Unknown")
-            
-            updateSessionInfo(messageData)
-            
-            // Solo marcar como sesión activa si hay información específica de sesión
-            const sessionName = messageData.Name || ""
-            const sessionType = messageData.Type || ""
-            const sessionStatus = messageData.Status || ""
-            
-            const isActiveSession = (
-              sessionName && 
-              !sessionName.toLowerCase().includes("no active") &&
-              !sessionName.toLowerCase().includes("finished") &&
-              !sessionName.toLowerCase().includes("closed") &&
-              !sessionName.toLowerCase().includes("not started") &&
-              sessionType &&
-              sessionType.toLowerCase() !== "unknown" &&
-              sessionStatus &&
-              sessionStatus.toLowerCase() !== "unknown"
-            )
-
-            if (isActiveSession) {
-              console.log("✅ Active session detected:", sessionName, "-", sessionType)
-              setHasActiveSession(true)
-            } else {
-              console.log("❌ No active session - Name:", sessionName, "Type:", sessionType, "Status:", sessionStatus)
-              setHasActiveSession(false)
-            }
-          } else {
-            console.log("⚠️ SessionInfo received but no messageData")
-          }
-          break
-        case "TrackStatus":
-          if (messageData) {
-            console.log("🏁 Track status received:", JSON.stringify(messageData, null, 2))
-            updateTrackStatus(messageData)
-            // Track status alone doesn't indicate active session
-            console.log("🏁 Track status received but not setting active session")
-          }
-          break
-        case "SessionStatus":
-          if (messageData) {
-            console.log("📊 Session status received:", JSON.stringify(messageData, null, 2))
-            updateSessionInfo(messageData)
-            // Only set as active if there's specific session data
-            if (messageData.Name && !messageData.Name.toLowerCase().includes("no active")) {
-              setHasActiveSession(true)
-            }
-          }
-          break
-        case "WeatherData":
-          if (messageData) {
-            console.log("🌤️ Weather data received:", JSON.stringify(messageData, null, 2))
-            console.log("🌤️ Weather data type:", typeof messageData)
-            console.log("🌤️ Weather data keys:", Object.keys(messageData || {}))
-            updateWeatherData(messageData)
-            // Weather data alone doesn't indicate active session
-            console.log("🌤️ Weather data received but not setting active session")
-          }
-          break
-        case "LapCount":
-          if (messageData) {
-            console.log("🔢 Lap count received:", JSON.stringify(messageData, null, 2))
-            updateLapCount(messageData)
-            // Lap count alone doesn't indicate active session
-            console.log("🔢 Lap count received but not setting active session")
-          }
-          break
-        default:
-          console.log("📊 Received:", messageType)
-          console.log("📊 Unknown message type - not setting active session")
-          // Log all message types to see what we're receiving
-          console.log("📊 ALL MESSAGE TYPES RECEIVED:", messageType, "Data:", messageData)
-          // No establecer hasActiveSession para tipos de mensaje desconocidos
-      }
+            break
+    }
     } else {
       console.log("⚠️ Message not processed - target:", data.target, "arguments:", data.arguments)
       console.log("⚠️ Full data:", JSON.stringify(data, null, 2))
@@ -854,7 +907,7 @@ export const useF1SignalR = () => {
   }
 
   // Helper function to safely extract string values from F1 data
-  const extractStringValue = (value: any, defaultValue: string = "0.000"): string => {
+  function extractStringValue(value: any, defaultValue: string = "0.000"): string {
     if (value === null || value === undefined) return defaultValue
     if (typeof value === 'string') {
       // If it's a string, clean it up
@@ -897,7 +950,7 @@ export const useF1SignalR = () => {
   }
 
   // Helper function to extract sector time from sector data
-  const extractSectorTime = (sectorData: any, defaultValue: string = "0.000"): string => {
+  function extractSectorTime(sectorData: any, defaultValue: string = "0.000"): string {
     if (sectorData === null || sectorData === undefined) return defaultValue
     if (typeof sectorData === 'string') {
       const cleaned = sectorData.trim()
@@ -926,7 +979,7 @@ export const useF1SignalR = () => {
     return defaultValue
   }
 
-  const updateDriverData = (timingData: any) => {
+  function updateDriverData(timingData: any) {
     if (!timingData.Lines) return
 
     console.log("🏎️ Updating driver data with:", timingData)
@@ -1811,7 +1864,7 @@ export const useF1SignalR = () => {
     })
   }
 
-  const updateSessionInfo = (sessionData: any) => {
+  function updateSessionInfo(sessionData: any) {
     // console.log("🔄 Updating session info with:", sessionData)
     
     // Fastest lap is now derived from drivers list, no need to reset state manually
@@ -1863,7 +1916,7 @@ export const useF1SignalR = () => {
     console.log("✅ Session info updated:", displayName, displayStatus)
   }
 
-  const updateTrackStatus = (trackData: any) => {
+  function updateTrackStatus(trackData: any) {
     setSessionInfo(prev => {
       const trackStatus = trackData.Status || prev.trackStatus
       // Determine if DRS is enabled based on track status
@@ -1879,7 +1932,7 @@ export const useF1SignalR = () => {
     })
   }
 
-  const updateWeatherData = (weatherData: any) => {
+  function updateWeatherData(weatherData: any) {
     console.log("🌤️ COMPLETE weather data structure:", JSON.stringify(weatherData, null, 2))
     console.log("🌤️ TrackTemp:", weatherData.TrackTemp)
     console.log("🌤️ AirTemp:", weatherData.AirTemp)
@@ -1902,7 +1955,7 @@ export const useF1SignalR = () => {
     }))
   }
 
-  const updateLapCount = (lapData: any) => {
+  function updateLapCount(lapData: any) {
     setSessionInfo(prev => ({
       ...prev,
       lapInfo: `${lapData.CurrentLap || 0} / ${lapData.TotalLaps || 0}`
@@ -2014,6 +2067,8 @@ export const useF1SignalR = () => {
     error,
     sessionInfo,
     drivers,
+    teamRadioMessages,
+    raceControlMessages,
     fastestLap,
     inferredPhase,
     reconnect,
