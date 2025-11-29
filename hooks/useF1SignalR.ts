@@ -349,7 +349,7 @@ export const useF1SignalR = () => {
             console.log("🔄 Attempting to reconnect after error...")
             connectToF1SignalR()
           }
-        }, 5000)
+        }, 5000) as any
       }
 
       wsRef.current.onclose = (event) => {
@@ -375,7 +375,7 @@ export const useF1SignalR = () => {
           reconnectTimeoutRef.current = window.setTimeout(() => {
             console.log("🔄 Attempting to reconnect...")
             connectToF1SignalR()
-          }, 10000)
+          }, 10000) as any
         } else if (event.code === 1000) {
           console.log("✅ WebSocket closed normally")
           setError(null)
@@ -613,6 +613,12 @@ export const useF1SignalR = () => {
         timer: initialData.ExtrapolatedClock.Remaining || "00:00:00"
       }))
       setHasActiveSession(true)
+    }
+
+    // Process initial TrackStatus
+    if (initialData.TrackStatus) {
+      console.log("🎯 Initial TrackStatus:", initialData.TrackStatus)
+      updateTrackStatus(initialData.TrackStatus)
     }
 
     // Process initial RaceControlMessages
@@ -874,6 +880,10 @@ export const useF1SignalR = () => {
             }
           }
           break
+        case "TrackStatus":
+            console.log("🚦 TrackStatus message received:", messageData)
+            updateTrackStatus(messageData)
+            break
         case "RaceControlMessages":
             if (messageData && messageData.Messages) {
                 const newMessages = messageData.Messages.map((msg: any) => ({
@@ -1909,11 +1919,30 @@ export const useF1SignalR = () => {
 
   function updateTrackStatus(trackData: any) {
     setSessionInfo(prev => {
-      const trackStatus = trackData.Status || prev.trackStatus
+      let statusRaw = trackData.Status || ""
+      
+      // Map numeric status codes to human readable strings
+      let trackStatus = prev.trackStatus
+      
+      if (statusRaw) {
+        switch (String(statusRaw)) {
+          case "1": trackStatus = "Green"; break;
+          case "2": trackStatus = "Yellow"; break;
+          case "3": trackStatus = "SC"; break; // Unused usually, but reserved
+          case "4": trackStatus = "SC"; break;
+          case "5": trackStatus = "Red"; break;
+          case "6": trackStatus = "VSC"; break;
+          case "7": trackStatus = "VSC Ending"; break;
+          default: trackStatus = statusRaw; // Fallback to raw value if not mapped
+        }
+      }
+
+      console.log(`🚦 Track Status Update: Raw=${statusRaw} -> Mapped=${trackStatus}`)
+
       // Determine if DRS is enabled based on track status
-      const drsEnabled = !trackStatus?.toLowerCase().includes('safety car') && 
-                        !trackStatus?.toLowerCase().includes('vsc') &&
-                        !trackStatus?.toLowerCase().includes('red flag')
+      // DRS is disabled (false) if status is not Green (1)
+      // But let's keep the existing logic as a fallback or refine it
+      const drsEnabled = String(statusRaw) === "1"
 
       return {
         ...prev,
