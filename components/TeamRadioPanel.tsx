@@ -30,16 +30,16 @@ const RaceControlList = ({ messages }: { messages: RaceControlMessage[] }) => {
     return (
         <div className="flex-1 flex flex-col gap-1 h-[400px] overflow-y-auto scrollbar-none min-w-0">
             {[...messages].reverse().map((msg, index) => (
-                <div key={`${msg.utc}-${index}`} className="flex bg-[#1a1d26] rounded overflow-hidden shadow-sm shrink-0 min-h-[36px]">
+                <div key={`${msg.utc}-${index}`} className="flex bg-white dark:bg-[#1a1d26] rounded overflow-hidden shadow-sm shrink-0 min-h-[36px] border border-gray-200 dark:border-transparent">
                     {/* Left: FIA Logo & Stewards */}
-                    <div className="bg-[#0f1116] w-20 flex flex-col items-center justify-center p-1 border-r border-white/10 shrink-0">
+                    <div className="bg-gray-50 dark:bg-[#0f1116] w-20 flex flex-col items-center justify-center p-1 border-r border-gray-200 dark:border-white/10 shrink-0">
                         <img src="/images/FIA.png" alt="FIA" className="w-4 h-4 object-contain mb-0.5 opacity-80" />
-                        <span className="text-[9px] font-bold text-white/60 tracking-wider leading-none">STEWARDS</span>
-                        <span className="text-[9px] font-mono text-white/40 leading-none mt-0.5">{formatTime(msg.utc)}</span>
+                        <span className="text-[9px] font-bold text-gray-500 dark:text-white/60 tracking-wider leading-none">STEWARDS</span>
+                        <span className="text-[9px] font-mono text-gray-400 dark:text-white/40 leading-none mt-0.5">{formatTime(msg.utc)}</span>
                     </div>
                     {/* Right: Message */}
-                    <div className="flex-1 px-3 py-1 flex items-center bg-[#1a1d26]">
-                        <p className="text-white text-xs font-bold font-inter leading-tight uppercase flex items-center gap-2">
+                    <div className="flex-1 px-3 py-1 flex items-center bg-white dark:bg-[#1a1d26]">
+                        <p className="text-gray-900 dark:text-white text-xs font-bold font-inter leading-tight uppercase flex items-center gap-2">
                             {msg.message.includes("DOUBLE YELLOW") && (
                                 <div className="relative w-5 h-3.5 shrink-0">
                                     <div className="absolute top-0 left-0 w-3.5 h-2.5 bg-[#FFD700] rounded-[1px]"></div>
@@ -47,7 +47,7 @@ const RaceControlList = ({ messages }: { messages: RaceControlMessage[] }) => {
                                 </div>
                             )}
                             {msg.message.includes("CHEQUERED FLAG") && (
-                                <div className="w-5 h-3.5 shrink-0 grid grid-cols-4 grid-rows-3 border border-white/20">
+                                <div className="w-5 h-3.5 shrink-0 grid grid-cols-4 grid-rows-3 border border-gray-300 dark:border-white/20">
                                     {[...Array(12)].map((_, i) => (
                                         <div key={i} className={`${(Math.floor(i / 4) + i) % 2 === 0 ? 'bg-white' : 'bg-black'} w-full h-full`}></div>
                                     ))}
@@ -360,7 +360,7 @@ export const TeamRadioPanel = ({ messages, raceControlMessages = [] }: TeamRadio
   return (
     <div className="flex gap-4 items-start relative w-full">
       {/* List Section */}
-      <div className="w-fit bg-[#0b0e14] p-2 font-sans rounded-lg border border-gray-800/50">
+      <div className="w-fit bg-white dark:bg-[#0b0e14] p-2 font-sans rounded-lg border border-gray-200 dark:border-gray-800/50 shadow-lg dark:shadow-none">
         <div className="flex flex-col gap-0">
           {messages.length === 0 ? (
             <div className="text-center py-4 text-gray-500 text-xs font-mono w-64">
@@ -371,9 +371,9 @@ export const TeamRadioPanel = ({ messages, raceControlMessages = [] }: TeamRadio
               const isPlaying = playingUrl === msg.audioUrl
               
               return (
-                <div key={`${msg.utc}-${index}`} className="flex items-center gap-1 py-0.5 hover:bg-white/5 px-2 rounded transition-colors group">
+                <div key={`${msg.utc}-${index}`} className="flex items-center gap-1 py-0.5 hover:bg-gray-100 dark:hover:bg-white/5 px-2 rounded transition-colors group">
                   {/* Time */}
-                  <div className="text-white text-sm font-inter w-12 text-right shrink-0 font-medium">
+                  <div className="text-gray-500 dark:text-white text-sm font-inter w-12 text-right shrink-0 font-medium">
                     {formatTime(msg.utc)}
                   </div>
                   
@@ -393,7 +393,7 @@ export const TeamRadioPanel = ({ messages, raceControlMessages = [] }: TeamRadio
                   {/* Play Button */}
                   <button 
                     onClick={() => handlePlay(msg)}
-                    className="text-white hover:text-gray-300 transition-colors shrink-0 focus:outline-none w-8 flex justify-center"
+                    className="text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors shrink-0 focus:outline-none w-8 flex justify-center"
                   >
                     {isPlaying ? (
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -408,9 +408,9 @@ export const TeamRadioPanel = ({ messages, raceControlMessages = [] }: TeamRadio
                   </button>
                   
                   {/* Progress Bar (Mini) */}
-                  <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden flex items-center">
+                  <div className="w-32 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden flex items-center">
                      <div 
-                        className="h-full bg-white transition-all duration-100 ease-linear"
+                        className="h-full bg-blue-600 dark:bg-white transition-all duration-100 ease-linear"
                         style={{ width: `${isPlaying ? progress * 100 : 0}%` }}
                      />
                   </div>

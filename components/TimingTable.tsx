@@ -54,7 +54,7 @@ function SortableHeader({ column }: { column: ColumnConfig }) {
       style={style} 
       {...attributes} 
       {...listeners}
-      className="flex items-center justify-center hover:bg-white/5 rounded-none px-1 border-r border-gray-600 last:border-r-0"
+      className="flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/5 rounded-none px-1 border-r border-gray-200 dark:border-gray-600 last:border-r-0"
     >
       {column.label}
     </div>
@@ -163,7 +163,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
         <div className="relative mb-1">
           <button
             onClick={() => setShowColumnSettings(!showColumnSettings)}
-            className="flex items-center gap-1 px-2 py-1 bg-gray-900 hover:bg-gray-800 rounded text-white text-xs"
+            className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-900 hover:bg-gray-300 dark:hover:bg-gray-800 rounded text-gray-900 dark:text-white text-xs"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -173,17 +173,17 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
 
           {/* Column Settings Dropdown */}
           {showColumnSettings && (
-            <div className="absolute top-full left-0 mt-1 bg-gray-900 border border-gray-700 rounded p-2 shadow-xl z-50 min-w-[200px]">
-              <div className="text-white text-xs font-bold mb-2">Show/Hide Columns</div>
+            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-2 shadow-xl z-50 min-w-[200px]">
+              <div className="text-gray-900 dark:text-white text-xs font-bold mb-2">Show/Hide Columns</div>
               {columns.map((column) => (
-                <label key={column.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-white/5 px-1 rounded">
+                <label key={column.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 px-1 rounded">
                   <input
                     type="checkbox"
                     checked={column.visible}
                     onChange={() => toggleColumnVisibility(column.id)}
                     className="w-3 h-3"
                   />
-                  <span className="text-white text-xs">{column.label}</span>
+                  <span className="text-gray-900 dark:text-white text-xs">{column.label}</span>
                 </label>
               ))}
             </div>
@@ -197,7 +197,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
           onDragEnd={handleDragEnd}
         >
           <div 
-            className={`px-0 py-0 bg-black text-[10px] font-bold border-b border-gray-800 text-white uppercase tracking-wider`}
+            className={`px-0 py-0 bg-gray-100 dark:bg-black text-[10px] font-bold border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white uppercase tracking-wider`}
             style={{
               display: 'grid',
               gridTemplateColumns,
