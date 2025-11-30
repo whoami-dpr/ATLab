@@ -139,7 +139,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
   const { getTeamLogo } = useTeamLogos()
 
   return (
-    <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
+    <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto overflow-x-auto">
       {/* Mobile Layout */}
       <div className="block md:hidden">
         <div className="space-y-1">

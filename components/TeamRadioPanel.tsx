@@ -39,7 +39,7 @@ const RaceControlList = ({ messages }: { messages: RaceControlMessage[] }) => {
                     </div>
                     {/* Right: Message */}
                     <div className="flex-1 px-3 py-1 flex items-center bg-white dark:bg-[#1a1d26]">
-                        <p className="text-gray-900 dark:text-white text-xs font-bold font-inter leading-tight uppercase flex items-center gap-2">
+                        <div className="text-gray-900 dark:text-white text-xs font-bold font-inter leading-tight uppercase flex items-center gap-2">
                             {msg.message.includes("DOUBLE YELLOW") && (
                                 <div className="relative w-5 h-3.5 shrink-0">
                                     <div className="absolute top-0 left-0 w-3.5 h-2.5 bg-[#FFD700] rounded-[1px]"></div>
@@ -57,7 +57,7 @@ const RaceControlList = ({ messages }: { messages: RaceControlMessage[] }) => {
                                 <div className="w-5 h-3.5 shrink-0 bg-[#00D2BE] rounded-[1px]"></div>
                             )}
                             {msg.message}
-                        </p>
+                        </div>
                     </div>
                 </div>
             ))}

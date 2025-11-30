@@ -757,7 +757,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
   // Desktop Layout
   const defaultColumnOrder: ColumnId[] = ['driver', 'leader', 'tyre', 'bestLap', 'interval', 'lastLap', 'miniSectors', 'lastSectors', 'pitIndicator', 'pitCount', 'topSpeed']
   const orderedColumns = columnOrder || defaultColumnOrder
-  const defaultGridTemplate = 'minmax(120px, 0.6fr) minmax(60px, 0.8fr) minmax(40px, 0.5fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(60px, 0.8fr) minmax(90px, 1.2fr) minmax(140px, 1.8fr) minmax(35px, 0.4fr) minmax(35px, 0.4fr) minmax(45px, 0.5fr)'
+  const defaultGridTemplate = '140px 80px 60px 90px 80px 100px 130px 180px 50px 50px 80px'
 
   return (
     <div
