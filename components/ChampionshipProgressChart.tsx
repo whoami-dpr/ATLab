@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -293,8 +294,56 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
                   stroke="#6B7280" 
                   tick={{ fill: '#6B7280' }}
                   label={{ value: 'Points', angle: -90, position: 'insideLeft', fill: '#6B7280' }}
+                  domain={[0, (dataMax: number) => {
+                    // Round up to the nearest 50
+                    return Math.ceil(dataMax / 50) * 50;
+                  }]}
+                  ticks={(() => {
+                    const maxPoints = Math.max(
+                      ...data.flatMap(race => 
+                        drivers
+                          .filter(d => visibleDrivers.has(d))
+                          .map(d => (race[d] as number) || 0)
+                      ),
+                      0
+                    );
+                    const maxRounded = Math.ceil(maxPoints / 50) * 50;
+                    const tickArray = [];
+                    for (let i = 0; i <= maxRounded; i += 50) {
+                      tickArray.push(i);
+                    }
+                    return tickArray;
+                  })()}
                 />
-              <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip />} />
+                
+                {/* Reference lines every 50 points */}
+                {(() => {
+                  const maxPoints = Math.max(
+                    ...data.flatMap(race => 
+                      drivers
+                        .filter(d => visibleDrivers.has(d))
+                        .map(d => (race[d] as number) || 0)
+                    ),
+                    0
+                  );
+                  // Round up to the nearest 50
+                  const maxRounded = Math.ceil(maxPoints / 50) * 50;
+                  const referenceLines = [];
+                  for (let i = 50; i <= maxRounded; i += 50) {
+                    referenceLines.push(
+                      <ReferenceLine 
+                        key={i}
+                        y={i} 
+                        stroke="#6B7280" 
+                        strokeDasharray="3 3"
+                        opacity={0.4}
+                      />
+                    );
+                  }
+                  return referenceLines;
+                })()}
+                
                 {drivers.map((driver) => (
                   visibleDrivers.has(driver) && (
                     <Line

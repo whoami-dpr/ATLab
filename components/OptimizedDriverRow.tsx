@@ -237,6 +237,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       return "text-green-400" // Green: personal best sector
     } else if (color.includes('yellow')) {
       return "text-yellow-400" // Yellow: improved but not best
+    } else if (color.includes('gray') || color.includes('grey')) {
+      return "text-gray-500" // Grey: previous lap / old data
     } else {
       return theme === 'light' ? 'text-black' : 'text-white' // Default: normal time
     }
@@ -329,7 +331,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             }}
           >
             <span 
-              className="text-white font-normal text-lg"
+              className="text-white font-normal text-xl"
               style={{
                 fontFamily: 'Formula1 Display Bold, Arial, sans-serif'
               }}
@@ -569,7 +571,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '0 4px 0 0',
-                  fontSize: '0.75rem',
+                  fontSize: '0.875rem',
                   fontWeight: 'bold'
                 }}
               >

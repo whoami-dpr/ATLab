@@ -556,14 +556,14 @@ export const useF1SignalR = () => {
       setHasActiveSession(true)
     }
     
-    // Process initial timing data
-    if (initialData.TimingData) {
-      console.log("🎯 Initial timing data:", initialData.TimingData)
-      updateDriverData(initialData.TimingData)
+    // Process TimingStats first (contains BestSectors)
+    if (initialData.TimingStats) {
+      console.log("🎯 Initial TimingStats (contains BestSectors):", initialData.TimingStats)
+      updateDriverData(initialData.TimingStats)
       setHasActiveSession(true)
     }
     
-    // Process TimingData first (contains all drivers)
+    // Then process TimingData (contains position, gaps, etc.)
     if (initialData.TimingData) {
       console.log("🎯 Initial TimingData (all drivers):", initialData.TimingData)
       updateDriverData(initialData.TimingData)
@@ -1363,31 +1363,87 @@ export const useF1SignalR = () => {
         return undefined
       }
 
-      // 1. Try to get from explicit BestSectors array (from TimingStats or rare TimingData)
-      let bestSector1 = getSectorVal(driverData.BestSectors?.[0]) || prevDriver?.bestSector1
-      let bestSector2 = getSectorVal(driverData.BestSectors?.[1]) || prevDriver?.bestSector2
-      let bestSector3 = getSectorVal(driverData.BestSectors?.[2]) || prevDriver?.bestSector3
+      // Best Sectors extraction from TimingStats (driverData.BestSectors) and fallback to Stats.BestSectors
+      // BestSectors is an ARRAY with sector times (not BestSpeeds which are velocities)
+      let bestSector1 = ""
+      let bestSector2 = ""
+      let bestSector3 = ""
       
-      // 2. Fallback: Check if current Sectors are Personal Best or Overall Best
-      // This allows us to capture best sectors even if TimingStats is missed, as long as we see the update
-      if (driverData.Sectors?.[0]) {
-         const s1 = driverData.Sectors[0]
-         if ((s1.PersonalFastest || s1.OverallFastest) && s1.Value) {
-            bestSector1 = s1.Value
-         }
+      // DEBUG: Log driverData structure for specific drivers
+      if (driverNumber === "1" || driverNumber === "81") {
+        const keys = Object.keys(driverData)
+        console.log(`🔍 CHECKING BEST SECTORS for driver ${driverNumber}:`, {
+          driverNumber: driverNumber,
+          driverNumberType: typeof driverNumber,
+          hasBestSectors: !!driverData.BestSectors,
+          isArray: Array.isArray(driverData.BestSectors),
+          BestSectors: driverData.BestSectors,
+          hasStats: !!driverData.Stats,
+          allKeysCount: keys.length,
+          allKeys: keys,
+          // Show a sample of the actual driverData to see where BestSectors might be
+          driverDataSample: {
+            Line: driverData.Line,
+            Position: driverData.Position,
+            RacingNumber: driverData.RacingNumber,
+            hasBestSectors: 'BestSectors' in driverData,
+            hasBestSpeeds: 'BestSpeeds' in driverData,
+            hasPersonalBestLapTime: 'PersonalBestLapTime' in driverData
+          }
+        })
       }
-      if (driverData.Sectors?.[1]) {
-         const s2 = driverData.Sectors[1]
-         if ((s2.PersonalFastest || s2.OverallFastest) && s2.Value) {
-            bestSector2 = s2.Value
-         }
+      
+      // PRIORITY 1: Try to get from TimingStats message (driverData.BestSectors directly)
+      if (driverData.BestSectors && Array.isArray(driverData.BestSectors)) {
+        if (driverData.BestSectors[0]) {
+          bestSector1 = getSectorVal(driverData.BestSectors[0]) || ""
+        }
+        if (driverData.BestSectors[1]) {
+          bestSector2 = getSectorVal(driverData.BestSectors[1]) || ""
+        }
+        if (driverData.BestSectors[2]) {
+          bestSector3 = getSectorVal(driverData.BestSectors[2]) || ""
+        }
+        
+        // DEBUG: Log when we get BestSectors from TimingStats
+        if (driverNumber === "1" || driverNumber === "81") {
+          console.log(`✅ BEST SECTORS (from TimingStats) for driver ${driverNumber}:`, {
+            BestSectors: driverData.BestSectors,
+            extracted: [bestSector1, bestSector2, bestSector3]
+          })
+        }
       }
-      if (driverData.Sectors?.[2]) {
-         const s3 = driverData.Sectors[2]
-         if ((s3.PersonalFastest || s3.OverallFastest) && s3.Value) {
-            bestSector3 = s3.Value
-         }
+      // FALLBACK: Try to get from Stats array (TimingData message)
+      else if (driverData.Stats && driverData.Stats.length > 0) {
+        const stats = driverData.Stats[driverData.Stats.length - 1]
+        
+        // BestSectors is an ARRAY containing sector times (not speeds)
+        if (stats.BestSectors && Array.isArray(stats.BestSectors)) {
+          if (stats.BestSectors[0]) {
+            bestSector1 = getSectorVal(stats.BestSectors[0]) || ""
+          }
+          if (stats.BestSectors[1]) {
+            bestSector2 = getSectorVal(stats.BestSectors[1]) || ""
+          }
+          if (stats.BestSectors[2]) {
+            bestSector3 = getSectorVal(stats.BestSectors[2]) || ""
+          }
+          
+          // DEBUG: Log when we get BestSectors from Stats
+          if (driverNumber === "1" || driverNumber === "81") {
+            console.log(`✅ BEST SECTORS (from Stats) for driver ${driverNumber}:`, {
+              BestSectors: stats.BestSectors,
+              extracted: [bestSector1, bestSector2, bestSector3]
+            })
+          }
+        }
+      } else {
+        // DEBUG: Log when we don't get BestSectors from anywhere
+        if (driverNumber === "1" || driverNumber === "81") {
+          console.log(`❌ NO BEST SECTORS found for driver ${driverNumber}`)
+        }
       }
+
 
       // Determine DRS eligibility based on position and gap
       const isDrsEligible = position > 1 && parseFloat(finalGapValue.replace(/[^\d.-]/g, '')) < 1.0
@@ -1423,50 +1479,32 @@ export const useF1SignalR = () => {
         bestSector2: bestSector2 || "",
         bestSector3: bestSector3 || "",
           sector1Color: (() => {
-             const currentSector = driverData.Sector || 1 // Default to 1 if missing
-             // If we are in sector 1, the displayed S1 time is from the PREVIOUS lap, so it should be grey
-             if (currentSector === 1) return "text-gray-500"
-             
-             // Otherwise (Sector 2 or 3), S1 is from CURRENT lap, so color it
-             if (driverData.Sectors?.[0]?.OverallFastest) return "purple"
-             if (driverData.Sectors?.[0]?.PersonalFastest) return "green"
-             // If valid time but not PB/OB, return yellow (slower/no improvement)
-             if (driverData.Sectors?.[0]?.Value) return "yellow"
-             return "white"
+             // If we have a Value for Sector 1 in the current data, it's the CURRENT lap's sector.
+             // So we color it based on performance.
+             if (driverData.Sectors?.[0]?.Value) {
+                if (driverData.Sectors?.[0]?.OverallFastest) return "purple"
+                if (driverData.Sectors?.[0]?.PersonalFastest) return "green"
+                return "white" // Completed but no improvement
+             }
+             // If no Value, we are showing previous lap data (or empty), so Grey.
+             return "text-gray-500"
           })(),
           sector2Color: (() => {
-             const currentSector = driverData.Sector || 1
-             // If we are in sector 1 or 2, the displayed S2 time is from PREVIOUS lap (or not yet set for current), so grey
-             if (currentSector === 1 || currentSector === 2) return "text-gray-500"
-             
-             // Otherwise (Sector 3), S2 is from CURRENT lap
-             if (driverData.Sectors?.[1]?.OverallFastest) return "purple"
-             if (driverData.Sectors?.[1]?.PersonalFastest) return "green"
-             if (driverData.Sectors?.[1]?.Value) return "yellow"
-             return "white"
+             // If we have a Value for Sector 2, it's the CURRENT lap.
+             if (driverData.Sectors?.[1]?.Value) {
+                if (driverData.Sectors?.[1]?.OverallFastest) return "purple"
+                if (driverData.Sectors?.[1]?.PersonalFastest) return "green"
+                return "white"
+             }
+             return "text-gray-500"
           })(),
           sector3Color: (() => {
-             // Sector 3 is ALWAYS from the previous lap (unless we just crossed the line, but then we are in S1)
-             // So S3 should generally be colored if it was just completed?
-             // Wait, if we are in S1, S3 is the LAST COMPLETED sector.
-             // But the user says "start a new lap they should be grey".
-             // If I am in S1, I am starting a new lap.
-             // So S3 (from previous lap) should be GREY?
-             // But usually "Last Sectors" shows the PREVIOUS lap's sectors.
-             // If I make them all grey in S1, then I see nothing colored?
-             // The user image shows some grey, some colored.
-             // Maybe "Last Sectors" means "Current Lap Sectors" + "Previous Lap Sectors if Current not done"?
-             // If I am in S1, I have no Current S1. So I show Previous S1 (Grey).
-             // If I am in S2, I have Current S1 (Colored). Previous S2 (Grey).
-             // If I am in S3, I have Current S1 (Colored), Current S2 (Colored). Previous S3 (Grey).
-             
-             // So S3 is ALWAYS Grey because it's always from the previous lap until I finish the CURRENT lap?
-             // But when I finish the current lap, I immediately go to S1 of NEXT lap.
-             // So S3 never gets colored?
-             // Unless... when I cross the line, I briefly show the full colored lap?
-             // Or maybe S3 stays colored while I am in S1?
-             // User: "ya empieza una nueva vuelta esten en gris" (when new lap starts, be grey).
-             // This implies S3 becomes grey immediately.
+             // If we have a Value for Sector 3, it's the CURRENT lap (just finished).
+             if (driverData.Sectors?.[2]?.Value) {
+                if (driverData.Sectors?.[2]?.OverallFastest) return "purple"
+                if (driverData.Sectors?.[2]?.PersonalFastest) return "green"
+                return "white"
+             }
              return "text-gray-500"
           })(),
           lapTimeColor: driverData.LastLapTime?.OverallFastest ? "purple" : 
