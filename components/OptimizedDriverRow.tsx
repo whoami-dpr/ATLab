@@ -14,10 +14,11 @@ interface OptimizedDriverRowProps {
   drsEnabled?: boolean
   columnOrder?: ColumnId[]
   gridTemplateColumns?: string
+  teamLogoUrl?: string
 }
 
 export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: OptimizedDriverRowProps) {
-  const { driver, index, isMobile = false, drsEnabled = true, columnOrder, gridTemplateColumns: customGridTemplate } = props
+  const { driver, index, isMobile = false, drsEnabled = true, columnOrder, gridTemplateColumns: customGridTemplate, teamLogoUrl } = props
   const { theme } = useThemeOptimized()
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -312,7 +313,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           {/* Team Logo - Small Dark Grey Square */}
           <div className="flex items-center justify-center px-2 bg-gray-800 rounded-l flex-shrink-0" style={{ minWidth: '50px', height: '40px' }}>
             <img
-              src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
+              src={teamLogoUrl || `/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
               alt={driver.team || "Unknown"}
               className="w-6 h-6 object-contain"
             />
@@ -531,11 +532,14 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       case 'driver':
         return (
           <div key="driver" className="flex items-center h-full pl-1 border-r border-gray-600">
-            <div className="flex items-center h-[22px] w-full rounded overflow-hidden">
+            <div className="flex items-center h-[22px] w-full rounded overflow-hidden"
+              style={{
+                background: getTeamBg(driver.team || "Unknown"),
+                color: getTeamText(driver.team || "Unknown")
+              }}
+            >
               <div
                 style={{
-                  background: getTeamBg(driver.team || "Unknown"),
-                  color: getTeamText(driver.team || "Unknown"),
                   width: '20px',
                   height: '100%',
                   display: 'flex',
@@ -547,28 +551,28 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
               >
                 {driver.pos}
               </div>
-              <div className="bg-white flex items-center justify-center w-6 h-full px-0.5">
+              <div className="flex items-center justify-center w-auto px-1">
                 <img
-                  src={`/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
+                  src={teamLogoUrl || `/team-logos/${getTeamLogoPath(driver.team || "Unknown")}`}
                   alt={driver.team || "Unknown"}
-                  className="h-3.5 w-auto object-contain"
+                  className="h-5 w-auto object-contain"
+                  style={{
+                    filter: ['Ferrari', 'Haas', 'McLaren'].includes(driver.team || '') ? 'none' : 'brightness(0) invert(1)'
+                  }}
                 />
               </div>
               <div
                 style={{
-                  background: getTeamBg(driver.team || "Unknown"),
-                  color: getTeamText(driver.team || "Unknown"),
                   flex: 1,
                   height: '100%',
                   display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '0 4px',
+                  padding: '0 4px 0 0',
                   fontSize: '0.75rem',
                   fontWeight: 'bold'
                 }}
               >
-                <span className="font-normal" style={{ fontFamily: 'Formula1 Display Bold, Arial, sans-serif' }}>{driver.code}</span>
+                <span className="font-bold" style={{ fontFamily: 'Formula1 Display Bold, Arial, sans-serif' }}>{driver.code}</span>
                 <span className="opacity-90" style={{ fontFamily: 'Formula1 Display Regular, Arial, sans-serif' }}>{driver.racingNumber}</span>
               </div>
             </div>

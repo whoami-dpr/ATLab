@@ -4,6 +4,7 @@ import React, { memo, useMemo, useState, useEffect } from "react"
 import { OptimizedDriverRow } from "./OptimizedDriverRow"
 import type { F1Driver } from "../hooks/useF1SignalR"
 import { useThemeOptimized } from "../hooks/useThemeOptimized"
+import { useTeamLogos } from "../hooks/useTeamLogos"
 import {
   DndContext,
   closestCenter,
@@ -135,6 +136,8 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
     [columns]
   )
 
+  const { getTeamLogo } = useTeamLogos()
+
   return (
     <div className="bg-transparent rounded-xl overflow-hidden shadow-xl font-inter font-bold max-w-8xl mx-auto">
       {/* Mobile Layout */}
@@ -142,7 +145,13 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
         <div className="space-y-1">
           {sortedDrivers.map((driver, index) => (
             <div key={`${driver.pos}-${driver.code}`}>
-              <OptimizedDriverRow driver={driver} index={index} isMobile={true} drsEnabled={drsEnabled} />
+              <OptimizedDriverRow 
+                driver={driver} 
+                index={index} 
+                isMobile={true} 
+                drsEnabled={drsEnabled}
+                teamLogoUrl={getTeamLogo(driver.team || "") || undefined}
+              />
             </div>
           ))}
         </div>
@@ -218,6 +227,7 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
               drsEnabled={drsEnabled}
               columnOrder={columns.filter(c => c.visible).map(c => c.id)}
               gridTemplateColumns={gridTemplateColumns}
+              teamLogoUrl={getTeamLogo(driver.team || "") || undefined}
             />
           ))}
         </div>

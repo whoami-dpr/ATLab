@@ -1,47 +1,25 @@
-/* TEMPORARILY DISABLED - F1 TEAMS API
-// Node.js Runtime Configuration
-export const runtime = 'nodejs';
-
 import { NextResponse } from "next/server"
 
-// Import f1-api-node using require for Node.js compatibility
-const f1Api = require("f1-api-node")
-
-export async function GET(request: Request) {
-  try {
-    // Usar f1-api-node para obtener datos de equipos
-    const teamLineup = await f1Api.getTeamLineup()
-    
-    // Mapear los datos para incluir las imágenes reales
-    const teamsWithImages = teamLineup.map((team: any) => ({
-      name: team.name,
-      points: team.points,
-      drivers: team.drivers,
-      carLogo: team.carLogo,
-      carImage: team.carImage
-    }))
-    
-    return NextResponse.json({
-      teams: teamsWithImages,
-      success: true,
-    })
-  } catch (error) {
-    console.error("F1 Teams API error:", error)
-    return NextResponse.json({ 
-      error: `Failed to fetch teams: ${error instanceof Error ? error.message : 'Unknown error'}` 
-    }, { status: 500 })
-  }
-}
-*/
-
-// TEMPORARY PLACEHOLDER - F1 TEAMS API DISABLED
 export const runtime = 'edge';
 
 export async function GET() {
-  return new Response(JSON.stringify({ 
-    error: "Teams API temporarily disabled" 
-  }), {
-    status: 503,
-    headers: { 'Content-Type': 'application/json' }
+  // Map of team names to local logo paths in public/team-logos
+  const teamLogos: Record<string, string> = {
+    "Red Bull": "/team-logos/red-bull-racing.svg",
+    "Mercedes": "/team-logos/mercedes.svg",
+    "Ferrari": "/team-logos/ferrari.svg",
+    "McLaren": "/team-logos/mclaren.svg",
+    "Aston Martin": "/team-logos/aston-martin.svg",
+    "Alpine": "/team-logos/alpine.svg",
+    "Williams": "/team-logos/williams.svg",
+    "Haas": "/team-logos/haas-f1-team.svg",
+    "Kick Sauber": "/team-logos/kick-sauber.svg",
+    "RB": "/team-logos/racing-bulls.svg",
+    "Racing Bulls": "/team-logos/racing-bulls.svg",
+  };
+
+  return NextResponse.json({
+    teams: teamLogos,
+    success: true,
   });
 }
