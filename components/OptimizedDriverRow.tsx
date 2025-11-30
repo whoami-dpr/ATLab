@@ -766,7 +766,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
           ? 'bg-[#5c1616] hover:bg-[#6e1a1a]' 
           : driver.isFastestLap 
             ? 'bg-purple-900/20' 
-            : 'hover:bg-gray-900 bg-black'
+            : index % 2 === 0 ? 'bg-[#161616] hover:bg-[#202020]' : 'bg-[#0b0b0b] hover:bg-[#1a1a1a]'
       }`}
       style={{
         display: 'grid',
