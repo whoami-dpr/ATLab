@@ -18,18 +18,44 @@ const TypewriterText = ({ text, progress }: { text: string, progress: number }) 
 
 // Race Control List Component
 const RaceControlList = ({ messages }: { messages: RaceControlMessage[] }) => {
+    const formatTime = (utcString: string) => {
+        try {
+            const date = new Date(utcString)
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+        } catch (e) {
+            return "--:--"
+        }
+    }
+
     return (
-        <div className="flex-1 flex flex-col gap-1.5 h-[400px] overflow-y-auto scrollbar-none min-w-0">
-            {messages.map((msg, index) => (
-                <div key={`${msg.utc}-${index}`} className="flex bg-[#1a1d26] rounded overflow-hidden shadow-sm shrink-0 min-h-[48px]">
+        <div className="flex-1 flex flex-col gap-1 h-[400px] overflow-y-auto scrollbar-none min-w-0">
+            {[...messages].reverse().map((msg, index) => (
+                <div key={`${msg.utc}-${index}`} className="flex bg-[#1a1d26] rounded overflow-hidden shadow-sm shrink-0 min-h-[36px]">
                     {/* Left: FIA Logo & Stewards */}
-                    <div className="bg-[#0f1116] w-24 flex flex-col items-center justify-center p-1.5 border-r border-white/10 shrink-0">
-                        <img src="/images/FIA.png" alt="FIA" className="w-6 h-6 object-contain mb-0.5 opacity-80" />
-                        <span className="text-[10px] font-bold text-white/60 tracking-wider leading-none">STEWARDS</span>
+                    <div className="bg-[#0f1116] w-20 flex flex-col items-center justify-center p-1 border-r border-white/10 shrink-0">
+                        <img src="/images/FIA.png" alt="FIA" className="w-4 h-4 object-contain mb-0.5 opacity-80" />
+                        <span className="text-[9px] font-bold text-white/60 tracking-wider leading-none">STEWARDS</span>
+                        <span className="text-[9px] font-mono text-white/40 leading-none mt-0.5">{formatTime(msg.utc)}</span>
                     </div>
                     {/* Right: Message */}
-                    <div className="flex-1 px-3 py-2 flex items-center bg-[#1a1d26]">
-                        <p className="text-white text-xs font-bold font-inter leading-tight uppercase">
+                    <div className="flex-1 px-3 py-1 flex items-center bg-[#1a1d26]">
+                        <p className="text-white text-xs font-bold font-inter leading-tight uppercase flex items-center gap-2">
+                            {msg.message.includes("DOUBLE YELLOW") && (
+                                <div className="relative w-5 h-3.5 shrink-0">
+                                    <div className="absolute top-0 left-0 w-3.5 h-2.5 bg-[#FFD700] rounded-[1px]"></div>
+                                    <div className="absolute bottom-0 right-0 w-3.5 h-2.5 bg-[#FFD700] rounded-[1px]"></div>
+                                </div>
+                            )}
+                            {msg.message.includes("CHEQUERED FLAG") && (
+                                <div className="w-5 h-3.5 shrink-0 grid grid-cols-4 grid-rows-3 border border-white/20">
+                                    {[...Array(12)].map((_, i) => (
+                                        <div key={i} className={`${(Math.floor(i / 4) + i) % 2 === 0 ? 'bg-white' : 'bg-black'} w-full h-full`}></div>
+                                    ))}
+                                </div>
+                            )}
+                            {msg.message.includes("GREEN LIGHT") && (
+                                <div className="w-5 h-3.5 shrink-0 bg-[#00D2BE] rounded-[1px]"></div>
+                            )}
                             {msg.message}
                         </p>
                     </div>

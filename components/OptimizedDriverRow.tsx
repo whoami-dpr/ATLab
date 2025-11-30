@@ -567,6 +567,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
                   height: '100%',
                   display: 'flex',
                   justifyContent: 'space-between',
+                  alignItems: 'center',
                   padding: '0 4px 0 0',
                   fontSize: '0.75rem',
                   fontWeight: 'bold'
