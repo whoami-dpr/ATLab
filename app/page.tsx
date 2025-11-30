@@ -38,7 +38,7 @@ export default function TelemetryLab() {
               <div className="w-full overflow-hidden">
                 <TimingTable drivers={drivers} drsEnabled={sessionInfo.drsEnabled} />
               </div>
-              <div className="w-fit">
+              <div className="w-full">
                 <TeamRadioPanel messages={teamRadioMessages} raceControlMessages={raceControlMessages} />
               </div>
             </div>

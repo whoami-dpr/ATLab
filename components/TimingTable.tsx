@@ -23,6 +23,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { DEFAULT_COLUMNS, STORAGE_KEY, type ColumnConfig, type ColumnId } from "../types/ColumnConfig"
+import { motion, AnimatePresence } from "motion/react"
 
 interface TimingTableProps {
   drivers: F1Driver[]
@@ -218,18 +219,28 @@ export const TimingTable = memo(function TimingTable({ drivers, drsEnabled = tru
 
         {/* Driver Rows */}
         <div>
-          {sortedDrivers.map((driver, index) => (
-            <OptimizedDriverRow 
-              key={`${driver.pos}-${driver.code}`} 
-              driver={driver} 
-              index={index} 
-              gapClass="gap-0 px-0" 
-              drsEnabled={drsEnabled}
-              columnOrder={columns.filter(c => c.visible).map(c => c.id)}
-              gridTemplateColumns={gridTemplateColumns}
-              teamLogoUrl={getTeamLogo(driver.team || "") || undefined}
-            />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {sortedDrivers.map((driver, index) => (
+              <motion.div
+                key={driver.code}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <OptimizedDriverRow 
+                  driver={driver} 
+                  index={index} 
+                  gapClass="gap-0 px-0" 
+                  drsEnabled={drsEnabled}
+                  columnOrder={columns.filter(c => c.visible).map(c => c.id)}
+                  gridTemplateColumns={gridTemplateColumns}
+                  teamLogoUrl={getTeamLogo(driver.team || "") || undefined}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </div>

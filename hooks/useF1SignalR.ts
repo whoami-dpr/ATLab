@@ -833,6 +833,47 @@ export const useF1SignalR = () => {
              updateDriverData(messageData)
           }
           break
+        case "SessionInfo":
+          console.log("🏎️ SessionInfo message received:", messageData)
+          if (messageData) {
+            updateSessionInfo(messageData)
+          }
+          break
+        case "LapCount":
+          console.log("🏎️ LapCount message received:", messageData)
+          if (messageData) {
+            updateLapCount(messageData)
+          }
+          break
+        case "ExtrapolatedClock":
+          console.log("🏎️ ExtrapolatedClock message received:", messageData)
+          if (messageData && messageData.Remaining) {
+            setSessionInfo(prev => ({
+              ...prev,
+              timer: messageData.Remaining
+            }))
+          }
+          break
+        case "RaceControlMessages":
+          console.log("🏎️ RaceControlMessages message received:", messageData)
+          if (messageData && messageData.Messages) {
+            const newMessages = messageData.Messages.map((msg: any) => ({
+              utc: msg.Utc,
+              message: msg.Message,
+              category: msg.Category,
+              flag: msg.Flag,
+              lap: msg.Lap
+            }))
+            
+            setRaceControlMessages(prev => {
+              const combined = [...newMessages, ...prev]
+              // Sort by UTC descending
+              combined.sort((a, b) => new Date(b.utc).getTime() - new Date(a.utc).getTime())
+              // Keep last 50
+              return combined.slice(0, 50)
+            })
+          }
+          break
     }
     } else {
       console.log("⚠️ Message not processed - target:", data.target, "arguments:", data.arguments)
@@ -1115,10 +1156,11 @@ export const useF1SignalR = () => {
       const currentLap = driverData.NumberOfLaps || 0
       
       // If no tire data is available, show empty or unknown
-      if (currentTire === "M" && !tireCompound) {
-        currentTire = "?" // Show unknown instead of inventing data
-        console.log(`🏎️ Driver ${driverNumber} NO TIRE DATA AVAILABLE - showing unknown (position ${position}, pitStops: ${pitStops}, laps: ${currentLap})`)
-      }
+      // REMOVED: Suspicious check that was forcing "M" to "?"
+      // if (currentTire === "M" && !tireCompound) {
+      //   currentTire = "?" // Show unknown instead of inventing data
+      //   console.log(`🏎️ Driver ${driverNumber} NO TIRE DATA AVAILABLE - showing unknown (position ${position}, pitStops: ${pitStops}, laps: ${currentLap})`)
+      // }
       
       // Additional debug logging for tire data
       console.log(`🏎️ Driver ${driverNumber} FINAL TIRE RESULT:`, {
@@ -1540,11 +1582,43 @@ export const useF1SignalR = () => {
           
           // Preserve Tire History if not present in update
           if ((!newDriver.tyresHistory || newDriver.tyresHistory.length === 0) && existingDriver.tyresHistory && existingDriver.tyresHistory.length > 0) {
-             // Only if we don't have new tire info. 
-             // Note: usually updates might have just current tire. 
-             // If newDriver has tire data, we might want to append? 
-             // For now, let's assume if the array is empty in update, we keep old history.
              mergedDriver.tyresHistory = existingDriver.tyresHistory
+          }
+
+          // Preserve Tire
+          if ((!newDriver.tire || newDriver.tire === "?" || newDriver.tire === "") && existingDriver.tire && existingDriver.tire !== "?") {
+            mergedDriver.tire = existingDriver.tire
+          }
+
+          // Preserve Stint
+          if ((!newDriver.stint || newDriver.stint === "0" || newDriver.stint === "") && existingDriver.stint) {
+            mergedDriver.stint = existingDriver.stint
+          }
+
+          // Preserve Gap
+          if ((!newDriver.gap || newDriver.gap === "" || newDriver.gap === "0.000") && existingDriver.gap) {
+            mergedDriver.gap = existingDriver.gap
+          }
+
+          // Preserve Interval (stored in newDriver.interval field which maps to finalGapValue)
+          if ((!newDriver.interval || newDriver.interval === "" || newDriver.interval === "0.000") && existingDriver.interval) {
+            mergedDriver.interval = existingDriver.interval
+          }
+
+          // Preserve Position
+          if ((!newDriver.pos || newDriver.pos === 0) && existingDriver.pos && existingDriver.pos !== 0) {
+            mergedDriver.pos = existingDriver.pos
+          }
+
+          // Preserve Best Sectors
+          if ((!newDriver.bestSector1 || newDriver.bestSector1 === "") && existingDriver.bestSector1) {
+            mergedDriver.bestSector1 = existingDriver.bestSector1
+          }
+          if ((!newDriver.bestSector2 || newDriver.bestSector2 === "") && existingDriver.bestSector2) {
+            mergedDriver.bestSector2 = existingDriver.bestSector2
+          }
+          if ((!newDriver.bestSector3 || newDriver.bestSector3 === "") && existingDriver.bestSector3) {
+            mergedDriver.bestSector3 = existingDriver.bestSector3
           }
 
           // Preserve Minisectors (Segments) with Smart Merge
@@ -1681,8 +1755,9 @@ export const useF1SignalR = () => {
         const isFastestLap = !isNaN(driverBestTimeMs) && driverBestTimeMs === currentFastestTime
         
         // Check if current lap is personal best (with tolerance for floating point precision)
+        // AND ensure times are valid (greater than 0)
         const timeDifference = Math.abs(currentLapTimeMs - driverBestTimeMs)
-        const isPersonalBest = !isNaN(currentLapTimeMs) && !isNaN(driverBestTimeMs) && timeDifference < 10 // 10ms tolerance
+        const isPersonalBest = !isNaN(currentLapTimeMs) && !isNaN(driverBestTimeMs) && currentLapTimeMs > 0 && driverBestTimeMs > 0 && timeDifference < 10
         
         return {
           ...driver,

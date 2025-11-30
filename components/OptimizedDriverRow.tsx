@@ -609,7 +609,7 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
         return (
           <div key="bestLap" className={`flex items-center justify-center text-sm font-bold border-r border-gray-200 dark:border-gray-600 ${
             driver.isFastestLap ? 'text-purple-600 dark:text-purple-400' : 
-            driver.isPersonalBest ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'
+            'text-gray-900 dark:text-white'
           }`}>
             {formatLapTime(driver.bestLapTime || driver.prevLap)}
           </div>
@@ -623,11 +623,13 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
             {driver.pos === 1 ? 'Interval' : driver.interval || '+0.000'}
           </div>
         )
-      
+
       case 'lastLap':
         return (
           <div key="lastLap" className={`flex items-center justify-center text-sm font-bold border-r border-gray-200 dark:border-gray-600 ${
-            getLapTimeColor(driver.lapTimeColor || "", false)
+            driver.isFastestLap ? 'text-purple-600 dark:text-purple-400' :
+            driver.isPersonalBest ? 'text-green-600 dark:text-green-400' :
+            'text-gray-900 dark:text-white'
           }`}>
             {formatLapTime(driver.lapTime)}
           </div>
