@@ -29,6 +29,7 @@ export default function TelemetryLab() {
           hasActiveSession={hasActiveSession}
           fastestLap={fastestLap}
           inferredPhase={inferredPhase}
+          drivers={drivers}
         />
         <div className="px-0 md:px-2 pb-4 md:pb-6 max-w-full mx-auto">
           {!shouldShowData ? (

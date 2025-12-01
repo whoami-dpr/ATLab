@@ -108,9 +108,9 @@ const driverNumberToTeam: Record<string, string> = {
   "18": "Aston Martin", // STR
   "22": "Red Bull",     // TSU
   "23": "Williams",     // ALB
-  "27": "Haas",         // HUL
+  "27": "Kick Sauber",  // HUL
   "30": "RB",           // LAW
-  "31": "Kick Sauber",  // OCO
+  "31": "Haas",         // OCO
   "43": "Alpine",       // COL
   "44": "Ferrari",      // HAM
   "55": "Williams",     // SAI

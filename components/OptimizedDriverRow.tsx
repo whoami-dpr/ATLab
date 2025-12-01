@@ -193,8 +193,8 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
     "Aston Martin":  { bg: "#229971", text: "white" },
     "Alpine":        { bg: "#2293d1", text: "white" },
     "Williams":      { bg: "#003d82", text: "white" },
-    "Haas":          { bg: "#b6babd", text: "white" },
-    "Kick Sauber":   { bg: "#52e252", text: "white" },
+    "Haas":          { bg: "#949494ff", text: "white" },
+    "Kick Sauber":   { bg: "#42b342ff", text: "white" },
     "RB":            { bg: "#6692ff", text: "white" }, // Racing Bulls
     // Default colors for unknown teams
     "Unknown":       { bg: "#666666", text: "white" },
@@ -733,13 +733,13 @@ export const OptimizedDriverRow = memo(function OptimizedDriverRow(props: Optimi
       case 'bestSectors':
         return (
           <div key="bestSectors" className="flex items-center justify-center gap-1.5 text-sm font-bold border-r border-gray-200 dark:border-gray-600">
-            <span className="text-green-400">
+            <span className="text-gray-900 dark:text-white">
               {formatSectorTime(driver.bestSector1 || "")}
             </span>
-            <span className="text-green-400">
+            <span className="text-gray-900 dark:text-white">
               {formatSectorTime(driver.bestSector2 || "")}
             </span>
-            <span className="text-green-400">
+            <span className="text-gray-900 dark:text-white">
               {formatSectorTime(driver.bestSector3 || "")}
             </span>
           </div>

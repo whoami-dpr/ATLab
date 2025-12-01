@@ -22,17 +22,17 @@ const countryNameToCode: Record<string, string> = {
   Italy: 'ita',
   Japan: 'jpn',
   Mexico: 'mex',
-  Monaco: 'mco',
-  Netherlands: 'nld',
+  Monaco: 'mon',
+  Netherlands: 'ned',
   Qatar: 'qat',
-  SaudiArabia: 'sau',
+  SaudiArabia: 'ksa',
   Singapore: 'sgp',
   USA: 'usa',
   UnitedStates: 'usa',
   Miami: 'usa',
   LasVegas: 'usa',
-  AbuDhabi: 'are',
-  // ...agrega más según tus banderas
+  AbuDhabi: 'uae',
+  UnitedArabEmirates: 'uae',
 };
 
 function getFlagUrl(country: string, country_key?: string) {

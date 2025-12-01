@@ -20,29 +20,20 @@ interface SessionHeaderProps {
     racingNumber: string | null
   }
   inferredPhase?: string | null
+  drivers?: any[]
 }
 
-const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLap, inferredPhase }: SessionHeaderProps) => {
+const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession, fastestLap, inferredPhase, drivers = [] }: SessionHeaderProps) => {
   const { schedule } = useSchedule()
   const { theme } = useThemeOptimized()
   
-  const getTrackStatusColor = () => {
-    const status = sessionInfo.trackStatus.toLowerCase()
-    if (status.includes("green") || status.includes("clear"))
-      return "bg-gradient-to-r from-green-500 to-green-600 shadow-md shadow-green-500/25"
-    if (status.includes("yellow"))
-      return "bg-gradient-to-r from-yellow-500 to-yellow-600 shadow-md shadow-yellow-500/25"
-    if (status.includes("red")) return "bg-gradient-to-r from-red-500 to-red-600 shadow-md shadow-red-500/25"
-    return "bg-gradient-to-r from-gray-500 to-gray-600 shadow-md shadow-gray-500/25"
-  }
-
   // Obtener información del GP actual del schedule
   const getCurrentGPInfo = () => {
     if (!schedule || schedule.length === 0) {
       return {
-        gpName: sessionInfo.raceName || 'F1 Live Timing',
-        country: 'Unknown',
-        sessionType: 'Session'
+        gpName: 'Loading...',
+        country: null,
+        sessionType: 'Loading...'
       }
     }
 
@@ -69,10 +60,10 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
       // Buscar el patrón "PAÍS Grand Prix" en el nombre
       const match = currentGP.name.match(/(\w+)\s+Grand\s+Prix/i)
       if (match) {
-        shortGPName = `${match[1]} Grand Prix`
+        shortGPName = `${match[1]} GP`
       } else {
         // Si no encuentra el patrón, usar solo el país del schedule
-        shortGPName = `${currentGP.country} Grand Prix`
+        shortGPName = `${currentGP.country} GP`
       }
     }
 
@@ -85,14 +76,19 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
 
   const gpInfo = getCurrentGPInfo()
 
-  const getCountryFlag = (country: string) => {
+  const getCountryFlag = (country: string | null) => {
+    if (!country) {
+      return (
+        <div className={`w-9 h-6 rounded-lg ${theme === 'light' ? 'bg-gray-200' : 'bg-white/10'} animate-pulse`} />
+      )
+    }
+    
     // Mapeo de países a códigos de bandera (usando el mismo del schedule)
     const countryNameToCode: Record<string, string> = {
       Australia: 'aus',
       Austria: 'aut',
       Azerbaijan: 'aze',
       Belgium: 'bel',
-      Brazil: 'bra',
       Bahrain: 'brn',
       Canada: 'can',
       China: 'chn',
@@ -103,37 +99,31 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
       Italy: 'ita',
       Japan: 'jpn',
       Mexico: 'mex',
-      Monaco: 'mco',
-      Netherlands: 'nld',
+      Monaco: 'mon',
+      Netherlands: 'ned',
       Qatar: 'qat',
-      SaudiArabia: 'sau',
+      SaudiArabia: 'ksa',
       Singapore: 'sgp',
       USA: 'usa',
       UnitedStates: 'usa',
       Miami: 'usa',
       LasVegas: 'usa',
-      AbuDhabi: 'are',
+      AbuDhabi: 'uae',
+      UnitedArabEmirates: 'uae',
     }
 
     const code = countryNameToCode[country.replace(/\s/g, '')] || 'aze'
     const flagUrl = `/country-flags/${code.toLowerCase()}.svg`
 
     return (
-      <div className={`w-8 h-6 rounded overflow-hidden flex items-center justify-center bg-gray-200 ${
-        theme === 'light' ? 'shadow-md shadow-gray-400/50 hover:bg-gray-100 transition-colors duration-200' : ''
-      }`}>
+      <div className="w-9 h-6 rounded-lg overflow-hidden flex items-center justify-center shadow-sm opacity-90">
         <img 
           src={flagUrl} 
           alt={`${country} flag`}
           className="w-full h-full object-cover"
           onError={(e) => {
-            // Fallback si la imagen no carga
             e.currentTarget.style.display = 'none'
-            e.currentTarget.parentElement!.innerHTML = `
-              <div class="w-8 h-6 rounded bg-gradient-to-b from-blue-500 via-white to-red-500 flex items-center justify-center">
-                <div class="w-2 h-2 bg-blue-500 rounded-sm"></div>
-              </div>
-            `
+            e.currentTarget.parentElement!.style.backgroundColor = '#ccc'
           }}
         />
       </div>
@@ -141,184 +131,169 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
   }
 
   // Estado de conexión
-  let statusColor = "bg-red-500"
-  let statusText = "Offline"
-  if (isConnected && !error) {
-    statusColor = "bg-green-500"
-    statusText = "Online"
+  const isOnline = isConnected && !error
+  const statusColor = isOnline ? "bg-emerald-500" : "bg-rose-500"
+
+  // Status Badge Logic - "Broadcast" Style (Solid & Bold)
+  const getStatusBadge = () => {
+    const status = sessionInfo.trackStatus?.toLowerCase() || ""
+    let bgClass = "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+    let label = "TRACK CLEAR"
+    
+    if (status.includes('red')) {
+      bgClass = "bg-[#ef4444] text-white shadow-lg shadow-red-500/20" // Red 500
+      label = "RED FLAG"
+    } else if (status.includes('yellow')) {
+      bgClass = "bg-[#eab308] text-black shadow-lg shadow-yellow-500/20" // Yellow 500
+      label = "YELLOW FLAG"
+    } else if (status.includes('green') || status.includes('clear')) {
+      bgClass = "bg-[#10b981] text-white shadow-lg shadow-emerald-500/20" // Emerald 500
+      label = "TRACK CLEAR"
+    } else if (status.includes('sc') || status.includes('safety')) {
+       bgClass = "bg-[#f97316] text-black shadow-lg shadow-orange-500/20" // Orange 500
+       label = "SAFETY CAR"
+    } else if (status.includes('vsc')) {
+       bgClass = "bg-[#f97316] text-black shadow-lg shadow-orange-500/20" // Orange 500
+       label = "VIRTUAL SC"
+    }
+
+    return (
+      <div className={`px-4 py-1.5 rounded-xl text-sm font-black uppercase tracking-wider flex items-center gap-2 transition-all duration-300 ${bgClass}`} style={{ fontFamily: 'Inter, sans-serif' }}>
+        {label}
+      </div>
+    )
   }
 
-  // Animación para el círculo de estado
-  let statusCircleClass = `${statusColor} w-2 h-2 rounded-full inline-block`
-  if (isConnected && !error) {
-    statusCircleClass += ' animate-pulse'
-  } else {
-    statusCircleClass += ' animate-ping'
-  }
+  // Vertical Divider Component
+  const Divider = () => (
+    <div className={`h-8 w-px ${theme === 'light' ? 'bg-gray-300' : 'bg-white/10'}`}></div>
+  )
 
   return (
-    <div className={`border-b bg-transparent ${
-      theme === 'light' ? 'border-gray-300/50' : 'border-gray-800/50'
+    <div className={`w-full backdrop-blur-xl transition-colors duration-300 border-b z-50 relative ${
+      theme === 'light' 
+        ? 'bg-white/90 border-gray-200/60' 
+        : 'bg-[#0a0a0a]/90 border-white/5'
     }`}>
-      {/* Mobile Layout */}
-      <div className="block md:hidden p-4 space-y-4">
-        {/* Top Row: Logo and Timer */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-10 w-auto object-contain" />
-            <h1 className={`text-lg font-semibold flex items-center gap-2 ${
-              theme === 'light' ? 'text-black' : 'text-white'
-            }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
-              Live Timing
-              <span
-                className={`w-3 h-3 rounded-full inline-block ml-1 ${statusColor} ${(!isConnected || error) ? 'animate-blink' : ''}`}
-                title={isConnected && !error ? 'Online' : 'Offline'}
-              ></span>
-            </h1>
-          </div>
-          <div className={`text-2xl font-bold ${
-            theme === 'light' ? 'text-black' : 'text-white'
-          }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
-            {sessionInfo.timer}
-          </div>
-        </div>
+      
+      {/* Desktop Layout - Hybrid: Structured Left + Centered Timer */}
+      <div className="hidden md:flex flex-col w-full">
+        {/* Top Row: Main Info & Timer */}
+        <div className="flex items-center justify-between h-16 px-6 max-w-[1920px] mx-auto relative w-full">
+          
+          {/* Left: Structured Info Bar (Logo | GP | Weather) */}
+          <div className="flex items-center gap-6 justify-start z-10">
+            {/* Logo & Status */}
+            <div className="flex items-center gap-3">
+              <img src="/images/F1-Logo.png" alt="F1" className="h-8 w-auto opacity-90" />
+              <div className={`w-10 h-2 rounded-full transition-colors duration-500 ${statusColor} ${!isOnline ? 'animate-pulse' : ''}`} />
+            </div>
+            
+            <Divider />
 
-        {/* GP Info and Status Row - Moved right below F1 Live */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {getCountryFlag(gpInfo.country)}
-            <div className="flex flex-col">
-              <div className={`text-sm font-medium leading-none ${
-                theme === 'light' ? 'text-black' : 'text-white'
-              }`}>
-                {gpInfo.gpName}
+            {/* GP Info */}
+            <div className="flex items-center gap-3">
+               {getCountryFlag(gpInfo.country)}
+               <div className="flex flex-col justify-center" style={{ fontFamily: 'Inter, sans-serif' }}>
+                  <span className={`text-base font-black tracking-tight uppercase leading-none ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                    {gpInfo.gpName}
+                  </span>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
+                     {inferredPhase ? `${gpInfo.sessionType} • ${inferredPhase}` : gpInfo.sessionType}
+                  </span>
+               </div>
+            </div>
+
+            <Divider />
+
+            {/* Weather */}
+            <div className="opacity-90 hover:opacity-100 transition-opacity">
+               <WeatherWidget weather={sessionInfo.weather} />
+            </div>
+          </div>
+
+          {/* Center: The Action (Timer & Laps) - Absolutely Positioned */}
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-20 pointer-events-none">
+             <div className={`text-3xl font-bold tabular-nums tracking-tight leading-none ${theme === 'light' ? 'text-gray-900' : 'text-white'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {sessionInfo.timer}
+             </div>
+             <div className={`text-[11px] font-medium uppercase tracking-widest mt-1 ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
+                Lap <span className={theme === 'light' ? 'text-gray-900' : 'text-white'}>{sessionInfo.lapInfo}</span>
+             </div>
+          </div>
+
+          {/* Right: Status (Flags & Fastest Lap) */}
+          <div className="flex items-center gap-4 justify-end z-10">
+            {fastestLap && (
+              <div className="origin-right">
+                 <FastestLapBanner fastestLap={fastestLap} theme={theme} />
               </div>
-              <div className={`text-sm ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>
-                {gpInfo.sessionType}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col items-center">
-              <span className={`text-sm font-medium leading-none mb-1 ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>Laps</span>
-              <span className={`text-base font-semibold leading-none ${
-                theme === 'light' ? 'text-black' : 'text-white'
-              }`}>{sessionInfo.lapInfo}</span>
-            </div>
-            <div className={`px-4 py-2 rounded text-xl font-bold text-white ${
-              sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
-                ? 'bg-red-600'
-                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
-                  ? 'bg-yellow-600'
-                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
-                    ? 'bg-green-600'
-                    : 'bg-gray-600'
-            }`}>
-              {sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
-                ? 'Red'
-                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
-                  ? 'Yellow'
-                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
-                    ? 'Green'
-                    : 'No Flag'
-              }
-            </div>
+            )}
+            {getStatusBadge()}
           </div>
         </div>
 
-        {/* Weather Row */}
-        <div className="flex justify-center">
-          <WeatherWidget weather={sessionInfo.weather} />
-        </div>
-
-        {/* Fastest Lap Banner */}
-        <div className="flex justify-center mt-6">
-          <FastestLapBanner 
-            fastestLap={fastestLap}
-            theme={theme}
-          />
+        {/* Bottom Row: Driver Ticker */}
+        <div className="w-full h-6 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex items-center overflow-hidden relative">
+          <div className="whitespace-nowrap animate-marquee flex gap-8 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400" style={{ fontFamily: 'Formula1 Display, sans-serif' }}>
+            {[...drivers, ...drivers].map((driver, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                <span className={`text-[10px] ${theme === 'light' ? 'text-gray-400' : 'text-gray-600'}`}>{driver.pos}</span>
+                <span className={theme === 'light' ? 'text-gray-800' : 'text-gray-200'}>{driver.code}</span>
+                {driver.gap && <span className="text-[9px] opacity-60">{driver.gap}</span>}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Desktop Layout */}
-      <div className="hidden md:flex items-center justify-between p-2 min-h-[40px]">
-        <div className="flex items-center gap-2 min-h-[32px]">
-          <div className="h-full flex items-center">
-            <img src="/images/F1-Logo.png" alt="F1 Logo" className="h-full w-auto max-h-[2rem] object-contain" />
-          </div>
-          <div className="flex flex-col justify-center">
-            <div className="flex items-center gap-2">
-              <h1 className={`text-sm font-semibold flex items-center gap-2 ${
-                theme === 'light' ? 'text-black' : 'text-white'
-              }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>
-                F1 Live Timing
-                <span
-                  className={`w-2 h-2 rounded-full inline-block ml-1 ${statusColor} ${(!isConnected || error) ? 'animate-blink' : ''}`}
-                  title={isConnected && !error ? 'Online' : 'Offline'}
-                ></span>
-              </h1>
-            </div>
-            <div className={`text-lg font-bold leading-none ${
-              theme === 'light' ? 'text-black' : 'text-white'
-            }`} style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif', fontWeight: 'bold' }}>{sessionInfo.timer}</div>
-          </div>
+      {/* Mobile Layout - Stacked & Clean (Unchanged from Iteration 2) */}
+      <div className="md:hidden flex flex-col p-4 gap-4">
+        {/* Top: Logo & Status */}
+        <div className="flex items-center justify-between">
+           <div className="flex items-center gap-2">
+              <img src="/images/F1-Logo.png" alt="F1" className="h-6 w-auto opacity-90" />
+              <div className={`w-2 h-5 rounded-full ${statusColor}`} />
+           </div>
+           {getStatusBadge()}
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Fastest Lap Banner */}
-          <FastestLapBanner 
-            fastestLap={fastestLap}
-            theme={theme}
-          />
+        {/* Center: BIG Timer */}
+        <div className="flex flex-col items-center py-2">
+           <div className={`text-4xl font-bold tabular-nums tracking-tighter ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+              {sessionInfo.timer}
+           </div>
+           <div className={`text-xs font-medium uppercase tracking-widest mt-1 ${theme === 'light' ? 'text-gray-500' : 'text-gray-500'}`}>
+              Lap <span className={theme === 'light' ? 'text-gray-900' : 'text-white'}>{sessionInfo.lapInfo}</span>
+           </div>
+        </div>
 
-          <WeatherWidget weather={sessionInfo.weather} />
-
-          {/* Grand Prix Info with Flag */}
-          <div className="flex items-center gap-2">
-            {getCountryFlag(gpInfo.country)}
-            <div className="flex flex-col">
-              <div className={`text-xs font-medium leading-none ${
-                theme === 'light' ? 'text-black' : 'text-white'
-              }`}>
-                {gpInfo.gpName} - {inferredPhase ? `${gpInfo.sessionType} ${inferredPhase}` : gpInfo.sessionType}
+        {/* Bottom: Info Scroll */}
+        <div className={`flex items-center justify-between pt-3 border-t ${theme === 'light' ? 'border-gray-100' : 'border-white/5'}`}>
+           <div className="flex items-center gap-3">
+              {getCountryFlag(gpInfo.country)}
+              <div className="flex flex-col">
+                 <span className={`text-xs font-bold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                    {gpInfo.gpName}
+                 </span>
+                 <span className={`text-[10px] ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {inferredPhase ? `${gpInfo.sessionType} • ${inferredPhase}` : gpInfo.sessionType}
+                 </span>
               </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-center">
-              <span className={`text-xs font-medium leading-none mb-1 ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>Laps</span>
-              <span className={`text-sm font-semibold leading-none ${
-                theme === 'light' ? 'text-black' : 'text-white'
-              }`}>{sessionInfo.lapInfo}</span>
-            </div>
-            <div className={`px-3 py-1.5 rounded text-base font-bold text-white ${
-              sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
-                ? 'bg-red-600'
-                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
-                  ? 'bg-yellow-600'
-                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
-                    ? 'bg-green-600'
-                    : 'bg-gray-600'
-            }`}>
-              {sessionInfo.trackStatus?.toLowerCase().includes('red') || sessionInfo.trackStatus?.toLowerCase().includes('red flag')
-                ? 'Red Flag'
-                : sessionInfo.trackStatus?.toLowerCase().includes('yellow') || sessionInfo.trackStatus?.toLowerCase().includes('yellow flag')
-                  ? 'Yellow Flag'
-                  : sessionInfo.trackStatus?.toLowerCase().includes('green') || sessionInfo.trackStatus?.toLowerCase().includes('clear') || sessionInfo.trackStatus?.toLowerCase().includes('green flag')
-                    ? 'Green Flag'
-                    : 'No Flag'
-              }
-            </div>
-          </div>
+           </div>
+           
+           <div className="flex items-center gap-3">
+              <div className="scale-90">
+                 <WeatherWidget weather={sessionInfo.weather} />
+              </div>
+           </div>
         </div>
+        
+        {fastestLap && (
+           <div className="mt-1">
+              <FastestLapBanner fastestLap={fastestLap} theme={theme} />
+           </div>
+        )}
       </div>
     </div>
   )
@@ -327,3 +302,17 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
 SessionHeader.displayName = "SessionHeader"
 
 export { SessionHeader }
+
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee 120s linear infinite;
+  }
+`;
+if (typeof document !== 'undefined') {
+  document.head.appendChild(style);
+}

@@ -35,49 +35,49 @@ const WeatherWidget = memo(({ weather }: WeatherWidgetProps) => {
   const windDirection = weather.windDirection && weather.windDirection > 0 ? getWindDirection(weather.windDirection) : 'E'
 
   return (
-    <div className="flex items-center gap-2 md:gap-3">
+    <div className="flex items-center gap-3 md:gap-4">
       <div className="flex flex-col items-center justify-center">
-        <Thermometer className={`w-3 h-3 ${
+        <Thermometer className={`w-3 h-3 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xs md:text-sm font-semibold leading-none ${
+        <span className={`text-sm md:text-lg font-bold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{trackTemp}°</span>
-        <span className={`text-xs ${
-          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        <span className={`text-[10px] font-bold uppercase ${
+          theme === 'light' ? 'text-gray-500' : 'text-gray-400'
         }`}>TRC</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Thermometer className={`w-3 h-3 ${
+        <Thermometer className={`w-3 h-3 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xs md:text-sm font-semibold leading-none ${
+        <span className={`text-sm md:text-lg font-bold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{airTemp}°</span>
-        <span className={`text-xs ${
-          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        <span className={`text-[10px] font-bold uppercase ${
+          theme === 'light' ? 'text-gray-500' : 'text-gray-400'
         }`}>AIR</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Droplets className={`w-3 h-3 ${
+        <Droplets className={`w-3 h-3 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xs md:text-sm font-semibold leading-none ${
+        <span className={`text-sm md:text-lg font-bold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{humidity}%</span>
-        <span className={`text-xs ${
-          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        <span className={`text-[10px] font-bold uppercase ${
+          theme === 'light' ? 'text-gray-500' : 'text-gray-400'
         }`}>HUM</span>
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Wind className={`w-3 h-3 ${
+        <Wind className={`w-3 h-3 mb-0.5 ${
           theme === 'light' ? 'text-gray-600' : 'text-gray-400'
         }`} />
-        <span className={`text-xs md:text-sm font-semibold leading-none ${
+        <span className={`text-sm md:text-lg font-bold leading-none ${
           theme === 'light' ? 'text-black' : 'text-white'
         }`}>{windSpeed}</span>
-        <span className={`text-xs ${
-          theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+        <span className={`text-[10px] font-bold uppercase ${
+          theme === 'light' ? 'text-gray-500' : 'text-gray-400'
         }`}>{windDirection}</span>
       </div>
     </div>
