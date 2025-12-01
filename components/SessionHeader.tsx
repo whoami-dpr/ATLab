@@ -303,16 +303,16 @@ SessionHeader.displayName = "SessionHeader"
 
 export { SessionHeader }
 
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes marquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-  .animate-marquee {
-    animation: marquee 120s linear infinite;
-  }
-`;
 if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      animation: marquee 120s linear infinite;
+    }
+  `;
   document.head.appendChild(style);
 }
