@@ -177,7 +177,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
     }`}>
       
       {/* Desktop Layout - Hybrid: Structured Left + Centered Timer */}
-      <div className="hidden md:flex flex-col w-full">
+      <div className="hidden xl:flex flex-col w-full">
         {/* Top Row: Main Info & Timer */}
         <div className="flex items-center justify-between h-16 px-6 max-w-[1920px] mx-auto relative w-full">
           
@@ -186,7 +186,7 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
             {/* Logo & Status */}
             <div className="flex items-center gap-3">
               <img src="/images/F1-Logo.png" alt="F1" className="h-8 w-auto opacity-90" />
-              <div className={`w-10 h-2 rounded-full transition-colors duration-500 ${statusColor} ${!isOnline ? 'animate-pulse' : ''}`} />
+              <div className={`w-3 h-3 rounded-full transition-colors duration-500 ${statusColor} ${!isOnline ? 'animate-pulse' : ''}`} />
             </div>
             
             <Divider />
@@ -212,8 +212,8 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
             </div>
           </div>
 
-          {/* Center: The Action (Timer & Laps) - Absolutely Positioned */}
-          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center z-20 pointer-events-none">
+          {/* Center: The Action (Timer & Laps) - Responsive Positioning */}
+          <div className="flex flex-col items-center justify-center z-20 pointer-events-none 2xl:absolute 2xl:left-1/2 2xl:top-1/2 2xl:transform 2xl:-translate-x-1/2 2xl:-translate-y-1/2">
              <div className={`text-3xl font-bold tabular-nums tracking-tight leading-none ${theme === 'light' ? 'text-gray-900' : 'text-white'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {sessionInfo.timer}
              </div>
@@ -248,12 +248,12 @@ const SessionHeader = memo(({ sessionInfo, isConnected, error, hasActiveSession,
       </div>
 
       {/* Mobile Layout - Stacked & Clean (Unchanged from Iteration 2) */}
-      <div className="md:hidden flex flex-col p-4 gap-4">
+      <div className="xl:hidden flex flex-col p-4 gap-4">
         {/* Top: Logo & Status */}
         <div className="flex items-center justify-between">
            <div className="flex items-center gap-2">
               <img src="/images/F1-Logo.png" alt="F1" className="h-6 w-auto opacity-90" />
-              <div className={`w-2 h-5 rounded-full ${statusColor}`} />
+              <div className={`w-3 h-3 rounded-full ${statusColor}`} />
            </div>
            {getStatusBadge()}
         </div>

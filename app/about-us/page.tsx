@@ -2,406 +2,407 @@
 
 import { Navbar } from "../../components/Navbar";
 import { useThemeOptimized } from "../../hooks/useThemeOptimized";
-import React from "react";
-import { ArrowRight, Github, Linkedin, Gauge, Target, Timer, Building2, Cpu, Database, Wifi, BarChart3, Clock, ChevronUp } from "lucide-react";
+import React, { useRef } from "react";
+import { Github, Linkedin, Radio, Activity, Database, Wifi, Cloud, Shield } from "lucide-react";
+import { motion, useScroll, useTransform, useSpring, useInView } from "motion/react";
+
+// Fade-in animation component
+function FadeIn({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 50 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+      transition={{ duration: 0.8, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Parallax section component
+function ParallaxSection({ children, offset = 50 }: { children: React.ReactNode; offset?: number }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [offset, -offset]);
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 0.95]);
+
+  return (
+    <motion.div ref={ref} style={{ y, scale }}>
+      {children}
+    </motion.div>
+  );
+}
+
+// Number counter animation
+function AnimatedNumber({ value, suffix = "" }: { value: string; suffix?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const [displayValue, setDisplayValue] = React.useState("0");
+
+  React.useEffect(() => {
+    if (isInView) {
+      const targetNum = parseFloat(value);
+      const duration = 2000;
+      const steps = 60;
+      const increment = targetNum / steps;
+      let current = 0;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= targetNum) {
+          setDisplayValue(value);
+          clearInterval(timer);
+        } else {
+          setDisplayValue(current.toFixed(value.includes(".") ? 1 : 0));
+        }
+      }, duration / steps);
+      return () => clearInterval(timer);
+    }
+  }, [isInView, value]);
+
+  return <span ref={ref}>{displayValue}{suffix}</span>;
+}
 
 export default function AboutUs() {
   const { theme } = useThemeOptimized();
-  const [scrollProgress, setScrollProgress] = React.useState(0);
+  const containerRef = useRef(null);
 
-  React.useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = (scrollTop / docHeight) * 100;
-      setScrollProgress(scrollPercent);
-    };
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const scaleProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
-  const features = [
-    {
-      title: "Live Positions",
-      description: "See exactly where each driver is on track. Positions update every 100ms during F1 sessions, just like the official F1 app.",
-      icon: <Gauge className="w-6 h-6" />
-    },
-    {
-      title: "Gap Times",
-      description: "Individual sector times and cumulative gaps to the leader. Know if a driver is gaining or losing time in real-time.",
-      icon: <Target className="w-6 h-6" />
-    },
-    {
-      title: "Session Schedule",
-      description: "Complete F1 weekend calendar with practice, qualifying, sprint, and race sessions. Never miss a session again.",
-      icon: <Timer className="w-6 h-6" />
-    },
-    {
-      title: "Team Colors",
-      description: "Each team has their official colors. Ferrari red, Mercedes silver, McLaren orange - just like on TV.",
-      icon: <Building2 className="w-6 h-6" />
-    }
-  ];
-
-  const techStack = [
-    { name: "Next.js 15", category: "Frontend", icon: <Cpu className="w-4 h-4" /> },
-    { name: "TypeScript", category: "Language", icon: <Database className="w-4 h-4" /> },
-    { name: "SignalR", category: "Real-time", icon: <Wifi className="w-4 h-4" /> },
-    { name: "Tailwind CSS", category: "Styling", icon: <BarChart3 className="w-4 h-4" /> }
-  ];
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.8]);
 
   return (
-    <div className={`min-h-screen w-full relative theme-transition ${
-      theme === 'light' 
-        ? 'text-gray-900' 
-        : 'bg-black text-white'
-    }`}>
-      {/* Background gradient */}
-      <div className="absolute inset-0 z-0" style={{
-        background: theme === 'light'
-          ? "linear-gradient(180deg, #f0f8ff 0%, #cce7ff 100%)"
-          : "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.15), transparent 70%), #000000"
-      }} />
-      
-      <div className="relative z-10">
-        <Navbar />
-        
-        {/* Mini Scroll Progress Bar */}
-        <div className="fixed top-16 right-4 w-1 h-20 z-50">
-          <div className="w-full h-full bg-gray-600 dark:bg-gray-300 rounded-full overflow-hidden">
-            <div 
-              className="w-full bg-gray-200 dark:bg-gray-700 transition-all duration-150 ease-out"
-              style={{ height: `${scrollProgress}%` }}
-            />
-          </div>
-        </div>
-        
-        
-        {/* Hero Section */}
-        <section className="pt-20 pb-32 px-6 max-w-4xl mx-auto text-center">
-          <div className="mb-8">
-            <h1 className={`text-6xl md:text-7xl font-bold mb-6 tracking-tight transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
+    <div
+      ref={containerRef}
+      className={`min-h-screen w-full ${
+        theme === "light" ? "bg-white text-black" : "bg-black text-white"
+      }`}
+    >
+      <Navbar />
+
+      {/* Progress Indicator */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-blue-500 origin-left z-50"
+        style={{ scaleX: scaleProgress }}
+      />
+
+      {/* Hero Section - Perfectly Centered */}
+      <motion.section
+        style={{ opacity: heroOpacity, scale: heroScale, height: "calc(100vh - 4rem)" }}
+        className="sticky top-0 px-6 flex items-center justify-center"
+      >
+        <div className="text-center max-w-6xl mx-auto transform -translate-y-12">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, filter: "blur(20px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h1 className="text-8xl md:text-[12rem] lg:text-[15rem] font-semibold tracking-tighter leading-none mb-8">
               ATLab
             </h1>
-            <p className={`text-xl md:text-2xl font-light leading-relaxed max-w-3xl mx-auto transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              Live timing data from F1's official timing system. 
-              Real-time positions, lap times, and gaps updated every 100ms during sessions.
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-            <a 
-              href="https://github.com/whoami-dpr" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className={`group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full font-medium text-lg transition-all duration-300 hover:scale-105 ${
-                theme === 'light'
-                  ? 'bg-gray-900 text-white hover:bg-gray-800'
-                  : 'bg-white text-black hover:bg-gray-100'
-              }`}
-            >
-              <Github className="w-5 h-5" />
-              View on GitHub
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </a>
-            <a 
-              href="https://www.linkedin.com/in/joaquinmontes10/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className={`group inline-flex items-center justify-center gap-3 px-8 py-4 border rounded-full font-medium text-lg transition-all duration-300 hover:scale-105 ${
-                theme === 'light'
-                  ? 'border-gray-300 text-gray-900 hover:border-gray-900 hover:bg-gray-900 hover:text-white'
-                  : 'border-gray-600 text-white hover:border-white hover:bg-white hover:text-black'
-              }`}
-            >
-              <Linkedin className="w-5 h-5" />
-              Connect
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </a>
-          </div>
-        </section>
+          </motion.div>
 
-        {/* Features Section */}
-        <section className="py-24 px-6 max-w-6xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
-              What ATLab Does
-            </h2>
-            <p className={`text-xl max-w-2xl mx-auto transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              Real F1 data, real-time updates, real performance insights
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="group text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 mb-6 transition-all duration-300 group-hover:scale-110 ${
-                  theme === 'light'
-                    ? 'text-gray-600 group-hover:text-blue-600'
-                    : 'text-gray-400 group-hover:text-blue-400'
-                }`}>
-                  {feature.icon}
-                </div>
-                <h3 className={`text-xl font-bold mb-3 transition-colors duration-300 ${
-                  theme === 'light' ? 'text-gray-900' : 'text-white'
-                }`}>
-                  {feature.title}
-                </h3>
-                <p className={`text-base leading-relaxed transition-colors duration-300 ${
-                  theme === 'light' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Tech Stack Section */}
-        <section className="py-16 px-6 max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className={`text-3xl font-bold mb-4 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
-              How It's Built
-            </h2>
-            <p className={`text-lg transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              The tech behind real-time F1 data
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {techStack.map((tech, index) => (
-              <div key={index} className="group text-center">
-                <div className={`inline-flex items-center justify-center w-10 h-10 mb-4 transition-all duration-300 group-hover:scale-110 ${
-                  theme === 'light'
-                    ? 'text-gray-600 group-hover:text-blue-600'
-                    : 'text-gray-400 group-hover:text-blue-400'
-                }`}>
-                  {tech.icon}
-                </div>
-                <h3 className={`font-semibold mb-1 transition-colors duration-300 ${
-                  theme === 'light' ? 'text-gray-900' : 'text-white'
-                }`}>{tech.name}</h3>
-                <p className={`text-sm transition-colors duration-300 ${
-                  theme === 'light' ? 'text-gray-500' : 'text-gray-500'
-                }`}>{tech.category}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="py-24 px-6 max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className={`text-4xl font-bold mb-2 transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-900' : 'text-white'
-              }`}>99.9%</div>
-              <div className={`transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>Uptime</div>
-            </div>
-            <div className="text-center">
-              <div className={`text-4xl font-bold mb-2 transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-900' : 'text-white'
-              }`}>&gt;100ms</div>
-              <div className={`transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>Latency</div>
-            </div>
-            <div className="text-center">
-              <div className={`text-4xl font-bold mb-2 transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-900' : 'text-white'
-              }`}>24/7</div>
-              <div className={`transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>Monitoring</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Developer Section */}
-        <section className="py-12 px-6 max-w-2xl mx-auto">
-          <div className="text-center">
-            <h2 className={`text-2xl font-bold mb-8 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
-              Meet the Developer
-            </h2>
-            
-            <div className={`w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 ${
-              theme === 'light' ? 'ring-2 ring-gray-200' : 'ring-2 ring-gray-700'
-            }`}>
-              <img 
-                src="https://github.com/whoami-dpr.png" 
-                alt="Joaquín Montes" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-            
-            <h3 className={`text-xl font-semibold mb-1 transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-900' : 'text-white'
-            }`}>
-              Joaquín Montes
-            </h3>
-            
-            <p className={`text-sm font-medium mb-3 transition-colors duration-500 ${
-              theme === 'light' ? 'text-blue-600' : 'text-blue-400'
-            }`}>
-              Systems Engineer
-            </p>
-
-            <p className={`text-sm leading-relaxed mb-6 max-w-md mx-auto transition-colors duration-500 ${
-              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              Built this app because I wanted better F1 timing data than what's available. 
-              Uses the same data source as the official F1 app, but with a cleaner interface.
-            </p>
-
-            <div className="flex justify-center gap-3">
-              <a 
-                href="https://github.com/whoami-dpr" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/25 ${
-                  theme === 'light'
-                    ? 'bg-gray-900 text-white hover:bg-gray-800'
-                    : 'bg-white text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                <Github className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="text-sm font-medium">GitHub</span>
-              </a>
-              <a 
-                href="https://www.linkedin.com/in/joaquinmontes10/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 ${
-                  theme === 'light'
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}
-              >
-                <Linkedin className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="text-sm font-medium">LinkedIn</span>
-              </a>
-            </div>
-          </div>
-        </section>
-
-      {/* Footer */}
-         <footer className={`border-t backdrop-blur-sm transition-all duration-500 ${
-           theme === 'light'
-             ? 'border-gray-800/50 bg-black/80'
-             : 'border-gray-800/50 bg-black/50'
-         }`}>
-          <div className="max-w-4xl mx-auto px-6 py-12 text-center">
-            <div className="mb-6">
-              <h3 className={`text-2xl font-bold mb-2 transition-colors duration-500 ${
-                theme === 'light' ? 'text-white' : 'text-white'
-              }`}>ATLab</h3>
-              <p className={`transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-300' : 'text-gray-400'
-              }`}>ARSIM Telemetry Lab</p>
-      </div>
-
-            {/* Legal Disclaimer and Privacy Section - Horizontal Layout */}
-            <div className="flex flex-col md:flex-row gap-8 md:gap-12 mb-8 max-w-4xl mx-auto">
-              <div className="flex-1">
-                <h4 className={`text-lg font-semibold mb-3 transition-colors duration-500 ${
-                  theme === 'light' ? 'text-white' : 'text-white'
-                }`}>Legal Disclaimer</h4>
-                <p className={`text-sm leading-relaxed transition-colors duration-500 ${
-                  theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  This platform operates as an independent, unofficial service and maintains no affiliation with Formula 1 companies. All trademarks including F1®, FORMULA ONE®, FORMULA 1®, FIA FORMULA ONE WORLD CHAMPIONSHIP®, GRAND PRIX®, and associated marks remain the exclusive property of Formula One Licensing B.V.
-                </p>
-              </div>
-              
-              <div className="flex-1">
-                <h4 className={`text-lg font-semibold mb-3 transition-colors duration-500 ${
-                  theme === 'light' ? 'text-white' : 'text-white'
-                }`}>Data & Privacy</h4>
-                <p className={`text-sm leading-relaxed transition-colors duration-500 ${
-                  theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  We prioritize user privacy and data security. All telemetry data is sourced from publicly available feeds and processed in real-time without permanent storage of personal viewing patterns.
-                </p>
-                <div className="flex flex-wrap gap-4 mt-4">
-                  <a href="#" className={`text-sm transition-colors duration-500 hover:underline ${
-                    theme === 'light' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-300'
-                  }`}>
-                    Privacy Policy
-                  </a>
-                  <a href="#" className={`text-sm transition-colors duration-500 hover:underline ${
-                    theme === 'light' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-300'
-                  }`}>
-                    Terms of Service
-                  </a>
-                  <span className={`text-sm transition-colors duration-500 ${
-                    theme === 'light' ? 'text-gray-300' : 'text-gray-400'
-                  }`}>
-                    © 2025 ATLab
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Built with passion credit */}
-            <div className="text-center mb-8">
-              <p className={`text-sm transition-colors duration-500 ${
-                theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-              }`}>
-                Built with passion by{' '}
-                <span className={`font-medium transition-colors duration-500 ${
-                  theme === 'light' ? 'text-yellow-500' : 'text-yellow-400'
-                }`}>
-                  Joaquin G. Montes
-                </span>
-              </p>
-            </div>
-            
-            <div className="flex justify-center gap-8">
-              <a 
-                href="https://github.com/whoami-dpr" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className={`transition-colors duration-300 ${
-                  theme === 'light'
-                    ? 'text-gray-400 hover:text-white'
-                    : 'text-gray-500 hover:text-white'
-                }`}
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a 
-                href="https://www.linkedin.com/in/joaquinmontes10/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className={`transition-colors duration-300 ${
-                  theme === 'light'
-                    ? 'text-gray-400 hover:text-white'
-                    : 'text-gray-500 hover:text-white'
-                }`}
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-          </div>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="text-2xl md:text-4xl lg:text-5xl font-medium opacity-60 tracking-tight"
+          >
+            F1 telemetry, engineered to perfection.
+          </motion.p>
         </div>
-      </footer>
+      </motion.section>
+
+      {/* Main Content Container */}
+      <div className={`relative z-10 ${theme === "light" ? "bg-white" : "bg-black"}`}>
+        
+        {/* Mission Statement */}
+        <section className="min-h-screen flex items-center justify-center px-6 py-32">
+          <div className="max-w-5xl mx-auto text-center">
+            <FadeIn>
+              <h2 className="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tight leading-tight mb-12">
+                Data shouldn't be <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">
+                  complicated.
+                </span>
+              </h2>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <p className="text-xl md:text-3xl opacity-60 leading-relaxed font-light max-w-3xl mx-auto">
+                We take F1's official timing stream—the same data used by teams—and transform it into 
+                a clean, intuitive experience. No clutter. No delays. Just pure racing intelligence.
+              </p>
+            </FadeIn>
+          </div>
+        </section>
+
+        {/* Feature 1: Live Telemetry */}
+        <ParallaxSection offset={30}>
+          <section className="min-h-screen flex items-center px-6 py-32">
+            <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-16 items-center">
+              <FadeIn>
+                <div className="space-y-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-500 text-sm font-semibold">
+                    <Activity className="w-4 h-4" /> Live Telemetry
+                  </div>
+                  <h3 className="text-5xl md:text-7xl font-semibold tracking-tight leading-tight">
+                    See the race unfold in real time.
+                  </h3>
+                  <p className="text-xl md:text-2xl opacity-60 leading-relaxed">
+                    Track positions, gaps, and sector times updated every 100ms. 
+                    Know exactly who's gaining, who's losing, and where it's happening.
+                  </p>
+                  <ul className="space-y-4 text-lg">
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2" />
+                      <span>100ms update frequency—faster than you can blink</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2" />
+                      <span>Sector-by-sector analysis for all 20 drivers</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2" />
+                      <span>Live tyre compound and age tracking</span>
+                    </li>
+                  </ul>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={0.2}>
+                <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+                  <img
+                    src="/images/live-timing-preview.png"
+                    alt="Live Timing Dashboard"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
+                </div>
+              </FadeIn>
+            </div>
+          </section>
+        </ParallaxSection>
+
+        {/* Feature 2: Team Radio */}
+        <ParallaxSection offset={-30}>
+          <section className="min-h-screen flex items-center px-6 py-32">
+            <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-16 items-center">
+              <FadeIn delay={0.2} className="order-2 md:order-1">
+                <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+                  <img
+                    src="/images/team-radio-preview.png"
+                    alt="Team Radio Interface"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-tl from-black/20 to-transparent" />
+                </div>
+              </FadeIn>
+
+              <FadeIn className="order-1 md:order-2">
+                <div className="space-y-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 text-red-500 text-sm font-semibold">
+                    <Radio className="w-4 h-4" /> Team Radio
+                  </div>
+                  <h3 className="text-5xl md:text-7xl font-semibold tracking-tight leading-tight">
+                    Hear what the TV doesn't show.
+                  </h3>
+                  <p className="text-xl md:text-2xl opacity-60 leading-relaxed">
+                    Uncensored team radio and Race Control messages as they happen. 
+                    Get the full story, not just what makes the broadcast.
+                  </p>
+                  <ul className="space-y-4 text-lg">
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2" />
+                      <span>All team radio messages, completely uncensored</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2" />
+                      <span>Race Control notifications in real time</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2" />
+                      <span>AI-powered transcriptions for every message</span>
+                    </li>
+                  </ul>
+                </div>
+              </FadeIn>
+            </div>
+          </section>
+        </ParallaxSection>
+
+        {/* Performance Stats */}
+        <section className="min-h-screen flex items-center justify-center px-6 py-32">
+          <div className="max-w-6xl mx-auto w-full">
+            <FadeIn>
+              <h2 className="text-4xl md:text-6xl font-semibold text-center mb-24 tracking-tight">
+                Built for performance.
+              </h2>
+            </FadeIn>
+
+            <div className="grid md:grid-cols-3 gap-12">
+              <FadeIn delay={0.1}>
+                <div className="text-center space-y-4">
+                  <div className="text-7xl md:text-8xl font-bold tracking-tighter">
+                    <AnimatedNumber value="99.9" suffix="%" />
+                  </div>
+                  <div className="text-xl opacity-60 font-medium">Uptime Reliability</div>
+                  <p className="text-sm opacity-40 leading-relaxed">
+                    Hosted on enterprise-grade infrastructure to ensure you never miss a moment of the action.
+                  </p>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={0.2}>
+                <div className="text-center space-y-4">
+                  <div className="text-7xl md:text-8xl font-bold tracking-tighter">
+                    <AnimatedNumber value="100" suffix="ms" />
+                  </div>
+                  <div className="text-xl opacity-60 font-medium">Update Frequency</div>
+                  <p className="text-sm opacity-40 leading-relaxed">
+                    Data refreshes 10 times per second, giving you the most responsive live timing experience available.
+                  </p>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={0.3}>
+                <div className="text-center space-y-4">
+                  <div className="text-7xl md:text-8xl font-bold tracking-tighter">
+                    <AnimatedNumber value="24" suffix="/7" />
+                  </div>
+                  <div className="text-xl opacity-60 font-medium">Always Online</div>
+                  <p className="text-sm opacity-40 leading-relaxed">
+                    Continuous monitoring and instant scaling ensure peak performance during every race weekend.
+                  </p>
+                </div>
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+
+        {/* Tech Stack */}
+        <section className="py-32 px-6 border-t border-white/5">
+          <div className="max-w-6xl mx-auto">
+            <FadeIn>
+              <h2 className="text-4xl md:text-6xl font-semibold text-center mb-12 tracking-tight">
+                Engineered with modern tech.
+              </h2>
+              <p className="text-xl text-center opacity-60 mb-24 max-w-3xl mx-auto">
+                Built on a foundation of cutting-edge tools and frameworks, 
+                chosen specifically for real-time performance and reliability.
+              </p>
+            </FadeIn>
+
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { icon: <Cloud className="w-8 h-8" />, name: "Next.js 15", desc: "React framework with App Router for optimal performance" },
+                { icon: <Database className="w-8 h-8" />, name: "TypeScript", desc: "Type-safe code prevents bugs before they happen" },
+                { icon: <Wifi className="w-8 h-8" />, name: "SignalR", desc: "Real-time WebSocket connection to F1's live timing" },
+                { icon: <Shield className="w-8 h-8" />, name: "Cloudflare", desc: "Edge network ensures global low-latency access" }
+              ].map((tech, i) => (
+                <FadeIn key={i} delay={i * 0.1}>
+                  <div className={`p-8 rounded-3xl transition-all duration-300 hover:scale-105 ${
+                    theme === "light" ? "bg-gray-50 hover:bg-gray-100" : "bg-white/5 hover:bg-white/10"
+                  }`}>
+                    <div className="mb-6 opacity-80">{tech.icon}</div>
+                    <h3 className="text-xl font-semibold mb-3">{tech.name}</h3>
+                    <p className="text-sm opacity-60 leading-relaxed">{tech.desc}</p>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="min-h-[80vh] flex items-center justify-center px-6 py-32">
+          <div className="max-w-4xl mx-auto text-center">
+            <FadeIn>
+              <h2 className="text-5xl md:text-7xl font-semibold tracking-tight mb-12 leading-tight">
+                Open source. <br /> Built for the community.
+              </h2>
+            </FadeIn>
+            <FadeIn delay={0.2}>
+              <p className="text-xl md:text-2xl opacity-60 mb-16 leading-relaxed">
+                Every line of code is available on GitHub. Contribute, learn, or build your own version.
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.4}>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <a
+                  href="https://github.com/whoami-dpr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`group px-10 py-5 rounded-full text-lg font-medium transition-all duration-300 hover:scale-105 ${
+                    theme === "light"
+                      ? "bg-black text-white hover:bg-gray-800"
+                      : "bg-white text-black hover:bg-gray-100"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <Github className="w-6 h-6" />
+                    View on GitHub
+                  </span>
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/joaquinmontes10/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`group px-10 py-5 rounded-full text-lg font-medium border transition-all duration-300 hover:scale-105 ${
+                    theme === "light"
+                      ? "border-black/20 hover:bg-black hover:text-white hover:border-black"
+                      : "border-white/20 hover:bg-white hover:text-black hover:border-white"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <Linkedin className="w-6 h-6" />
+                    Connect
+                  </span>
+                </a>
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-20 px-6 border-t border-white/5">
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/10">
+                <img
+                  src="https://github.com/whoami-dpr.png"
+                  alt="Joaquín Montes"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="font-semibold text-lg">Joaquín Montes</div>
+                <div className="text-sm opacity-60">Systems Engineer</div>
+              </div>
+            </div>
+            <div className="text-sm opacity-40">
+              &copy; 2024 ATLab. Open source under MIT License.
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );
-} 
+}
