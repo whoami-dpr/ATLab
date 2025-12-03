@@ -3,7 +3,6 @@
 import { Info, Github, Sun, Moon, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { GitHubStarsButton } from "./animate-ui/buttons/github-stars";
 import { useTheme } from "@/contexts/ThemeContext";
 
 const navItems = [
@@ -68,7 +67,10 @@ export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
               <Sun className="w-5 h-5" />
             )}
           </button>
-          <GitHubStarsButton username="whoami-dpr" repo="ATLab" className="bg-transparent text-gray-900 dark:text-white hover:bg-transparent hover:scale-100" />
+          <a href="https://github.com/whoami-dpr/ATLab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200">
+            <Github className="w-4 h-4" />
+            GitHub
+          </a>
           <a href="/about-us" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 flex items-center gap-1">
             <Info className="w-4 h-4 mr-1" /> About Us
           </a>
@@ -124,13 +126,14 @@ export function Navbar({ hideLogo = false }: { hideLogo?: boolean }) {
               
               {/* Mobile Actions */}
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-4 transition-colors duration-200">
-                <div className="pl-4">
-                  <GitHubStarsButton 
-                    username="whoami-dpr" 
-                    repo="ATLab" 
-                    className="bg-transparent text-gray-900 dark:text-white hover:bg-transparent hover:scale-100 text-left" 
-                  />
-                </div>
+                <a 
+                  href="https://github.com/whoami-dpr/ATLab" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200 flex items-center gap-1 py-2 pl-4"
+                >
+                  <Github className="w-4 h-4 mr-1" /> GitHub
+                </a>
                 
                 <a 
                   href="/about-us" 

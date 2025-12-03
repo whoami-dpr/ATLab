@@ -68,7 +68,7 @@ export default function RootLayout({
               `
             }} />
           </head>
-          <body className="min-h-screen w-full relative font-sans antialiased bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-200">
+          <body className="min-h-screen w-full relative font-inter antialiased bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-200">
             <Script
               async
               src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4944595008155827"

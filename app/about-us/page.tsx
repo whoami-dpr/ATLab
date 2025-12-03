@@ -190,8 +190,8 @@ export default function AboutUs() {
               <FadeIn delay={0.2}>
                 <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border border-white/10">
                   <img
-                    src="/images/live-timing-preview.png"
-                    alt="Live Timing Dashboard"
+                    src="/images/mclaren-team.png"
+                    alt="Team working with live timing data"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
