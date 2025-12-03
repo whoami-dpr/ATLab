@@ -1,47 +1,35 @@
-import React from 'react';
-import Image from 'next/image';
+"use client";
 
-const galleryImages = [
-  { src: '/gallery-images/f1.jpg', alt: 'Formula 1 Car' },
-  { src: '/gallery-images/indycar.jpg', alt: 'IndyCar' },
-  { src: '/gallery-images/motogp.jpg', alt: 'MotoGP bike' },
-  { src: '/gallery-images/nascar.jpg', alt: 'NASCAR car' },
-  { src: '/gallery-images/tc.jpg', alt: 'Turismo Carretera car' },
-  { src: '/gallery-images/wrc.jpg', alt: 'WRC rally car' },
-];
+import React from 'react';
 
 const HeroBanner = () => {
   return (
-    <div className="relative w-full h-20 md:h-24 lg:h-28 overflow-hidden mb-4">
-      {/* Image Grid */}
-      <div className="absolute inset-0 grid grid-cols-6 h-full">
-        {galleryImages.map((image, index) => (
-          <div
-            key={index}
-            className="relative w-full h-full"
-            style={{ borderRight: index < galleryImages.length - 1 ? '1px solid rgba(0,0,0,0.25)' : 'none' }}
-          >
-            <Image
-              src={image.src}
-              alt={image.alt}
-              layout="fill"
-              objectFit="cover"
-              className="object-cover"
-            />
-          </div>
-        ))}
+    <div className="relative w-full overflow-hidden bg-white dark:bg-[#111827]">
+      
+      {/* Compact Content */}
+      <div className="relative py-6 md:py-8 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          
+          {/* Eyebrow */}
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide mb-1.5">
+            Motorsport 2025
+          </p>
+
+          {/* Title */}
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-black dark:text-white tracking-tight mb-1.5">
+            Calendario
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-xs md:text-sm text-gray-700 dark:text-gray-300">
+            Todas las fechas del motorsport
+          </p>
+
+        </div>
       </div>
 
-      {/* Dark blue overlay to match the sample */}
-      <div className="absolute inset-0 bg-[#0b2340] opacity-60 mix-blend-multiply" />
-
-      {/* Text Overlay */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold italic tracking-[0.18em] uppercase drop-shadow-lg">
-          Calendario ATLab
-        </h1>
-        <p className="text-xs md:text-sm mt-1 opacity-90">Calendario completo del motorsport</p>
-      </div>
+      {/* Divider */}
+      <div className="w-full h-px bg-gray-200 dark:bg-gray-800"></div>
     </div>
   );
 };

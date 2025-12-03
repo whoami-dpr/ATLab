@@ -192,3 +192,6 @@ button:focus-visible {
     letter-spacing: -0.01em;
   }
 }
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle, var(--tw-gradient-stops));
+  }
