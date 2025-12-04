@@ -157,7 +157,7 @@ export function RaceResultsTable({ year }: RaceResultsTableProps) {
     }
 
     const position = parseInt(result.position);
-    if (position === 1) return "#FFD700"; // Gold for P1
+    if (position === 1) return "#e6b000ff"; // Metallic Gold for P1
     if (position === 2) return "#C0C0C0"; // Silver for P2
     if (position === 3) return "#CD7F32"; // Bronze for P3
     if (position <= 10) return "#1E2642"; // Requested color for P4-10
@@ -170,7 +170,7 @@ export function RaceResultsTable({ year }: RaceResultsTableProps) {
   };
 
   const getPointsColumnColor = (position: number): string => {
-    if (position === 1) return "#FFD700"; // Gold
+    if (position === 1) return "#e6b000ff"; // Metallic Gold
     if (position === 2) return "#C0C0C0"; // Silver
     if (position === 3) return "#CD7F32"; // Bronze
     return "#2d3e50"; // Default background
@@ -199,7 +199,7 @@ export function RaceResultsTable({ year }: RaceResultsTableProps) {
   const sortedDrivers = getSortedDrivers();
 
   return (
-    <div className="w-full bg-[#1a2332] rounded-lg overflow-hidden border border-white/20">
+    <div className="w-full bg-[#1a2332] rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full" style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>

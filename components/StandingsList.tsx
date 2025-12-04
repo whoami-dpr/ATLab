@@ -12,7 +12,8 @@ interface StandingsListProps {
 export function StandingsList({ title, data, type }: StandingsListProps) {
   return (
     <div className="flex flex-col w-full">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 pl-2 border-l-4 border-red-600">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-3">
+        <span className="w-1.5 h-6 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]"></span>
         {title}
       </h2>
       

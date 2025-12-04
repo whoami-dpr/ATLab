@@ -511,22 +511,7 @@ export const TeamRadioPanel = ({ messages, raceControlMessages = [] }: TeamRadio
       />
 
       {/* Worker Status Debug */}
-      <div className="absolute bottom-0 right-0 p-2 text-[10px] font-mono text-gray-500 flex gap-2 items-center z-50 bg-black/50 rounded-tl">
-        <span>AI Worker: {workerRef.current ? "ACTIVE" : "INACTIVE"}</span>
-        <button 
-            onClick={() => {
-                if (workerRef.current) {
-                    console.log("🎤 Manually triggering worker test");
-                    workerRef.current.postMessage({ action: 'transcribe' }); 
-                } else {
-                    console.log("❌ Worker not ready");
-                }
-            }}
-            className="bg-gray-800 px-2 py-0.5 rounded hover:bg-gray-700 text-white cursor-pointer"
-        >
-            Test
-        </button>
-      </div>
+
     </div>
   )
 }

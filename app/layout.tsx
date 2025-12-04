@@ -76,7 +76,7 @@ export default function RootLayout({
               strategy="afterInteractive"
             />
             <div className="absolute inset-0 z-0 opacity-0 dark:opacity-100 transition-opacity duration-200" style={{
-              background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%), #000000"
+              background: "#000000"
             }} />
             <div className="absolute inset-0 z-0 opacity-100 dark:opacity-0 transition-opacity duration-200" style={{
               background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(239, 68, 68, 0.08), transparent 70%), #ffffff"

@@ -7,7 +7,9 @@ interface ChartDataPoint {
   round: number;
   raceName: string;
   isFinished?: boolean;
-  [key: string]: number | string | boolean | undefined; // Driver codes and their points
+  hasSprint?: boolean;
+  ranks?: Record<string, number>;
+  [key: string]: number | string | boolean | undefined | Record<string, number>; // Driver codes and their points
 }
 
 export async function GET(request: Request) {
@@ -109,15 +111,21 @@ export async function GET(request: Request) {
     // Then fetch sprint results (if any)
     let sprintsRaw: any[] = [];
     try {
-      await delay(200);
+      await delay(500); // Increased delay to avoid rate limits
       sprintsRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/sprint.json`);
     } catch (e) {
-      console.warn("Failed to fetch sprints or no sprints available", e);
-      sprintsRaw = [];
+      console.warn("Failed to fetch sprints, retrying...", e);
+      try {
+        await delay(1000);
+        sprintsRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/sprint.json`);
+      } catch (retryErr) {
+        console.error("Retry failed for sprints", retryErr);
+        sprintsRaw = [];
+      }
     }
 
-    const races = mergeRaces(racesRaw);
-    const sprints = mergeRaces(sprintsRaw);
+    const races = mergeRaces(racesRaw).sort((a: any, b: any) => parseInt(a.round) - parseInt(b.round));
+    const sprints = mergeRaces(sprintsRaw).sort((a: any, b: any) => parseInt(a.round) - parseInt(b.round));
 
     // Map to store cumulative points for each driver
     const driverPoints: Record<string, number> = {};
@@ -128,21 +136,31 @@ export async function GET(request: Request) {
     const driverNames: Record<string, string> = {};
     const driverTeams: Record<string, string> = {};
 
-    // Initialize drivers from results (only drivers who have raced exist in results)
+    // Helper to process driver info
+    const processDriverInfo = (result: any) => {
+      if (result.Driver.code) {
+        allDrivers.add(result.Driver.code);
+        if (!driverNames[result.Driver.code]) {
+          driverNames[result.Driver.code] = `${result.Driver.givenName} ${result.Driver.familyName}`;
+        }
+        // Store/Update team (will end up with the team from the last race processed)
+        if (result.Constructor && result.Constructor.constructorId) {
+          driverTeams[result.Driver.code] = result.Constructor.constructorId;
+        }
+      }
+    };
+
+    // Initialize drivers from race results
     races.forEach((race: any) => {
       if (race.Results) {
-        race.Results.forEach((result: any) => {
-          if (result.Driver.code) {
-            allDrivers.add(result.Driver.code);
-            if (!driverNames[result.Driver.code]) {
-              driverNames[result.Driver.code] = `${result.Driver.givenName} ${result.Driver.familyName}`;
-            }
-            // Store/Update team (will end up with the team from the last race processed)
-            if (result.Constructor && result.Constructor.constructorId) {
-              driverTeams[result.Driver.code] = result.Constructor.constructorId;
-            }
-          }
-        });
+        race.Results.forEach(processDriverInfo);
+      }
+    });
+
+    // Initialize drivers from sprint results (in case a driver only did a sprint)
+    sprints.forEach((sprint: any) => {
+      if (sprint.SprintResults) {
+        sprint.SprintResults.forEach(processDriverInfo);
       }
     });
 
@@ -167,6 +185,7 @@ export async function GET(request: Request) {
     sprints.forEach((sprint: any) => sprintsByRound[parseInt(sprint.round)] = sprint);
 
     const raceResultsByRound: Record<number, Record<string, any>> = {};
+    const driverPositionCounts: Record<string, Record<number, number>> = {};
 
     for (let round = 1; round <= maxRound; round++) {
       const scheduledRace = scheduleByRound[round];
@@ -192,6 +211,13 @@ export async function GET(request: Request) {
           if (code) {
             driverPoints[code] = (driverPoints[code] || 0) + parseFloat(result.points);
             
+            // Update position counts for tie-breaker
+            const pos = parseInt(result.position);
+            if (!isNaN(pos)) {
+                if (!driverPositionCounts[code]) driverPositionCounts[code] = {};
+                driverPositionCounts[code][pos] = (driverPositionCounts[code][pos] || 0) + 1;
+            }
+
             // Capture raw result for the table
             raceResultsByRound[round][code] = {
               position: result.position,
@@ -203,6 +229,30 @@ export async function GET(request: Request) {
         });
       }
 
+      // Calculate ranks for this round with tie-breaker logic
+      const currentDrivers = Array.from(allDrivers);
+      currentDrivers.sort((a, b) => {
+        const pointsA = driverPoints[a] || 0;
+        const pointsB = driverPoints[b] || 0;
+        if (pointsA !== pointsB) return pointsB - pointsA;
+
+        // Tie-breaker: Countback
+        const countsA = driverPositionCounts[a] || {};
+        const countsB = driverPositionCounts[b] || {};
+        
+        for (let i = 1; i <= 25; i++) { // Check positions 1-25
+            const cA = countsA[i] || 0;
+            const cB = countsB[i] || 0;
+            if (cA !== cB) return cB - cA;
+        }
+        return 0;
+      });
+
+      const roundRanks: Record<string, number> = {};
+      currentDrivers.forEach((driver, index) => {
+        roundRanks[driver] = index + 1;
+      });
+
       // Create data point for this round
       // Use scheduled race name
       const raceName = scheduledRace ? scheduledRace.raceName : `Round ${round}`;
@@ -211,6 +261,8 @@ export async function GET(request: Request) {
         round: round,
         raceName: raceName,
         isFinished: !!race,
+        hasSprint: !!(sprint && sprint.SprintResults),
+        ranks: roundRanks,
         ...driverPoints
       };
 

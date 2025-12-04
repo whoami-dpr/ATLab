@@ -6,6 +6,7 @@ import { useF1Standings } from "@/hooks/useF1Standings";
 import { StandingsList } from "@/components/StandingsList";
 import { ChampionshipProgressChart } from "@/components/ChampionshipProgressChart";
 import { RaceResultsTable } from "@/components/RaceResultsTable";
+import { SeasonAnalytics } from "@/components/SeasonAnalytics";
 
 export default function StandingsPage() {
   const { driverStandings, constructorStandings, loading, error, fetchStandings } = useF1Standings();
@@ -16,65 +17,73 @@ export default function StandingsPage() {
   }, [selectedYear, fetchStandings]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0B0E14] text-gray-900 dark:text-white font-sans transition-colors duration-200">
+    <div className="min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-200">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header with Year Selection */}
-        <div className="mb-10">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white transition-colors duration-200">
-                Championship Standings
-              </h1>
-              <div className="h-1 w-20 bg-red-600 rounded-full mt-2"></div>
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-medium tracking-tight leading-none text-gray-900 dark:text-white">
+              Championship Standings
+            </h1>
+            <p className="mt-3 text-base md:text-lg text-gray-500 dark:text-gray-400 font-regular max-w-2xl leading-relaxed">
+              Explore the complete driver and constructor rankings, track championship battles with detailed progress charts, and review race-by-race results for the {selectedYear} season.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-end px-1 w-full">
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 font-inter">Quick Select</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 font-inter">Select Season</span>
             </div>
+            {/* Year Selector - Monochrome Minimalist */}
+            <div className="flex flex-wrap items-center gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/10">
+            {['2025', '2024', '2023', '2022'].map((year) => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={`
+                  px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300
+                  ${selectedYear === year 
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-md transform scale-105' 
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'
+                  }
+                `}
+              >
+                {year}
+              </button>
+            ))}
             
-            {/* Year Input */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="year-input" className="text-sm text-gray-600 dark:text-gray-300 font-semibold transition-colors duration-200">Year:</label>
+            <div className="w-px h-6 bg-gray-300 dark:bg-white/10 mx-1"></div>
+
+            <div className="relative group">
               <input
-                id="year-input"
                 type="number"
                 min="1950"
                 max="2025"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-20 px-3 py-1.5 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white font-bold text-sm text-center focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 transition-all hover:border-gray-400 dark:hover:border-gray-600 shadow-md"
+                className="w-20 px-2 py-2 rounded-xl bg-transparent text-center text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5 focus:bg-white dark:focus:bg-white/10 focus:text-gray-900 dark:focus:text-white transition-all outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                placeholder="..."
               />
+              <div className="absolute inset-0 rounded-xl border border-transparent group-hover:border-gray-200 dark:group-hover:border-white/10 pointer-events-none transition-colors"></div>
             </div>
           </div>
-          
-          {/* Quick Year Selection Buttons */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 dark:text-gray-500 transition-colors duration-200">Quick select:</span>
-            <div className="relative">
-              <div className="flex items-center gap-1 bg-gray-200/80 dark:bg-gray-800/50 p-1 rounded-full border border-gray-300 dark:border-gray-700/50 transition-colors duration-200">
-                {['2025', '2024', '2023', '2022', '2021'].map((year) => (
-                  <button
-                    key={year}
-                    onClick={() => setSelectedYear(year)}
-                    className={`
-                      px-5 py-2 rounded-full font-semibold text-sm transition-all
-                      ${selectedYear === year 
-                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/50' 
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                      }
-                    `}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-              {/* Glow Effect */}
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/20 via-red-500/20 to-red-600/20 rounded-full blur opacity-50 -z-10"></div>
-            </div>
           </div>
         </div>
 
         {/* Championship Progress Chart and Race Results */}
+        {/* Championship Progress Chart and Race Results */}
         <div className="flex flex-col gap-8 max-w-6xl mx-auto mb-12">
           <ChampionshipProgressChart year={selectedYear} />
+          
+          <SeasonAnalytics 
+            driverStandings={driverStandings} 
+            constructorStandings={constructorStandings} 
+            year={selectedYear}
+          />
+
           <RaceResultsTable year={selectedYear} />
         </div>
 
@@ -84,11 +93,11 @@ export default function StandingsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
           </div>
         ) : error ? (
-          <div className="text-center py-12 bg-red-100 dark:bg-red-900/20 rounded-xl border border-red-300 dark:border-red-900/50 transition-colors duration-200">
-            <p className="text-red-700 dark:text-red-400 text-lg transition-colors duration-200">Error loading standings: {error}</p>
+          <div className="text-center py-12 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20 backdrop-blur-sm">
+            <p className="text-red-600 dark:text-red-400 text-lg font-medium">Error loading standings: {error}</p>
             <button 
               onClick={() => fetchStandings(selectedYear)}
-              className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-bold"
+              className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-bold shadow-lg shadow-red-600/20"
             >
               Retry
             </button>

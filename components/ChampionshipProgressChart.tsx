@@ -270,7 +270,7 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
   }
 
   return (
-    <div className="w-full bg-white dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-8 transition-colors duration-200">
+    <div className="w-full bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 p-6 mb-8 transition-colors duration-200">
       <div className="flex flex-col lg:flex-row">
         <div className="flex-1 flex flex-col">
           <div className="mb-6">

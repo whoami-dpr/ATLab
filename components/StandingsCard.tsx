@@ -13,7 +13,7 @@ interface StandingsCardProps {
 
 export function StandingsCard({ rank, name, team, points, logo, type }: StandingsCardProps) {
   return (
-    <div className="relative flex items-center justify-between px-3 py-2 rounded-lg border bg-gray-100 dark:bg-gray-800/30 border-gray-200 dark:border-transparent transition-all hover:bg-gray-200 dark:hover:bg-gray-800/50 mb-1.5">
+    <div className="relative flex items-center justify-between px-4 py-3 rounded-xl border bg-white dark:bg-white/5 backdrop-blur-sm border-gray-200 dark:border-white/10 transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/10 mb-2 shadow-sm hover:shadow-md group">
       {/* Left Section: Rank & Info */}
       <div className="flex items-center gap-3">
         {/* Rank Number - Simple and minimal */}
