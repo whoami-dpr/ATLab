@@ -50,7 +50,7 @@ export default function StandingsPage() {
               Championship Standings
             </h1>
             <p className="mt-3 text-base md:text-lg text-gray-500 dark:text-gray-400 font-regular max-w-2xl leading-relaxed">
-              Explore the complete driver and constructor rankings, track championship battles with detailed progress charts, and review race-by-race results for the {selectedYear} season.
+              Explore the full drivers' and constructors' standings, follow the championship battles with detailed progress charts, driver standings evolution, points distribution, and more.
             </p>
           </div>
           

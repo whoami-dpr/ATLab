@@ -261,17 +261,17 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
       };
 
       return (
-        <div className="bg-black/90 backdrop-blur-md border border-gray-800 p-3 rounded-md shadow-2xl min-w-[180px]">
-          <div className="flex items-center justify-between gap-4 mb-2 border-b border-gray-800 pb-2">
+        <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md border border-gray-200 dark:border-gray-800 p-3 rounded-md shadow-2xl min-w-[180px]">
+          <div className="flex items-center justify-between gap-4 mb-2 border-b border-gray-200 dark:border-gray-800 pb-2">
             <div className="flex items-center gap-2">
               {flagUrl && <img src={flagUrl} alt="flag" className="w-5 h-3.5 object-cover rounded-[2px]" />}
-              <span className="text-white font-bold text-sm whitespace-nowrap">{raceName}</span>
+              <span className="text-gray-900 dark:text-white font-bold text-sm whitespace-nowrap">{raceName}</span>
             </div>
-            <span className="text-gray-400 text-xs font-mono whitespace-nowrap">R{round}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-xs font-mono whitespace-nowrap">R{round}</span>
           </div>
           
           <div className="flex items-center justify-between gap-4">
-            <span className="text-gray-300 font-medium whitespace-nowrap">{targetDriver}</span>
+            <span className="text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">{targetDriver}</span>
             <span className={`text-lg font-bold`} style={{ color: getDriverColor(targetDriver) }}>
               {getOrdinal(position)} <span className="text-xs text-gray-500 font-normal ml-0.5">pos.</span>
             </span>
@@ -296,17 +296,17 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
           const flagUrl = flagCode ? `/country-flags/${flagCode}.svg` : null;
           
           return (
-            <div className="bg-black/90 backdrop-blur-md border border-gray-800 p-3 rounded-md shadow-2xl min-w-[180px]">
-              <div className="flex items-center justify-between gap-4 mb-2 border-b border-gray-800 pb-2">
+            <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md border border-gray-200 dark:border-gray-800 p-3 rounded-md shadow-2xl min-w-[180px]">
+              <div className="flex items-center justify-between gap-4 mb-2 border-b border-gray-200 dark:border-gray-800 pb-2">
                 <div className="flex items-center gap-2">
                   {flagUrl && <img src={flagUrl} alt="flag" className="w-5 h-3.5 object-cover rounded-[2px]" />}
-                  <span className="text-white font-bold text-sm whitespace-nowrap">{raceName}</span>
+                  <span className="text-gray-900 dark:text-white font-bold text-sm whitespace-nowrap">{raceName}</span>
                 </div>
-                <span className="text-gray-400 text-xs font-mono whitespace-nowrap">R{round}</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs font-mono whitespace-nowrap">R{round}</span>
               </div>
               
               <div className="flex items-center justify-between gap-4">
-                <span className="text-gray-300 font-medium whitespace-nowrap">{hoveredDriver}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">{hoveredDriver}</span>
                 <span className="text-lg font-bold" style={{ color: getDriverColor(hoveredDriver) }}>
                   {points} <span className="text-xs text-gray-500 font-normal ml-0.5">points</span>
                 </span>
@@ -317,10 +317,10 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
 
       // Fallback: Show total points
       return (
-        <div className="bg-black/90 backdrop-blur-md border border-gray-800 p-3 rounded-md shadow-2xl min-w-[180px]">
-          <div className="mb-2 border-b border-gray-800 pb-2 flex justify-between items-center">
-            <span className="text-white font-bold text-sm">{data.raceName}</span>
-            <span className="text-gray-400 text-xs">Total: {data.total} pts</span>
+        <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md border border-gray-200 dark:border-gray-800 p-3 rounded-md shadow-2xl min-w-[180px]">
+          <div className="mb-2 border-b border-gray-200 dark:border-gray-800 pb-2 flex justify-between items-center">
+            <span className="text-gray-900 dark:text-white font-bold text-sm">{data.raceName}</span>
+            <span className="text-gray-500 dark:text-gray-400 text-xs">Total: {data.total} pts</span>
           </div>
         </div>
       );
@@ -332,10 +332,10 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
     <div className="w-full">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center justify-between p-4 bg-white/5 backdrop-blur-md border border-white/10 ${isExpanded ? 'rounded-t-xl border-b-0' : 'rounded-xl'} hover:bg-white/10 transition-all duration-200 group`}
+        className={`w-full flex items-center justify-between p-4 bg-white dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 ${isExpanded ? 'rounded-t-xl border-b-0' : 'rounded-xl'} hover:bg-gray-50 dark:hover:bg-white/10 transition-all duration-200 group`}
       >
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg bg-white/5 text-gray-300 transition-colors group-hover:bg-blue-500/20 group-hover:text-blue-400`}>
+          <div className={`p-2 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-300 transition-colors group-hover:bg-blue-500/20 group-hover:text-blue-400`}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="20" x2="18" y2="10"></line>
               <line x1="12" y1="20" x2="12" y2="4"></line>
@@ -343,12 +343,12 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
             </svg>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-sm font-bold text-white">More Analytics</span>
-            <span className="text-xs text-gray-400">Deep dive into season statistics and trends</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-white">More Analytics</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Deep dive into season statistics and trends</span>
           </div>
         </div>
         <div className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 dark:text-gray-400">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
@@ -363,25 +363,25 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="pt-4 bg-black/20 backdrop-blur-md rounded-b-xl border-x border-b border-white/10 p-4 flex flex-col gap-8">
+            <div className="pt-4 bg-gray-50/50 dark:bg-black/20 backdrop-blur-md rounded-b-xl border-x border-b border-gray-200 dark:border-white/10 p-4 flex flex-col gap-8">
               {loading ? (
                 <div className="h-[400px] flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
                 <>
-                  <h3 className="text-white font-bold text-lg mb-4 px-2">Driver Ranking Evolution</h3>
+                  <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1 px-2">Driver Ranking Evolution</h3>
                   <div className="h-[500px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={rankingData}
-                        margin={{ top: 20, right: 60, left: 20, bottom: 40 }}
+                        margin={{ top: 5, right: 60, left: 20, bottom: 40 }}
                         onMouseLeave={handleChartLeave}
                       >
-                        <CartesianGrid stroke="#333" vertical={false} strokeDasharray="3 3" opacity={0.3} />
+                        <CartesianGrid stroke="var(--text-secondary)" vertical={true} horizontal={true} strokeDasharray="2 2" opacity={0.2} />
                         <XAxis 
                           dataKey="abbr" 
-                          stroke="#666" 
+                          stroke="var(--text-secondary)" 
                           interval={0}
                           padding={{ left: 0, right: 0 }}
                           axisLine={false}
@@ -394,7 +394,7 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                                 {flagUrl ? (
                                   <image x={-10} y={10} width={20} height={15} href={flagUrl} preserveAspectRatio="xMidYMid slice" />
                                 ) : (
-                                  <text x={0} y={20} dy={0} textAnchor="middle" fill="#666" fontSize={10}>{payload.value}</text>
+                                  <text x={0} y={20} dy={0} textAnchor="middle" fill="var(--text-secondary)" fontSize={10}>{payload.value}</text>
                                 )}
                               </g>
                             );
@@ -404,8 +404,8 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                           yAxisId="left"
                           reversed={true} 
                           domain={[1, 'dataMax']} 
-                          stroke="#666"
-                          tick={{ fill: '#999', fontSize: 12, fontWeight: 'bold' }}
+                          stroke="var(--text-secondary)"
+                          tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 'bold' }}
                           axisLine={false}
                           tickLine={false}
                           width={30}
@@ -417,7 +417,7 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                           orientation="right"
                           reversed={true} 
                           domain={[1, 'dataMax']} 
-                          stroke="#666"
+                          stroke="var(--text-secondary)"
                           axisLine={false}
                           tickLine={false}
                           width={40}
@@ -448,10 +448,10 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                             dataKey={driver}
                             stroke={getDriverColor(driver)}
                             strokeWidth={hoveredDriver === driver ? 4 : 2}
-                            strokeOpacity={hoveredDriver && hoveredDriver !== driver ? 0.5 : 1}
+                            strokeOpacity={hoveredDriver && hoveredDriver !== driver ? 0.35 : 1}
                             dot={(props: any) => {
                               if (props.payload.round === 0) return <g key={props.key} />;
-                              return <circle key={props.key} cx={props.cx} cy={props.cy} r={2} fill={getDriverColor(driver)} strokeWidth={0} />;
+                              return <circle key={props.key} cx={props.cx} cy={props.cy} r={2} fill={getDriverColor(driver)} fillOpacity={hoveredDriver && hoveredDriver !== driver ? 0.35 : 1} strokeWidth={0} />;
                             }}
                             activeDot={(props: any) => {
                               // Only show active dot on the visual line if this driver is hovered
@@ -488,22 +488,22 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
 
                   {/* Points Distribution Chart */}
                   <div className="w-full">
-                    <h3 className="text-white font-bold text-lg mb-4 px-2">Points Distribution</h3>
+                    <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1 px-2">Points Distribution</h3>
                     <div className="h-[600px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           layout="vertical"
                           data={racePointsData}
-                          margin={{ top: 20, right: 60, left: 20, bottom: 20 }}
+                          margin={{ top: 5, right: 60, left: 20, bottom: 20 }}
                           barCategoryGap={2}
                           onMouseLeave={handleChartLeave}
                         >
-                          <CartesianGrid stroke="#333" horizontal={false} strokeDasharray="3 3" opacity={0.3} />
+                          <CartesianGrid stroke="var(--text-secondary)" horizontal={false} strokeDasharray="3 3" opacity={0.2} />
                           <XAxis type="number" hide />
                           <YAxis 
                             dataKey="abbr" 
                             type="category" 
-                            stroke="#666" 
+                            stroke="var(--text-secondary)" 
                             tick={({ x, y, payload }) => {
                                 const flagCode = ABBR_TO_FLAG[payload.value];
                                 const flagUrl = flagCode ? `/country-flags/${flagCode}.svg` : null;
@@ -525,11 +525,11 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                             orientation="right"
                             dataKey="total"
                             type="category"
-                            stroke="#666"
+                            stroke="var(--text-secondary)"
                             tick={({ x, y, payload, index }) => {
                                 const total = racePointsData[index]?.total || 0;
                                 return (
-                                    <text x={x} y={y} dy={4} textAnchor="start" fill="#fff" fontSize={11} fontWeight="bold">
+                                    <text x={x} y={y} dy={4} textAnchor="start" fill="var(--text-primary)" fontSize={11} fontWeight="bold">
                                         {total}
                                     </text>
                                 );

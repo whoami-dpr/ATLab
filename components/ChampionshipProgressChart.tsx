@@ -260,7 +260,7 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
-              Championship Progress
+              Championship {year} Progress
             </h2>
             <div className="h-0.5 w-full bg-red-600"></div>
           </div>
@@ -338,8 +338,8 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
                       stroke={getDriverColor(driver)}
                       strokeWidth={2}
                       strokeDasharray={SECOND_DRIVERS.has(driver) ? "5 5" : undefined}
-                      dot={{ r: 3, strokeWidth: 1 }}
-                      activeDot={{ r: 6 }}
+                      dot={{ r: 3, strokeWidth: 1, fill: getDriverColor(driver) }}
+                      activeDot={{ r: 6, fill: getDriverColor(driver) }}
                       connectNulls
                       isAnimationActive={false}
                     />
