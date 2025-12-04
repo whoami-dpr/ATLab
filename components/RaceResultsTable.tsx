@@ -10,6 +10,8 @@ interface ChartDataPoint {
 
 interface RaceResultsTableProps {
   year: string;
+  data: any;
+  loading: boolean;
 }
 
 const TEAM_COLORS: Record<string, string> = {
@@ -87,35 +89,22 @@ const COUNTRY_FLAGS: Record<string, string> = {
   "DUT": "/country-flags/ned.svg",
 };
 
-export function RaceResultsTable({ year }: RaceResultsTableProps) {
+export function RaceResultsTable({ year, data: result, loading }: RaceResultsTableProps) {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [raceResults, setRaceResults] = useState<Record<number, Record<string, any>>>({});
   const [drivers, setDrivers] = useState<string[]>([]);
   const [driverNames, setDriverNames] = useState<Record<string, string>>({});
   const [driverTeams, setDriverTeams] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/f1/championship-progress?year=${year}`);
-        if (!response.ok) throw new Error("Failed to fetch");
-        const result = await response.json();
-        
-        setChartData(result.data || []);
-        setRaceResults(result.raceResults || {});
-        setDrivers(result.drivers || []);
-        setDriverNames(result.driverNames || {});
-        setDriverTeams(result.driverTeams || {});
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [year]);
+    if (result && result.success) {
+      setChartData(result.data || []);
+      setRaceResults(result.raceResults || {});
+      setDrivers(result.drivers || []);
+      setDriverNames(result.driverNames || {});
+      setDriverTeams(result.driverTeams || {});
+    }
+  }, [result]);
 
   const getRaceAbbreviation = (raceName: string): string => {
     for (const [key, abbr] of Object.entries(RACE_ABBREVIATIONS)) {

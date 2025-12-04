@@ -19,6 +19,8 @@ interface SeasonAnalyticsProps {
   driverStandings: DriverStanding[];
   constructorStandings: ConstructorStanding[];
   year: string;
+  progressData: any;
+  loading: boolean;
 }
 
 interface ChartDataPoint {
@@ -90,12 +92,11 @@ Object.values(RACE_CONFIG).forEach(config => {
   ABBR_TO_FLAG[config.abbr] = config.flag;
 });
 
-export function SeasonAnalytics({ driverStandings, constructorStandings, year }: SeasonAnalyticsProps) {
+export function SeasonAnalytics({ driverStandings, constructorStandings, year, progressData: result, loading }: SeasonAnalyticsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [rankingData, setRankingData] = useState<any[]>([]);
   const [racePointsData, setRacePointsData] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const [driverTeams, setDriverTeams] = useState<Record<string, string>>({});
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
 
@@ -114,121 +115,106 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year }:
   };
 
   useEffect(() => {
-    if (isExpanded && rankingData.length === 0) {
-      const fetchData = async () => {
-        setLoading(true);
-        try {
-          const response = await fetch(`/api/f1/championship-progress?year=${year}`);
-          const result = await response.json();
-          
-          if (result.success && result.data) {
-            const finishedRaces = result.data.filter((race: ChartDataPoint) => race.isFinished);
-            const allDrivers = result.drivers as string[];
-            setDriverTeams(result.driverTeams || {});
-            
-            // Process data to calculate rankings per round
-            const processedData = finishedRaces.map((race: any) => {
-              const raceConfig = getRaceConfig(race.raceName);
-              const raceRanks: any = {
-                round: race.round,
-                raceName: race.raceName,
-                abbr: raceConfig.abbr,
-                hasSprint: race.hasSprint
-              };
+    if (result && result.success && result.data) {
+      const finishedRaces = result.data.filter((race: ChartDataPoint) => race.isFinished);
+      const allDrivers = result.drivers as string[];
+      setDriverTeams(result.driverTeams || {});
+      
+      // Process data to calculate rankings per round
+      const processedData = finishedRaces.map((race: any) => {
+        const raceConfig = getRaceConfig(race.raceName);
+        const raceRanks: any = {
+          round: race.round,
+          raceName: race.raceName,
+          abbr: raceConfig.abbr,
+          hasSprint: race.hasSprint
+        };
 
-              // If backend provides ranks (with tie-breaker logic), use them
-              if (race.ranks) {
-                allDrivers.forEach(driver => {
-                  if (race.ranks[driver]) {
-                    raceRanks[driver] = race.ranks[driver];
-                  }
-                });
-              } else {
-                // Fallback to frontend calculation (points only)
-                const raceStandings = allDrivers.map(driver => ({
-                  driver,
-                  points: (race[driver] as number) || 0
-                }));
-
-                // Sort by points descending to get rank
-                raceStandings.sort((a, b) => b.points - a.points);
-
-                // Assign rank
-                raceStandings.forEach((item, index) => {
-                  raceRanks[item.driver] = index + 1;
-                });
-              }
-
-              return raceRanks;
-            });
-
-            setRankingData(processedData);
-            
-            // Add a starting point (Round 0) that matches the first race results
-            // This creates a visual "start" for the season
-            if (processedData.length > 0) {
-                const firstRace = processedData[0];
-                const startPoint = {
-                    ...firstRace,
-                    round: 0,
-                    raceName: "Season Start",
-                    abbr: "" 
-                };
-                processedData.unshift(startPoint);
+        // If backend provides ranks (with tie-breaker logic), use them
+        if (race.ranks) {
+          allDrivers.forEach(driver => {
+            if (race.ranks[driver]) {
+              raceRanks[driver] = race.ranks[driver];
             }
-            
-            // Sort drivers by final standing for the legend/rendering order
-            if (processedData.length > 0) {
-                const lastRace = processedData[processedData.length - 1];
-                const sortedDrivers = [...allDrivers].sort((a, b) => lastRace[a] - lastRace[b]);
-                setDrivers(sortedDrivers);
-            } else {
-                setDrivers(allDrivers);
-            }
+          });
+        } else {
+          // Fallback to frontend calculation (points only)
+          const raceStandings = allDrivers.map(driver => ({
+            driver,
+            points: (race[driver] as number) || 0
+          }));
 
-            // Calculate points per round for the distribution chart using RAW cumulative data (finishedRaces)
-            // processedData contains RANKS, so we cannot use it for points calculation.
-            const sortedRaces = [...finishedRaces].sort((a: any, b: any) => a.round - b.round);
-            
-            const pointsDistribution = sortedRaces.map((data: any, index: number) => {
-                const prevData = index > 0 ? sortedRaces[index - 1] : null;
-                const raceConfig = getRaceConfig(data.raceName);
-                
-                const roundPoints: any = {
-                    round: data.round,
-                    raceName: data.raceName,
-                    abbr: raceConfig.abbr,
-                    total: 0
-                };
+          // Sort by points descending to get rank
+          raceStandings.sort((a, b) => b.points - a.points);
 
-                allDrivers.forEach(driver => {
-                    const currentPoints = (data[driver] as number) || 0;
-                    const prevPoints = prevData ? ((prevData[driver] as number) || 0) : 0;
-                    const gained = currentPoints - prevPoints;
-                    
-                    // Only record positive gains (ignore corrections or weird data)
-                    if (gained > 0) {
-                        roundPoints[driver] = gained;
-                        roundPoints.total += gained;
-                    } else {
-                        roundPoints[driver] = 0;
-                    }
-                });
-
-                return roundPoints;
-            });
-
-            setRacePointsData(pointsDistribution);
-          }
-        } catch (error) {
-          console.error("Failed to fetch analytics data", error);
-        } finally {
-          setLoading(false);
+          // Assign rank
+          raceStandings.forEach((item, index) => {
+            raceRanks[item.driver] = index + 1;
+          });
         }
-      };
-      fetchData();
+
+        return raceRanks;
+      });
+
+      setRankingData(processedData);
+      
+      // Add a starting point (Round 0) that matches the first race results
+      // This creates a visual "start" for the season
+      if (processedData.length > 0) {
+          const firstRace = processedData[0];
+          const startPoint = {
+              ...firstRace,
+              round: 0,
+              raceName: "Season Start",
+              abbr: "" 
+          };
+          processedData.unshift(startPoint);
+      }
+      
+      // Sort drivers by final standing for the legend/rendering order
+      if (processedData.length > 0) {
+          const lastRace = processedData[processedData.length - 1];
+          const sortedDrivers = [...allDrivers].sort((a, b) => lastRace[a] - lastRace[b]);
+          setDrivers(sortedDrivers);
+      } else {
+          setDrivers(allDrivers);
+      }
+
+      // Calculate points per round for the distribution chart using RAW cumulative data (finishedRaces)
+      // processedData contains RANKS, so we cannot use it for points calculation.
+      const sortedRaces = [...finishedRaces].sort((a: any, b: any) => a.round - b.round);
+      
+      const pointsDistribution = sortedRaces.map((data: any, index: number) => {
+          const prevData = index > 0 ? sortedRaces[index - 1] : null;
+          const raceConfig = getRaceConfig(data.raceName);
+          
+          const roundPoints: any = {
+              round: data.round,
+              raceName: data.raceName,
+              abbr: raceConfig.abbr,
+              total: 0
+          };
+
+          allDrivers.forEach(driver => {
+              const currentPoints = (data[driver] as number) || 0;
+              const prevPoints = prevData ? ((prevData[driver] as number) || 0) : 0;
+              const gained = currentPoints - prevPoints;
+              
+              // Only record positive gains (ignore corrections or weird data)
+              if (gained > 0) {
+                  roundPoints[driver] = gained;
+                  roundPoints.total += gained;
+              } else {
+                  roundPoints[driver] = 0;
+              }
+          });
+
+          return roundPoints;
+      });
+
+      setRacePointsData(pointsDistribution);
     }
-  }, [isExpanded, year, rankingData.length]);
+  }, [result, year]);
 
   const getDriverColor = useCallback((driver: string) => {
     if (driverTeams[driver]) {

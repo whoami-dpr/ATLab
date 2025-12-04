@@ -23,6 +23,8 @@ interface ChartDataPoint {
 
 interface ChampionshipProgressChartProps {
   year: string;
+  data: any;
+  loading: boolean;
 }
 
 const TEAM_COLORS: Record<string, string> = {
@@ -41,6 +43,7 @@ const TEAM_COLORS: Record<string, string> = {
   "stake_f1_team_kick_sauber": "#52e252",
   "audi": "#52e252",
   "alfa": "#900000",
+  "racing_bulls": "#6692ff",
 };
 
 const DRIVER_COLORS: Record<string, string> = {
@@ -91,53 +94,35 @@ const SECOND_DRIVERS = new Set([
   "ZHO", // Sauber (2024)
 ]);
 
-export function ChampionshipProgressChart({ year }: ChampionshipProgressChartProps) {
+export function ChampionshipProgressChart({ year, data: result, loading }: ChampionshipProgressChartProps) {
   const [data, setData] = useState<ChartDataPoint[]>([]);
   const [drivers, setDrivers] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [visibleDrivers, setVisibleDrivers] = useState<Set<string>>(new Set(DEFAULT_VISIBLE_DRIVERS));
   const [driverNames, setDriverNames] = useState<Record<string, string>>({});
   const [driverTeams, setDriverTeams] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/f1/championship-progress?year=${year}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch chart data");
-        }
-        const result = await response.json();
-        if (result.success) {
-          // Filter out future races for the chart
-          const finishedRaces = result.data.filter((race: ChartDataPoint) => race.isFinished);
-          setData(finishedRaces);
-          setDriverNames(result.driverNames || {});
-          setDriverTeams(result.driverTeams || {});
-          
-          const allDrivers = result.drivers as string[];
-          
-          if (result.data.length > 0) {
-            const lastRound = result.data[result.data.length - 1];
-            allDrivers.sort((a, b) => (lastRound[b] as number) - (lastRound[a] as number));
-             setVisibleDrivers(new Set(allDrivers.slice(0, 5)));
-          }
-          
-          setDrivers(allDrivers);
-        } else {
-          setError(result.error);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
+    if (result && result.success) {
+      // Filter out future races for the chart
+      const finishedRaces = result.data.filter((race: ChartDataPoint) => race.isFinished);
+      setData(finishedRaces);
+      setDriverNames(result.driverNames || {});
+      setDriverTeams(result.driverTeams || {});
+      
+      const allDrivers = result.drivers as string[];
+      
+      if (result.data.length > 0) {
+        const lastRound = result.data[result.data.length - 1];
+        allDrivers.sort((a, b) => (lastRound[b] as number) - (lastRound[a] as number));
+         setVisibleDrivers(new Set(allDrivers.slice(0, 5)));
       }
-    };
-
-    fetchData();
-  }, [year]);
+      
+      setDrivers(allDrivers);
+    } else if (result && result.error) {
+      setError(result.error);
+    }
+  }, [result]);
 
   const toggleDriver = (driver: string) => {
     const newVisible = new Set(visibleDrivers);
@@ -183,7 +168,7 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
 
   if (loading) {
     return (
-      <div className="w-full bg-white dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-8 overflow-hidden transition-colors duration-200">
+      <div className="w-full bg-white dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800 p-6 overflow-hidden transition-colors duration-200">
         <div className="flex flex-col lg:flex-row">
           <div className="flex-1 flex flex-col">
             <div className="mb-6">
@@ -270,7 +255,7 @@ export function ChampionshipProgressChart({ year }: ChampionshipProgressChartPro
   }
 
   return (
-    <div className="w-full bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 p-6 mb-8 transition-colors duration-200">
+    <div className="w-full bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 p-6 transition-colors duration-200">
       <div className="flex flex-col lg:flex-row">
         <div className="flex-1 flex flex-col">
           <div className="mb-6">

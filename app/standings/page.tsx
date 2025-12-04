@@ -11,10 +11,31 @@ import { SeasonAnalytics } from "@/components/SeasonAnalytics";
 export default function StandingsPage() {
   const { driverStandings, constructorStandings, loading, error, fetchStandings } = useF1Standings();
   const [selectedYear, setSelectedYear] = useState<string>("2025");
+  const [progressData, setProgressData] = useState<any>(null);
+  const [progressLoading, setProgressLoading] = useState(true);
 
   useEffect(() => {
     fetchStandings(selectedYear);
   }, [selectedYear, fetchStandings]);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      setProgressLoading(true);
+      try {
+        const response = await fetch(`/api/f1/championship-progress?year=${selectedYear}`);
+        const result = await response.json();
+        if (result.success) {
+          setProgressData(result);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setProgressLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, [selectedYear]);
 
   return (
     <div className="min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-200">
@@ -74,17 +95,26 @@ export default function StandingsPage() {
         </div>
 
         {/* Championship Progress Chart and Race Results */}
-        {/* Championship Progress Chart and Race Results */}
         <div className="flex flex-col gap-8 max-w-6xl mx-auto mb-12">
-          <ChampionshipProgressChart year={selectedYear} />
+          <ChampionshipProgressChart 
+            year={selectedYear} 
+            data={progressData} 
+            loading={progressLoading} 
+          />
           
           <SeasonAnalytics 
             driverStandings={driverStandings} 
             constructorStandings={constructorStandings} 
             year={selectedYear}
+            progressData={progressData}
+            loading={progressLoading}
           />
 
-          <RaceResultsTable year={selectedYear} />
+          <RaceResultsTable 
+            year={selectedYear} 
+            data={progressData} 
+            loading={progressLoading} 
+          />
         </div>
 
         {/* Standings Content Section */}
