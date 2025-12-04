@@ -11,6 +11,7 @@ import { SeasonAnalytics } from "@/components/SeasonAnalytics";
 export default function StandingsPage() {
   const { driverStandings, constructorStandings, loading, error, fetchStandings } = useF1Standings();
   const [selectedYear, setSelectedYear] = useState<string>("2025");
+  const [yearInput, setYearInput] = useState<string>("2025");
   const [progressData, setProgressData] = useState<any>(null);
   const [progressLoading, setProgressLoading] = useState(true);
 
@@ -63,7 +64,10 @@ export default function StandingsPage() {
             {['2025', '2024', '2023', '2022'].map((year) => (
               <button
                 key={year}
-                onClick={() => setSelectedYear(year)}
+                onClick={() => {
+                  setSelectedYear(year);
+                  setYearInput(year);
+                }}
                 className={`
                   px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300
                   ${selectedYear === year 
@@ -83,8 +87,14 @@ export default function StandingsPage() {
                 type="number"
                 min="1950"
                 max="2025"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
+                value={yearInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setYearInput(val);
+                  if (val.length === 4 && parseInt(val) >= 1950 && parseInt(val) <= 2026) {
+                    setSelectedYear(val);
+                  }
+                }}
                 className="w-20 px-2 py-2 rounded-xl bg-transparent text-center text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5 focus:bg-white dark:focus:bg-white/10 focus:text-gray-900 dark:focus:text-white transition-all outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 placeholder="..."
               />

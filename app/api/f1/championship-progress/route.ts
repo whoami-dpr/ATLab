@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 
       // Fetch remaining pages
       for (offset = limit; offset < total; offset += limit) {
-        await delay(500); // Increased delay between pages
+        await delay(100); // Reduced delay between pages
         const response = await fetchWithRetry(`${url}?limit=${limit}&offset=${offset}`);
         const data = await response.json();
         allRaces = [...allRaces, ...data.MRData.RaceTable.Races];
@@ -111,7 +111,7 @@ export async function GET(request: Request) {
     // Then fetch sprint results (if any)
     let sprintsRaw: any[] = [];
     try {
-      await delay(500); // Increased delay to avoid rate limits
+      await delay(100); // Reduced delay to avoid rate limits
       sprintsRaw = await fetchAllResults(`https://api.jolpi.ca/ergast/f1/${year}/sprint.json`);
     } catch (e) {
       console.warn("Failed to fetch sprints, retrying...", e);
