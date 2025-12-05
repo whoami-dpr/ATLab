@@ -15,11 +15,12 @@ interface ChartDataPoint {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const year = parseInt(searchParams.get("year") || "2025")
+  const forceRefresh = searchParams.get("refresh") === "true"
 
   try {
     // Simple in-memory cache
     const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-    const cacheKey = `championship-progress-${year}`;
+    const cacheKey = `championship-progress-v2-${year}`; // Changed key to invalidate old cache
     
     // @ts-ignore
     const globalCache = globalThis as any;
@@ -29,9 +30,10 @@ export async function GET(request: Request) {
     const cache = globalCache._f1Cache;
 
     const cached = cache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+    if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
       return NextResponse.json(cached.data);
     }
+
 
     // Helper to delay execution
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -269,12 +271,77 @@ export async function GET(request: Request) {
       chartData.push(dataPoint);
     }
 
+    // Calculate constructor points per round
+    const constructorPoints: Record<string, number> = {};
+    const constructorNames: Record<string, string> = {};
+    const constructorChartData: ChartDataPoint[] = [];
+
+    // Get unique constructors
+    const allConstructors = new Set<string>();
+    races.forEach((race: any) => {
+      if (race.Results) {
+        race.Results.forEach((result: any) => {
+          if (result.Constructor?.constructorId) {
+            allConstructors.add(result.Constructor.constructorId);
+            constructorNames[result.Constructor.constructorId] = result.Constructor.name;
+          }
+        });
+      }
+    });
+
+    // Initialize constructor points
+    allConstructors.forEach(id => {
+      constructorPoints[id] = 0;
+    });
+
+    // Calculate constructor points per round
+    for (let round = 1; round <= maxRound; round++) {
+      const race = racesByRound[round];
+      const sprint = sprintsByRound[round];
+      const scheduledRace = scheduleByRound[round];
+
+      // Add sprint points
+      if (sprint && sprint.SprintResults) {
+        sprint.SprintResults.forEach((result: any) => {
+          const constructorId = result.Constructor?.constructorId;
+          if (constructorId) {
+            constructorPoints[constructorId] = (constructorPoints[constructorId] || 0) + parseFloat(result.points);
+          }
+        });
+      }
+
+      // Add race points
+      if (race && race.Results) {
+        race.Results.forEach((result: any) => {
+          const constructorId = result.Constructor?.constructorId;
+          if (constructorId) {
+            constructorPoints[constructorId] = (constructorPoints[constructorId] || 0) + parseFloat(result.points);
+          }
+        });
+      }
+
+      const raceName = scheduledRace ? scheduledRace.raceName : `Round ${round}`;
+      
+      const constructorDataPoint: ChartDataPoint = {
+        round: round,
+        raceName: raceName,
+        isFinished: !!race,
+        hasSprint: !!(sprint && sprint.SprintResults),
+        ...constructorPoints
+      };
+
+      constructorChartData.push(constructorDataPoint);
+    }
+
     const responseData = {
       data: chartData,
+      constructorData: constructorChartData,
       raceResults: raceResultsByRound,
       drivers: Array.from(allDrivers),
+      constructors: Array.from(allConstructors),
       driverNames: driverNames,
       driverTeams: driverTeams,
+      constructorNames: constructorNames,
       success: true,
       debug: {
         racesFetched: races.length,

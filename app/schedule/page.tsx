@@ -5,7 +5,6 @@ import { Countdown } from '../../components/Countdown';
 import { Navbar } from '../../components/Navbar';
 import { useThemeOptimized } from '../../hooks/useThemeOptimized';
 
-// Mapping de nombre de país a código de bandera (ISO 3166-1 alpha-3)
 const countryNameToCode: Record<string, string> = {
   Australia: 'aus',
   Austria: 'aut',
@@ -44,7 +43,6 @@ function getFlagUrl(country: string, country_key?: string) {
 }
 
 function getSessionName(kind: string, allSessions: any[], currentIndex: number) {
-  // Si es una sesión de práctica, contar cuántas sesiones de práctica han aparecido antes
   if (kind === 'Pract' || kind === 'Prac' || kind === 'Practice' || kind.toLowerCase().includes('practice')) {
     let practiceCount = 0;
     for (let i = 0; i < currentIndex; i++) {
@@ -55,18 +53,11 @@ function getSessionName(kind: string, allSessions: any[], currentIndex: number) 
     return `Practice ${practiceCount + 1}`;
   }
   
-  // Lógica especial para sesiones de Sprint
   if (kind === 'Sprint' || kind === 'Sp' || kind === 'Spri' || kind === 'Sprint R') {
-    // Si hay una sesión de Sprint después de esta en el fin de semana, esta es Qualification
     const hasSprintAfter = allSessions.slice(currentIndex + 1).some(session => 
       session && (session.kind === 'Sprint' || session.kind === 'Sp' || session.kind === 'Spri' || session.kind === 'Sprint R')
     );
-    
-    if (hasSprintAfter) {
-      return 'Sprint Qualification';
-    } else {
-      return 'Sprint Race';
-    }
+    return hasSprintAfter ? 'Sprint Qualification' : 'Sprint Race';
   }
   
   const sessionNames: Record<string, string> = {
@@ -79,9 +70,6 @@ function getSessionName(kind: string, allSessions: any[], currentIndex: number) 
     'FP1': 'Practice 1',
     'FP2': 'Practice 2', 
     'FP3': 'Practice 3',
-    'Q1': 'Qualifying 1',
-    'Q2': 'Qualifying 2',
-    'Q3': 'Qualifying 3',
     'Sprint Qualifying': 'Sprint Qualification',
     'Sprint Race': 'Sprint Race'
   };
@@ -89,16 +77,24 @@ function getSessionName(kind: string, allSessions: any[], currentIndex: number) 
   return sessionNames[kind] || kind;
 }
 
+function getRaceDays(sessions: any[]) {
+  const daysMap: Record<string, any[]> = {};
+  sessions.forEach(session => {
+    const date = new Date(session.start);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const day = dayNames[date.getUTCDay()];
+    if (!daysMap[day]) daysMap[day] = [];
+    daysMap[day].push(session);
+  });
+  return Object.entries(daysMap).map(([day, sessions]) => ({ day, sessions }));
+}
+
 export default function SchedulePage() {
   const { schedule, loading, error, nextSession, nextRace } = useSchedule();
   const { theme } = useThemeOptimized();
-  const now = new Date();
 
   return (
-    <div className={`min-h-screen w-full relative font-inter ${
-      theme === 'light' ? 'bg-gray-50' : 'bg-black'
-    }`}>
-      {/* Background */}
+    <div className={`min-h-screen w-full relative font-inter ${theme === 'light' ? 'bg-gray-50' : 'bg-black'}`}>
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -107,64 +103,37 @@ export default function SchedulePage() {
             : "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%), #000000"
         }}
       />
-      <div className={`relative z-10 flex flex-col min-h-screen ${
-        theme === 'light' ? 'text-gray-900' : 'text-white'
-      }`}>
+      <div className={`relative z-10 flex flex-col min-h-screen ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
         <Navbar />
         <div className="flex-1 p-6">
-          <h1 className={`text-3xl font-bold mb-0 ${
-            theme === 'light' ? 'text-black' : 'text-white'
-          }`}>Schedule</h1>
-          <div className={`text-xs mb-4 ${
-            theme === 'light' ? 'text-gray-700' : 'text-gray-400'
-          }`}>All times are local time</div>
+          <h1 className={`text-3xl font-bold mb-0 ${theme === 'light' ? 'text-black' : 'text-white'}`}>Schedule</h1>
+          <div className={`text-xs mb-4 ${theme === 'light' ? 'text-gray-700' : 'text-gray-400'}`}>All times are local time</div>
+          
           {loading && <div className={theme === 'light' ? 'text-black' : 'text-gray-300'}>Loading...</div>}
           {error && <div className="text-red-500">{error}</div>}
+          
           {!loading && !error && (
             <>
-              {/* Fila superior: Up Next y Próxima carrera */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-8">
-                {/* Columna izquierda: Countdowns */}
                 <div className="pr-2">
                   {nextSession && (
                     <div className="mb-3">
-                      <div className={`text-lg font-semibold mb-1 ${
-                        theme === 'light' ? 'text-black' : 'text-white'
-                      }`}>Next session in</div>
-                      <Countdown
-                        targetDate={nextSession.start}
-                        label={undefined}
-                        className="mb-1"
-                      />
-                      <div className={`mt-1 text-xs ${
-                        theme === 'light' ? 'text-gray-800' : 'text-gray-400'
-                      }`}>
+                      <div className={`text-lg font-semibold mb-1 ${theme === 'light' ? 'text-black' : 'text-white'}`}>Next session in</div>
+                      <Countdown targetDate={nextSession.start} label={undefined} className="mb-1" />
+                      <div className={`mt-1 text-xs ${theme === 'light' ? 'text-gray-800' : 'text-gray-400'}`}>
                         {nextSession.kind}: {format(new Date(nextSession.start), 'EEEE, MMMM d, yyyy')} – {format(new Date(nextSession.start), 'HH:mm')} - {format(new Date(nextSession.end), 'HH:mm')}
                       </div>
                     </div>
                   )}
-                  <div className={`border-b my-2 ${
-                    theme === 'light' ? 'border-gray-300' : 'border-gray-700'
-                  }`} />
+                  <div className={`border-b my-2 ${theme === 'light' ? 'border-gray-300' : 'border-gray-700'}`} />
                   {nextRace && (
                     <div className="mb-1">
-                      <div className={`text-lg font-semibold mb-1 ${
-                        theme === 'light' ? 'text-black' : 'text-white'
-                      }`}>Next race in</div>
-                      <Countdown
-                        targetDate={nextRace.start}
-                        label={undefined}
-                        className="mb-1"
-                      />
-                      {/* Fecha y hora de la próxima carrera */}
+                      <div className={`text-lg font-semibold mb-1 ${theme === 'light' ? 'text-black' : 'text-white'}`}>Next race in</div>
+                      <Countdown targetDate={nextRace.start} label={undefined} className="mb-1" />
                       {(() => {
-                        const raceSession = nextRace.round.sessions.find(
-                          (s: any) => s.kind && s.kind.toLowerCase() === 'race'
-                        );
+                        const raceSession = nextRace.round.sessions.find((s: any) => s.kind && s.kind.toLowerCase() === 'race');
                         return raceSession ? (
-                          <div className={`mt-1 text-xs ${
-                            theme === 'light' ? 'text-gray-800' : 'text-gray-400'
-                          }`}>
+                          <div className={`mt-1 text-xs ${theme === 'light' ? 'text-gray-800' : 'text-gray-400'}`}>
                             Race: {format(new Date(raceSession.start), 'EEEE, MMMM d, yyyy')} – {format(new Date(raceSession.start), 'HH:mm')} - {format(new Date(raceSession.end), 'HH:mm')}
                           </div>
                         ) : null;
@@ -172,175 +141,231 @@ export default function SchedulePage() {
                     </div>
                   )}
                 </div>
-                {/* Columna derecha: Tarjeta de próxima carrera más compacta */}
+                
+                {/* Next Race Card - Same style as schedule cards */}
                 {nextRace && (
-                  <div className={`w-full rounded-xl p-4 shadow-xl border ${
-                    theme === 'light' 
-                      ? 'bg-white border-gray-200 shadow-gray-200/50' 
-                      : 'bg-[#181824] border-[#232336]'
-                  }`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const flagUrl = getFlagUrl(nextRace.round.country);
-                          return flagUrl ? (
-                            <div className={`w-12 h-8 rounded-lg overflow-hidden shadow border ${
-                              theme === 'light' ? 'border-gray-300' : 'border-gray-700'
-                            }`}>
-                              <img src={flagUrl} alt={nextRace.round.country} className="w-full h-full object-cover" />
-                            </div>
-                          ) : (
-                            <span className="text-2xl">🏁</span>
-                          );
-                        })()}
-                        <span className={`text-xl font-semibold ${
-                          theme === 'light' ? 'text-black' : 'text-white'
-                        }`}>{nextRace.round.country}</span>
-                      </div>
-                      <div className={`text-sm font-medium ${
-                        theme === 'light' ? 'text-gray-800' : 'text-gray-400'
-                      }`}>
-                        {format(new Date(nextRace.round.start), 'LLLL d')}<span className={theme === 'light' ? 'text-gray-700' : 'text-gray-400'}>–{format(new Date(nextRace.round.end), 'd')}</span>
+                  <div 
+                    className="w-full rounded-2xl overflow-hidden font-inter"
+                    style={{
+                      background: theme === 'light' 
+                        ? 'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(245,245,250,0.98))'
+                        : 'linear-gradient(145deg, rgba(22,22,38,0.98), rgba(16,16,28,0.99))',
+                      boxShadow: theme === 'light'
+                        ? '0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)'
+                        : '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.02)'
+                    }}
+                  >
+                    <div className="p-4 pb-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={`relative flex-shrink-0 w-10 h-7 rounded-md overflow-hidden ${
+                            theme === 'light' ? 'shadow-md ring-1 ring-gray-200' : 'shadow-lg ring-1 ring-white/10'
+                          }`}>
+                            {(() => {
+                              const flagUrl = getFlagUrl(nextRace.round.country);
+                              return flagUrl ? (
+                                <img src={flagUrl} alt={nextRace.round.country} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className={`w-full h-full flex items-center justify-center ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-800'}`}>
+                                  <span className="text-sm">🏁</span>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <h3 className={`text-base font-bold leading-tight tracking-tight truncate ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                            {nextRace.round.country}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-blue-400 font-inter">
+                            Next Session
+                          </span>
+                          <span className={`text-xs font-medium ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>
+                            {format(new Date(nextRace.round.start), 'MMMM d')}–{format(new Date(nextRace.round.end), 'd')}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className={`border-b my-2 ${
-                      theme === 'light' ? 'border-gray-200' : 'border-gray-700'
-                    }`} />
-                    {/* Grid de días y sesiones más grande */}
-                    <div className="grid grid-cols-3 gap-3 w-full mt-3">
-                      {(() => {
-                        // Obtener todas las sesiones del fin de semana para la numeración correcta
-                        const allWeekendSessions = getRaceDays(nextRace.round.sessions)
-                          .flatMap(day => day.sessions)
-                          .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-                        
-                        return ['Friday', 'Saturday', 'Sunday'].map((day) => {
-                          const sessions = getRaceDays(nextRace.round.sessions).find(d => d.day === day)?.sessions || [];
-                          return (
-                            <div key={day}>
-                              <div className={`font-bold mb-1 text-sm ${
-                                theme === 'light' ? 'text-black' : 'text-white'
-                              }`}>{day}</div>
-                              {sessions.length === 0 ? (
-                                <div className={`text-xs italic ${
-                                  theme === 'light' ? 'text-gray-700' : 'text-gray-600'
-                                }`}>—</div>
-                              ) : (
-                                sessions.map((session: any, index: number) => {
-                                  // Encontrar el índice global de esta sesión en todas las sesiones del fin de semana
-                                  const globalIndex = allWeekendSessions.findIndex(s => 
-                                    s.kind === session.kind && 
-                                    s.start === session.start && 
-                                    s.end === session.end
-                                  );
-                                  return (
-                                    <div key={session.kind + session.start} className="mb-1">
-                                      <div className={`font-semibold text-xs ${
-                                        theme === 'light' ? 'text-black' : 'text-white'
-                                      }`}>{getSessionName(session.kind, allWeekendSessions, globalIndex)}</div>
-                                      <div className={`text-xs ${
-                                        theme === 'light' ? 'text-gray-800' : 'text-gray-300'
-                                      }`}>
-                                        {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
-                                      </div>
-                                    </div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          );
-                        });
-                      })()}
+                    
+                    <div className={`mx-4 h-px ${theme === 'light' ? 'bg-gray-100' : 'bg-white/5'}`} />
+                    
+                    <div className="p-4 pt-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        {(() => {
+                          const allWeekendSessions = getRaceDays(nextRace.round.sessions)
+                            .flatMap(day => day.sessions)
+                            .sort((a: any, b: any) => new Date(a.start).getTime() - new Date(b.start).getTime());
+                          
+                          return ['Friday', 'Saturday', 'Sunday'].map((dayName) => {
+                            const dayData = getRaceDays(nextRace.round.sessions).find(d => d.day === dayName);
+                            const sessions = dayData?.sessions || [];
+                            
+                            return (
+                              <div key={dayName} className="min-w-0">
+                                <div className={`text-[11px] font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                                  {dayName}
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  {sessions.length === 0 ? (
+                                    <div className={`text-[10px] ${theme === 'light' ? 'text-gray-400' : 'text-gray-600'}`}>—</div>
+                                  ) : (
+                                    sessions.map((session: any) => {
+                                      const globalIndex = allWeekendSessions.findIndex((s: any) => 
+                                        s.kind === session.kind && s.start === session.start
+                                      );
+                                      const sessionName = getSessionName(session.kind, allWeekendSessions, globalIndex);
+                                      const isRace = session.kind.toLowerCase() === 'race';
+                                      const isSprint = sessionName.toLowerCase().includes('sprint');
+                                      
+                                      return (
+                                        <div key={session.kind + session.start}>
+                                          <div className={`text-[11px] leading-tight ${
+                                            isRace || isSprint ? 'font-semibold' : 'font-medium'
+                                          } ${
+                                            theme === 'light' 
+                                              ? isRace ? 'text-gray-900' : 'text-gray-700'
+                                              : isRace ? 'text-white' : 'text-gray-300'
+                                          }`}>
+                                            {sessionName}
+                                          </div>
+                                          <div className={`text-[10px] ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                            {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
+                                          </div>
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Schedule completo debajo, ocupando todo el ancho */}
               <div className="mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {schedule.map((round: any) => (
-                    <div key={round.name} className={`w-full rounded-xl p-4 shadow-xl border flex flex-col h-full ${
-                      theme === 'light' 
-                        ? 'bg-white border-gray-200 shadow-gray-200/50' 
-                        : 'bg-[#181824] border-[#232336]'
-                    }`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              const flagUrl = getFlagUrl(round.country);
-                              return flagUrl ? (
-                                <img src={flagUrl} alt={round.country} className={`w-6 h-4 rounded shadow border ${
-                                  theme === 'light' ? 'border-gray-300' : 'border-gray-700'
-                                }`} />
-                              ) : (
-                                <span className="text-xl">🏁</span>
-                              );
-                            })()}
-                            <span className={`text-lg font-bold leading-tight ${
-                              theme === 'light' ? 'text-black' : 'text-white'
-                            }`}>{round.country}</span>
-                          </div>
-                          <div className={`text-xs font-medium ${
-                            theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-                          }`}>
-                            {format(new Date(round.start), 'MMM d')} – {format(new Date(round.end), 'MMM d')}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                  {schedule.map((round: any) => {
+                    const flagUrl = getFlagUrl(round.country);
+                    const allWeekendSessions = getRaceDays(round.sessions)
+                      .flatMap(day => day.sessions)
+                      .sort((a: any, b: any) => new Date(a.start).getTime() - new Date(b.start).getTime());
+                    
+                    const dateStr = `${format(new Date(round.start), 'MMMM d')}–${format(new Date(round.end), 'd')}`;
+                    
+                    return (
+                      <div 
+                        key={round.name} 
+                        className={`group relative w-full rounded-2xl overflow-hidden transition-all duration-300 font-inter ${
+                          round.over ? 'opacity-50 hover:opacity-80' : 'hover:scale-[1.02] hover:shadow-2xl'
+                        }`}
+                        style={{
+                          background: theme === 'light' 
+                            ? 'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(245,245,250,0.98))'
+                            : 'linear-gradient(145deg, rgba(22,22,38,0.98), rgba(16,16,28,0.99))',
+                          boxShadow: theme === 'light'
+                            ? '0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)'
+                            : '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.02)'
+                        }}
+                      >
+                        {!round.over && (
+                          <div 
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                            style={{ background: 'radial-gradient(circle at 50% 0%, rgba(156,249,254,0.1), transparent 50%)' }}
+                          />
+                        )}
+                        
+                        <div className="relative p-4 pb-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className={`relative flex-shrink-0 w-10 h-7 rounded-md overflow-hidden ${
+                                theme === 'light' ? 'shadow-md ring-1 ring-gray-200' : 'shadow-lg ring-1 ring-white/10'
+                              }`}>
+                                {flagUrl ? (
+                                  <img src={flagUrl} alt={round.country} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className={`w-full h-full flex items-center justify-center ${theme === 'light' ? 'bg-gray-100' : 'bg-gray-800'}`}>
+                                    <span className="text-sm">🏁</span>
+                                  </div>
+                                )}
+                              </div>
+                              <h3 className={`text-base font-bold leading-tight tracking-tight truncate ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                                {round.country}
+                              </h3>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {round.over && (
+                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider ${
+                                  theme === 'light' ? 'bg-gray-100 text-gray-400' : 'bg-white/5 text-gray-500'
+                                }`}>
+                                  Done
+                                </div>
+                              )}
+                              <span className={`text-xs font-medium ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                {dateStr}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        {round.over && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 border border-red-500/20">
-                            Done
-                          </span>
-                        )}
+                        
+                        <div className={`mx-4 h-px ${theme === 'light' ? 'bg-gray-100' : 'bg-white/5'}`} />
+                        
+                        <div className="p-4 pt-3">
+                          <div className="grid grid-cols-3 gap-3">
+                            {['Friday', 'Saturday', 'Sunday'].map((dayName) => {
+                              const dayData = getRaceDays(round.sessions).find(d => d.day === dayName);
+                              const sessions = dayData?.sessions || [];
+                              
+                              return (
+                                <div key={dayName} className="min-w-0">
+                                  <div className={`text-[11px] font-bold mb-2 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
+                                    {dayName}
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    {sessions.length === 0 ? (
+                                      <div className={`text-[10px] ${theme === 'light' ? 'text-gray-400' : 'text-gray-600'}`}>—</div>
+                                    ) : (
+                                      sessions.map((session: any) => {
+                                        const globalIndex = allWeekendSessions.findIndex((s: any) => 
+                                          s.kind === session.kind && s.start === session.start
+                                        );
+                                        const sessionName = getSessionName(session.kind, allWeekendSessions, globalIndex);
+                                        const isRace = session.kind.toLowerCase() === 'race';
+                                        const isSprint = sessionName.toLowerCase().includes('sprint');
+                                        
+                                        return (
+                                          <div key={session.kind + session.start}>
+                                            <div className={`text-[11px] leading-tight ${
+                                              isRace || isSprint ? 'font-semibold' : 'font-medium'
+                                            } ${
+                                              theme === 'light' 
+                                                ? isRace ? 'text-gray-900' : 'text-gray-700'
+                                                : isRace ? 'text-white' : 'text-gray-300'
+                                            }`}>
+                                              {sessionName}
+                                            </div>
+                                            <div className={`text-[10px] ${theme === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                              {format(new Date(session.start), 'HH:mm')} - {format(new Date(session.end), 'HH:mm')}
+                                            </div>
+                                          </div>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className={`w-full h-px mb-3 ${
-                        theme === 'light' ? 'bg-gray-100' : 'bg-gray-800'
-                      }`} />
-
-                      {/* Lista compacta de sesiones */}
-                      <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
-                        {(() => {
-                          const allWeekendSessions = getRaceDays(round.sessions)
-                            .flatMap(day => day.sessions)
-                            .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-                          
-                          // Agrupar por día pero mostrar en lista vertical compacta
-                          return getRaceDays(round.sessions).map(({ day, sessions }) => (
-                            <div key={day} className="mb-2 last:mb-0">
-                              <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70 ${
-                                theme === 'light' ? 'text-gray-500' : 'text-gray-500'
-                              }`}>{day}</div>
-                              <div className="space-y-1">
-                                {sessions.map((session: any) => {
-                                  const globalIndex = allWeekendSessions.findIndex(s => 
-                                    s.kind === session.kind && 
-                                    s.start === session.start
-                                  );
-                                  const isRace = session.kind.toLowerCase().includes('race');
-                                  return (
-                                    <div key={session.kind + session.start} className={`flex justify-between items-center text-xs ${
-                                      isRace ? 'font-bold' : ''
-                                    } ${theme === 'light' ? 'text-gray-800' : 'text-gray-300'}`}>
-                                      <span className="truncate mr-2">
-                                        {getSessionName(session.kind, allWeekendSessions, globalIndex).replace('Practice', 'FP').replace('Qualifying', 'Quali')}
-                                      </span>
-                                      <span className={`font-mono whitespace-nowrap ${
-                                        theme === 'light' ? 'text-gray-500' : 'text-gray-500'
-                                      }`}>
-                                        {format(new Date(session.start), 'HH:mm')}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>
@@ -349,31 +374,4 @@ export default function SchedulePage() {
       </div>
     </div>
   );
-}
-
-// Helper para agrupar sesiones por día (en inglés)
-function getRaceDays(sessions: any[]) {
-  const daysMap: Record<string, any> = {};
-  sessions.forEach(session => {
-    // Usar UTC para evitar problemas de zona horaria
-    const date = new Date(session.start);
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const day = dayNames[date.getUTCDay()];
-    console.log(`Session ${session.kind} on ${day} at ${session.start}`);
-    // Mapear días a nombres consistentes
-    const dayMapping: Record<string, string> = {
-      'Monday': 'Monday',
-      'Tuesday': 'Tuesday', 
-      'Wednesday': 'Wednesday',
-      'Thursday': 'Thursday',
-      'Friday': 'Friday',
-      'Saturday': 'Saturday',
-      'Sunday': 'Sunday'
-    };
-    const mappedDay = dayMapping[day] || day;
-    if (!daysMap[mappedDay]) daysMap[mappedDay] = [];
-    daysMap[mappedDay].push(session);
-  });
-  console.log('Days found:', Object.keys(daysMap));
-  return Object.entries(daysMap).map(([day, sessions]) => ({ day, sessions }));
 }

@@ -14,6 +14,7 @@ export default function StandingsPage() {
   const [yearInput, setYearInput] = useState<string>("2025");
   const [progressData, setProgressData] = useState<any>(null);
   const [progressLoading, setProgressLoading] = useState(true);
+  const [chartMode, setChartMode] = useState<'drivers' | 'constructors'>('drivers');
 
   useEffect(() => {
     fetchStandings(selectedYear);
@@ -39,10 +40,20 @@ export default function StandingsPage() {
   }, [selectedYear]);
 
   return (
-    <div className="min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-200">
-      <Navbar />
+    <div className="min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-200 relative">
+      {/* Background gradient - same as schedule (light mode only) */}
+      <div
+        className="absolute inset-0 z-0 dark:hidden"
+        style={{
+          background: "linear-gradient(180deg, #f0f8ff 0%, #cce7ff 100%)"
+        }}
+      />
+      <div className="hidden dark:block absolute inset-0 z-0 bg-black" />
       
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="relative z-10">
+        <Navbar />
+      
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header with Year Selection */}
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
           <div>
@@ -109,7 +120,9 @@ export default function StandingsPage() {
           <ChampionshipProgressChart 
             year={selectedYear} 
             data={progressData} 
-            loading={progressLoading} 
+            loading={progressLoading}
+            chartMode={chartMode}
+            onChartModeChange={setChartMode}
           />
           
           <SeasonAnalytics 
@@ -118,6 +131,7 @@ export default function StandingsPage() {
             year={selectedYear}
             progressData={progressData}
             loading={progressLoading}
+            chartMode={chartMode}
           />
 
           <RaceResultsTable 
@@ -161,6 +175,7 @@ export default function StandingsPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

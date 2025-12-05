@@ -25,6 +25,8 @@ interface ChampionshipProgressChartProps {
   year: string;
   data: any;
   loading: boolean;
+  chartMode: 'drivers' | 'constructors';
+  onChartModeChange: (mode: 'drivers' | 'constructors') => void;
 }
 
 const TEAM_COLORS: Record<string, string> = {
@@ -94,12 +96,16 @@ const SECOND_DRIVERS = new Set([
   "ZHO", // Sauber (2024)
 ]);
 
-export function ChampionshipProgressChart({ year, data: result, loading }: ChampionshipProgressChartProps) {
+export function ChampionshipProgressChart({ year, data: result, loading, chartMode, onChartModeChange }: ChampionshipProgressChartProps) {
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const [constructorData, setConstructorData] = useState<ChartDataPoint[]>([]);
   const [drivers, setDrivers] = useState<string[]>([]);
+  const [constructors, setConstructors] = useState<string[]>([]);
   const [visibleDrivers, setVisibleDrivers] = useState<Set<string>>(new Set(DEFAULT_VISIBLE_DRIVERS));
+  const [visibleConstructors, setVisibleConstructors] = useState<Set<string>>(new Set());
   const [driverNames, setDriverNames] = useState<Record<string, string>>({});
   const [driverTeams, setDriverTeams] = useState<Record<string, string>>({});
+  const [constructorNames, setConstructorNames] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -109,16 +115,30 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
       setData(finishedRaces);
       setDriverNames(result.driverNames || {});
       setDriverTeams(result.driverTeams || {});
+      setConstructorNames(result.constructorNames || {});
       
+      // Process drivers
       const allDrivers = result.drivers as string[];
-      
       if (result.data.length > 0) {
         const lastRound = result.data[result.data.length - 1];
         allDrivers.sort((a, b) => (lastRound[b] as number) - (lastRound[a] as number));
-         setVisibleDrivers(new Set(allDrivers.slice(0, 5)));
+        setVisibleDrivers(new Set(allDrivers.slice(0, 5)));
       }
-      
       setDrivers(allDrivers);
+
+      // Process constructors
+      if (result.constructorData) {
+        const finishedConstructorRaces = result.constructorData.filter((race: ChartDataPoint) => race.isFinished);
+        setConstructorData(finishedConstructorRaces);
+        
+        const allConstructors = result.constructors as string[];
+        if (result.constructorData.length > 0) {
+          const lastRound = result.constructorData[result.constructorData.length - 1];
+          allConstructors.sort((a, b) => (lastRound[b] as number) - (lastRound[a] as number));
+          setVisibleConstructors(new Set(allConstructors.slice(0, 5)));
+        }
+        setConstructors(allConstructors);
+      }
     } else if (result && result.error) {
       setError(result.error);
     }
@@ -134,12 +154,26 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
     setVisibleDrivers(newVisible);
   };
 
+  const toggleConstructor = (constructor: string) => {
+    const newVisible = new Set(visibleConstructors);
+    if (newVisible.has(constructor)) {
+      newVisible.delete(constructor);
+    } else {
+      newVisible.add(constructor);
+    }
+    setVisibleConstructors(newVisible);
+  };
+
   const getDriverColor = (driver: string) => {
     const teamId = driverTeams[driver];
     if (teamId && TEAM_COLORS[teamId]) {
       return TEAM_COLORS[teamId];
     }
     return DRIVER_COLORS[driver] || "#ffffff";
+  };
+
+  const getConstructorColor = (constructorId: string) => {
+    return TEAM_COLORS[constructorId] || "#ffffff";
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -260,14 +294,17 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
         <div className="flex-1 flex flex-col">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
-              Championship {year} Progress
+              {chartMode === 'drivers' ? 'Drivers' : 'Constructors'} Championship {year} Progress
             </h2>
             <div className="h-0.5 w-full bg-red-600"></div>
           </div>
           
           <div className="h-[400px] min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+              <LineChart 
+                data={chartMode === 'drivers' ? data : constructorData} 
+                margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid stroke="#9CA3AF" className="dark:stroke-gray-600" opacity={0.3} vertical={true} horizontal={true} />
                 <XAxis 
                   dataKey="round" 
@@ -280,21 +317,24 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
                   tick={{ fill: '#6B7280' }}
                   label={{ value: 'Points', angle: -90, position: 'insideLeft', fill: '#6B7280' }}
                   domain={[0, (dataMax: number) => {
-                    // Round up to the nearest 50
-                    return Math.ceil(dataMax / 50) * 50;
+                    return Math.ceil(dataMax / 100) * 100;
                   }]}
                   ticks={(() => {
+                    const currentData = chartMode === 'drivers' ? data : constructorData;
+                    const items = chartMode === 'drivers' ? drivers : constructors;
+                    const visibleItems = chartMode === 'drivers' ? visibleDrivers : visibleConstructors;
                     const maxPoints = Math.max(
-                      ...data.flatMap(race => 
-                        drivers
-                          .filter(d => visibleDrivers.has(d))
+                      ...currentData.flatMap(race => 
+                        items
+                          .filter(d => visibleItems.has(d))
                           .map(d => (race[d] as number) || 0)
                       ),
                       0
                     );
-                    const maxRounded = Math.ceil(maxPoints / 50) * 50;
+                    const step = chartMode === 'constructors' ? 100 : 50;
+                    const maxRounded = Math.ceil(maxPoints / step) * step;
                     const tickArray = [];
-                    for (let i = 0; i <= maxRounded; i += 50) {
+                    for (let i = 0; i <= maxRounded; i += step) {
                       tickArray.push(i);
                     }
                     return tickArray;
@@ -302,20 +342,23 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
                 />
                 <Tooltip content={<CustomTooltip />} />
                 
-                {/* Reference lines every 50 points */}
+                {/* Reference lines */}
                 {(() => {
+                  const currentData = chartMode === 'drivers' ? data : constructorData;
+                  const items = chartMode === 'drivers' ? drivers : constructors;
+                  const visibleItems = chartMode === 'drivers' ? visibleDrivers : visibleConstructors;
                   const maxPoints = Math.max(
-                    ...data.flatMap(race => 
-                      drivers
-                        .filter(d => visibleDrivers.has(d))
+                    ...currentData.flatMap(race => 
+                      items
+                        .filter(d => visibleItems.has(d))
                         .map(d => (race[d] as number) || 0)
                     ),
                     0
                   );
-                  // Round up to the nearest 50
-                  const maxRounded = Math.ceil(maxPoints / 50) * 50;
+                  const step = chartMode === 'constructors' ? 100 : 50;
+                  const maxRounded = Math.ceil(maxPoints / step) * step;
                   const referenceLines = [];
-                  for (let i = 50; i <= maxRounded; i += 50) {
+                  for (let i = step; i <= maxRounded; i += step) {
                     referenceLines.push(
                       <ReferenceLine 
                         key={i}
@@ -329,22 +372,40 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
                   return referenceLines;
                 })()}
                 
-                {drivers.map((driver) => (
-                  visibleDrivers.has(driver) && (
-                    <Line
-                      key={driver}
-                      type="linear"
-                      dataKey={driver}
-                      stroke={getDriverColor(driver)}
-                      strokeWidth={2}
-                      strokeDasharray={SECOND_DRIVERS.has(driver) ? "5 5" : undefined}
-                      dot={{ r: 3, strokeWidth: 1, fill: getDriverColor(driver) }}
-                      activeDot={{ r: 6, fill: getDriverColor(driver) }}
-                      connectNulls
-                      isAnimationActive={false}
-                    />
-                  )
-                ))}
+                {chartMode === 'drivers' ? (
+                  drivers.map((driver) => (
+                    visibleDrivers.has(driver) && (
+                      <Line
+                        key={driver}
+                        type="linear"
+                        dataKey={driver}
+                        stroke={getDriverColor(driver)}
+                        strokeWidth={2}
+                        strokeDasharray={SECOND_DRIVERS.has(driver) ? "5 5" : undefined}
+                        dot={{ r: 3, strokeWidth: 1, fill: getDriverColor(driver) }}
+                        activeDot={{ r: 6, fill: getDriverColor(driver) }}
+                        connectNulls
+                        isAnimationActive={false}
+                      />
+                    )
+                  ))
+                ) : (
+                  constructors.map((constructor) => (
+                    visibleConstructors.has(constructor) && (
+                      <Line
+                        key={constructor}
+                        type="linear"
+                        dataKey={constructor}
+                        stroke={getConstructorColor(constructor)}
+                        strokeWidth={2}
+                        dot={{ r: 3, strokeWidth: 1, fill: getConstructorColor(constructor) }}
+                        activeDot={{ r: 6, fill: getConstructorColor(constructor) }}
+                        connectNulls
+                        isAnimationActive={false}
+                      />
+                    )
+                  ))
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -352,70 +413,126 @@ export function ChampionshipProgressChart({ year, data: result, loading }: Champ
 
         <div className="lg:w-72 flex flex-col lg:border-l lg:border-gray-200 dark:lg:border-gray-800 lg:pl-6 transition-colors duration-200">
           <div className="mb-3">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider pt-1 transition-colors duration-200">Drivers</h3>
-            <div className="h-0.5 w-full bg-transparent"></div>
+            <div className="relative flex rounded-full bg-white dark:bg-white/10 p-0.5 border border-gray-200 dark:border-white/10">
+              {/* Sliding indicator */}
+              <div 
+                className="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-gray-900 dark:bg-white rounded-full shadow-sm transition-all duration-300 ease-out"
+                style={{ left: chartMode === 'drivers' ? '2px' : 'calc(50% + 2px)' }}
+              />
+              <button
+                onClick={() => onChartModeChange('drivers')}
+                className={`relative z-10 flex-1 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 ${
+                  chartMode === 'drivers'
+                    ? 'text-white dark:text-gray-900'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Drivers
+              </button>
+              <button
+                onClick={() => onChartModeChange('constructors')}
+                className={`relative z-10 flex-1 py-1.5 text-xs font-semibold rounded-full transition-colors duration-200 ${
+                  chartMode === 'constructors'
+                    ? 'text-white dark:text-gray-900'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Teams
+              </button>
+            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-1 overflow-y-auto max-h-[700px] pr-2 custom-scrollbar">
-            {drivers.map((driver) => (
-              <button
-                key={driver}
-                onClick={() => toggleDriver(driver)}
-                className={`
-                  flex items-center justify-between px-2 py-1 rounded border transition-all
-                  ${visibleDrivers.has(driver) 
-                    ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white' 
-                    : 'bg-transparent border-gray-300 dark:border-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/30'
-                  }
-                `}
-              >
-                <div className="flex items-center gap-2">
-                  {SECOND_DRIVERS.has(driver) ? (
-                    // Dashed line for second drivers
-                    <svg width="12" height="4" className={visibleDrivers.has(driver) ? '' : 'opacity-50'}>
-                      <line 
-                        x1="0" 
-                        y1="2" 
-                        x2="12" 
-                        y2="2" 
-                        stroke={getDriverColor(driver)} 
-                        strokeWidth="2"
-                        strokeDasharray="3 2"
-                      />
-                    </svg>
+            {chartMode === 'drivers' ? (
+              drivers.map((driver) => (
+                <button
+                  key={driver}
+                  onClick={() => toggleDriver(driver)}
+                  className={`
+                    flex items-center justify-between px-2 py-1 rounded border transition-all
+                    ${visibleDrivers.has(driver) 
+                      ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white' 
+                      : 'bg-transparent border-gray-300 dark:border-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/30'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2">
+                    {SECOND_DRIVERS.has(driver) ? (
+                      <svg width="12" height="4" className={visibleDrivers.has(driver) ? '' : 'opacity-50'}>
+                        <line 
+                          x1="0" 
+                          y1="2" 
+                          x2="12" 
+                          y2="2" 
+                          stroke={getDriverColor(driver)} 
+                          strokeWidth="2"
+                          strokeDasharray="3 2"
+                        />
+                      </svg>
+                    ) : (
+                      <span 
+                        className={`w-3 h-1 rounded-full ${visibleDrivers.has(driver) ? '' : 'opacity-50'}`}
+                        style={{ backgroundColor: getDriverColor(driver) }}
+                      ></span>
+                    )}
+                    <span className="font-bold text-xs tracking-wide">{driver}</span>
+                  </div>
+                  {visibleDrivers.has(driver) ? (
+                    <Eye className="w-3 h-3 text-green-500" />
                   ) : (
-                    // Solid line for first drivers
-                    <span 
-                      className={`w-3 h-1 rounded-full ${visibleDrivers.has(driver) ? '' : 'opacity-50'}`}
-                      style={{ backgroundColor: getDriverColor(driver) }}
-                    ></span>
+                    <EyeOff className="w-3 h-3 text-gray-400 dark:text-gray-600" />
                   )}
-                  <span className="font-bold text-xs tracking-wide">{driver}</span>
-                </div>
-                {visibleDrivers.has(driver) ? (
-                  <Eye className="w-3 h-3 text-green-500" />
-                ) : (
-                  <EyeOff className="w-3 h-3 text-gray-400 dark:text-gray-600" />
-                )}
-              </button>
-            ))}
+                </button>
+              ))
+            ) : (
+              constructors.map((constructor) => (
+                <button
+                  key={constructor}
+                  onClick={() => toggleConstructor(constructor)}
+                  className={`
+                    flex items-center justify-between px-2 py-1 rounded border transition-all
+                    ${visibleConstructors.has(constructor) 
+                      ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white' 
+                      : 'bg-transparent border-gray-300 dark:border-gray-800 text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/30'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className={`w-3 h-1 rounded-full ${visibleConstructors.has(constructor) ? '' : 'opacity-50'}`}
+                      style={{ backgroundColor: getConstructorColor(constructor) }}
+                    ></span>
+                    <span className="font-bold text-xs tracking-wide truncate">
+                      {constructorNames[constructor] || constructor}
+                    </span>
+                  </div>
+                  {visibleConstructors.has(constructor) ? (
+                    <Eye className="w-3 h-3 text-green-500" />
+                  ) : (
+                    <EyeOff className="w-3 h-3 text-gray-400 dark:text-gray-600" />
+                  )}
+                </button>
+              ))
+            )}
           </div>
           
-          {/* Legend explanation */}
-          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-200">
-            <div className="flex flex-col gap-1.5 text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-0.5 bg-gray-400 rounded-full"></span>
-                <span>First driver</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg width="16" height="2">
-                  <line x1="0" y1="1" x2="16" y2="1" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="3 2" />
-                </svg>
-                <span>Second driver</span>
+          {/* Legend explanation - only show for drivers */}
+          {chartMode === 'drivers' && (
+            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-200">
+              <div className="flex flex-col gap-1.5 text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200">
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-0.5 bg-gray-400 rounded-full"></span>
+                  <span>First driver</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg width="16" height="2">
+                    <line x1="0" y1="1" x2="16" y2="1" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="3 2" />
+                  </svg>
+                  <span>Second driver</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -21,6 +21,7 @@ interface SeasonAnalyticsProps {
   year: string;
   progressData: any;
   loading: boolean;
+  chartMode: 'drivers' | 'constructors';
 }
 
 interface ChartDataPoint {
@@ -92,19 +93,28 @@ Object.values(RACE_CONFIG).forEach(config => {
   ABBR_TO_FLAG[config.abbr] = config.flag;
 });
 
-export function SeasonAnalytics({ driverStandings, constructorStandings, year, progressData: result, loading }: SeasonAnalyticsProps) {
+export function SeasonAnalytics({ driverStandings, constructorStandings, year, progressData: result, loading, chartMode }: SeasonAnalyticsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [rankingData, setRankingData] = useState<any[]>([]);
   const [racePointsData, setRacePointsData] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<string[]>([]);
   const [driverTeams, setDriverTeams] = useState<Record<string, string>>({});
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
+  
+  // Constructor states
+  const [constructorRankingData, setConstructorRankingData] = useState<any[]>([]);
+  const [constructorPointsData, setConstructorPointsData] = useState<any[]>([]);
+  const [constructors, setConstructors] = useState<string[]>([]);
+  const [constructorNames, setConstructorNames] = useState<Record<string, string>>({});
 
   // Reset data when year changes
   useEffect(() => {
     setRankingData([]);
     setRacePointsData([]);
     setDrivers([]);
+    setConstructorRankingData([]);
+    setConstructorPointsData([]);
+    setConstructors([]);
   }, [year]);
 
   const getRaceConfig = (raceName: string): { abbr: string, flag: string } => {
@@ -119,8 +129,9 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
       const finishedRaces = result.data.filter((race: ChartDataPoint) => race.isFinished);
       const allDrivers = result.drivers as string[];
       setDriverTeams(result.driverTeams || {});
+      setConstructorNames(result.constructorNames || {});
       
-      // Process data to calculate rankings per round
+      // Process DRIVER data to calculate rankings per round
       const processedData = finishedRaces.map((race: any) => {
         const raceConfig = getRaceConfig(race.raceName);
         const raceRanks: any = {
@@ -213,6 +224,90 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
       });
 
       setRacePointsData(pointsDistribution);
+
+      // Process CONSTRUCTOR data
+      if (result.constructorData && result.constructors) {
+        const finishedConstructorRaces = result.constructorData.filter((race: ChartDataPoint) => race.isFinished);
+        const allConstructors = result.constructors as string[];
+
+        // Calculate constructor rankings per round
+        const constructorProcessedData = finishedConstructorRaces.map((race: any) => {
+          const raceConfig = getRaceConfig(race.raceName);
+          const raceRanks: any = {
+            round: race.round,
+            raceName: race.raceName,
+            abbr: raceConfig.abbr,
+            hasSprint: race.hasSprint
+          };
+
+          // Calculate ranks based on points
+          const standings = allConstructors.map(constructor => ({
+            constructor,
+            points: (race[constructor] as number) || 0
+          }));
+          standings.sort((a, b) => b.points - a.points);
+          standings.forEach((item, index) => {
+            raceRanks[item.constructor] = index + 1;
+          });
+
+          return raceRanks;
+        });
+
+        // Add starting point
+        if (constructorProcessedData.length > 0) {
+          const firstRace = constructorProcessedData[0];
+          const startPoint = {
+            ...firstRace,
+            round: 0,
+            raceName: "Season Start",
+            abbr: ""
+          };
+          constructorProcessedData.unshift(startPoint);
+        }
+
+        setConstructorRankingData(constructorProcessedData);
+
+        // Sort constructors by final standing
+        if (constructorProcessedData.length > 0) {
+          const lastRace = constructorProcessedData[constructorProcessedData.length - 1];
+          const sortedConstructors = [...allConstructors].sort((a, b) => lastRace[a] - lastRace[b]);
+          setConstructors(sortedConstructors);
+        } else {
+          setConstructors(allConstructors);
+        }
+
+        // Calculate constructor points distribution
+        const sortedConstructorRaces = [...finishedConstructorRaces].sort((a: any, b: any) => a.round - b.round);
+        
+        const constructorPointsDist = sortedConstructorRaces.map((data: any, index: number) => {
+          const prevData = index > 0 ? sortedConstructorRaces[index - 1] : null;
+          const raceConfig = getRaceConfig(data.raceName);
+          
+          const roundPoints: any = {
+            round: data.round,
+            raceName: data.raceName,
+            abbr: raceConfig.abbr,
+            total: 0
+          };
+
+          allConstructors.forEach(constructor => {
+            const currentPoints = (data[constructor] as number) || 0;
+            const prevPoints = prevData ? ((prevData[constructor] as number) || 0) : 0;
+            const gained = currentPoints - prevPoints;
+            
+            if (gained > 0) {
+              roundPoints[constructor] = gained;
+              roundPoints.total += gained;
+            } else {
+              roundPoints[constructor] = 0;
+            }
+          });
+
+          return roundPoints;
+        });
+
+        setConstructorPointsData(constructorPointsDist);
+      }
     }
   }, [result, year]);
 
@@ -226,6 +321,23 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
     }
     return DRIVER_COLORS[driver] || "#ffffff";
   }, [driverTeams]);
+
+  const getConstructorColor = useCallback((constructorId: string) => {
+    return TEAM_COLORS[constructorId] || "#ffffff";
+  }, []);
+
+  // Generic function to get color based on mode
+  const getItemColor = useCallback((item: string) => {
+    if (chartMode === 'drivers') {
+      return getDriverColor(item);
+    }
+    return getConstructorColor(item);
+  }, [chartMode, getDriverColor, getConstructorColor]);
+
+  // Get current data based on mode
+  const currentRankingData = chartMode === 'drivers' ? rankingData : constructorRankingData;
+  const currentPointsData = chartMode === 'drivers' ? racePointsData : constructorPointsData;
+  const currentItems = chartMode === 'drivers' ? drivers : constructors;
 
   const handleDriverHover = useCallback((driver: string) => {
     if (hoveredDriver !== driver) {
@@ -370,11 +482,13 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                 </div>
               ) : (
                 <>
-                  <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1 px-2">Driver Ranking Evolution</h3>
+                  <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1 px-2">
+                    {chartMode === 'drivers' ? 'Driver' : 'Team'} Ranking Evolution
+                  </h3>
                   <div className="h-[500px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
-                        data={rankingData}
+                        data={currentRankingData}
                         margin={{ top: 5, right: 60, left: 20, bottom: 40 }}
                         onMouseLeave={handleChartLeave}
                       >
@@ -409,7 +523,7 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                           axisLine={false}
                           tickLine={false}
                           width={30}
-                          ticks={drivers.length > 0 ? Array.from({ length: drivers.length }, (_, i) => i + 1) : undefined}
+                          ticks={currentItems.length > 0 ? Array.from({ length: currentItems.length }, (_, i) => i + 1) : undefined}
                           interval={0}
                         />
                         <YAxis 
@@ -420,19 +534,21 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                           stroke="var(--text-secondary)"
                           axisLine={false}
                           tickLine={false}
-                          width={40}
-                          ticks={drivers.length > 0 ? Array.from({ length: drivers.length }, (_, i) => i + 1) : undefined}
+                          width={chartMode === 'constructors' ? 80 : 40}
+                          ticks={currentItems.length > 0 ? Array.from({ length: currentItems.length }, (_, i) => i + 1) : undefined}
                           interval={0}
                           tick={({ x, y, payload }) => {
-                            // Since drivers is sorted by final standing, we can just grab the driver at the index
-                            // payload.value is 1-based rank, so subtract 1 for 0-based index
-                            const driver = drivers[payload.value - 1];
+                            const item = currentItems[payload.value - 1];
                             
-                            if (!driver) return <g />;
+                            if (!item) return <g />;
+                            
+                            const displayName = chartMode === 'constructors' 
+                              ? (constructorNames[item] || item)
+                              : item;
                             
                             return (
-                              <text x={x} y={y} dy={4} textAnchor="start" fill={getDriverColor(driver)} fontSize={11} fontWeight="bold">
-                                {driver}
+                              <text x={x} y={y} dy={4} textAnchor="start" fill={getItemColor(item)} fontSize={11} fontWeight="bold">
+                                {displayName}
                               </text>
                             );
                           }}
@@ -440,25 +556,22 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                         <Tooltip content={<CustomTooltip />} />
                         
                         {/* Visual Lines (No Interaction) */}
-                        {drivers.map((driver) => (
+                        {currentItems.map((item) => (
                           <Line
-                            key={`visual-${driver}`}
+                            key={`visual-${item}`}
                             yAxisId="left"
                             type="monotone"
-                            dataKey={driver}
-                            stroke={getDriverColor(driver)}
-                            strokeWidth={hoveredDriver === driver ? 4 : 2}
-                            strokeOpacity={hoveredDriver && hoveredDriver !== driver ? 0.35 : 1}
+                            dataKey={item}
+                            stroke={getItemColor(item)}
+                            strokeWidth={hoveredDriver === item ? 4 : 2}
+                            strokeOpacity={hoveredDriver && hoveredDriver !== item ? 0.35 : 1}
                             dot={(props: any) => {
                               if (props.payload.round === 0) return <g key={props.key} />;
-                              return <circle key={props.key} cx={props.cx} cy={props.cy} r={2} fill={getDriverColor(driver)} fillOpacity={hoveredDriver && hoveredDriver !== driver ? 0.35 : 1} strokeWidth={0} />;
+                              return <circle key={props.key} cx={props.cx} cy={props.cy} r={2} fill={getItemColor(item)} fillOpacity={hoveredDriver && hoveredDriver !== item ? 0.35 : 1} strokeWidth={0} />;
                             }}
                             activeDot={(props: any) => {
-                              // Only show active dot on the visual line if this driver is hovered
-                              // But since this line has pointerEvents: none, it won't trigger active state itself
-                              // However, Recharts might pass active payload if the interaction line triggers it
-                              if (props.payload.round === 0 || hoveredDriver !== driver) return <g key={props.key} />;
-                              return <circle key={props.key} cx={props.cx} cy={props.cy} r={5} fill={getDriverColor(driver)} strokeWidth={2} stroke="#fff" />;
+                              if (props.payload.round === 0 || hoveredDriver !== item) return <g key={props.key} />;
+                              return <circle key={props.key} cx={props.cx} cy={props.cy} r={5} fill={getItemColor(item)} strokeWidth={2} stroke="#fff" />;
                             }}
                             connectNulls
                             isAnimationActive={false}
@@ -467,15 +580,15 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                         ))}
 
                         {/* Interaction Lines (Invisible, Thick) */}
-                        {drivers.map((driver) => (
+                        {currentItems.map((item) => (
                           <Line
-                            key={`interaction-${driver}`}
+                            key={`interaction-${item}`}
                             yAxisId="left"
                             type="monotone"
-                            dataKey={driver}
+                            dataKey={item}
                             stroke="transparent"
                             strokeWidth={20}
-                            onMouseEnter={() => handleDriverHover(driver)}
+                            onMouseEnter={() => handleDriverHover(item)}
                             dot={false}
                             activeDot={false}
                             connectNulls
@@ -488,12 +601,14 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
 
                   {/* Points Distribution Chart */}
                   <div className="w-full">
-                    <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1 px-2">Points Distribution</h3>
+                    <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1 px-2">
+                      {chartMode === 'drivers' ? 'Driver' : 'Team'} Points Distribution
+                    </h3>
                     <div className="h-[600px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           layout="vertical"
-                          data={racePointsData}
+                          data={currentPointsData}
                           margin={{ top: 5, right: 60, left: 20, bottom: 20 }}
                           barCategoryGap={2}
                           onMouseLeave={handleChartLeave}
@@ -527,7 +642,7 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                             type="category"
                             stroke="var(--text-secondary)"
                             tick={({ x, y, payload, index }) => {
-                                const total = racePointsData[index]?.total || 0;
+                                const total = currentPointsData[index]?.total || 0;
                                 return (
                                     <text x={x} y={y} dy={4} textAnchor="start" fill="var(--text-primary)" fontSize={11} fontWeight="bold">
                                         {total}
@@ -540,15 +655,15 @@ export function SeasonAnalytics({ driverStandings, constructorStandings, year, p
                             interval={0}
                           />
                           <Tooltip content={<PointsTooltip />} cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} />
-                          {drivers.map((driver) => (
+                          {currentItems.map((item) => (
                             <Bar
-                              key={driver}
-                              dataKey={driver}
+                              key={item}
+                              dataKey={item}
                               stackId="a"
-                              fill={getDriverColor(driver)}
+                              fill={getItemColor(item)}
                               stroke="#000"
                               strokeWidth={1}
-                              onMouseEnter={() => handleDriverHover(driver)}
+                              onMouseEnter={() => handleDriverHover(item)}
                             />
                           ))}
                         </BarChart>
